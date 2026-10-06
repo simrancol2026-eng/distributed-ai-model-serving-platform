@@ -1,0 +1,58 @@
+# Java / Maven
+target/
+*.class
+hs_err_pid*
+replay_pid*
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+.output/
+.nitro/
+.tanstack/
+.vinxi/
+.wrangler/
+*.local
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment files. Examples stay tracked.
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Model weight caches
+.cache/
+models--*
+*.safetensors
+*.gguf
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
