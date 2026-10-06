@@ -1,8 +1,115 @@
-import { ArrowDownToLine, ScanSearch, Layers, HeartPulse, Gauge, Timer, Cpu, Server, Network, ShieldCheck, CircleAlert, Ban, RefreshCw, GitBranch, CheckCircle2 } from 'lucide-react';
-import { PageHeader } from '@/components/PageHeader';
-import { routingFactors } from '@/data/platform';
-const routingSteps=[['Incoming Request','Unified AI interface',ArrowDownToLine],['Capability Detection','Text, code, image or document',ScanSearch],['Eligible Models','Capability-compatible model services',Layers],['Worker Health','Availability and health checks',HeartPulse],['Workload','Current worker demand',Gauge],['Latency','Response-time conditions',Timer],['Resource Availability','Compute and memory capacity',Cpu],['Selected Worker','Best appropriate available worker',Server]] as const;
-const recoverySteps=[['Worker A','Assigned inference worker',Server],['Health Check Failed','Worker stops responding',CircleAlert],['Marked Unavailable','Removed from the eligible pool',Ban],['Router Re-evaluates Workers','Health and capacity considered again',RefreshCw],['Worker B Selected','An alternative healthy worker',GitBranch],['Request Continues','Inference resumes through the selected worker',CheckCircle2]] as const;
-export function RoutingPipeline({recovery=false}:{recovery?:boolean}){const steps=recovery?recoverySteps:routingSteps;
- return <main className="platform-page"><PageHeader eyebrow={recovery?'PLATFORM / RESILIENCE':'PLATFORM / ORCHESTRATION'} title={recovery?'Failure Recovery':'Intelligent Routing'} description={recovery?'Resilient request orchestration when a worker becomes unavailable.':'From one request to the most appropriate available AI worker.'}/><div className="architecture-badge"><Network size={12}/>{recovery?'RECOVERY ARCHITECTURE':'ROUTING ARCHITECTURE'} · NOT CONNECTED</div><div className="pipeline-layout"><div className="pipeline">{steps.map(([title,description,Icon],i)=><div key={title}><div className="pipeline-step"><span className="pipeline-step-index">0{i+1}</span><div className={`pipeline-node ${recovery?'recovery-node':''} ${recovery&&(i===1||i===2)?'failed':''} ${recovery&&i>=4?'recovered':''}`}><Icon/><div><h3>{title}</h3><p>{description}</p></div><span>—</span></div></div>{i<steps.length-1&&<div className="pipeline-link"/>}</div>)}</div><aside className="pipeline-summary"><h2>{recovery?'RECOVERY CONDITIONS':'DECISION SIGNALS'}</h2>{(recovery?['Health check','Unavailable worker','Alternative workers','Re-evaluation','Recovery latency','Request outcome']:routingFactors).map(f=><div className="detail-row" key={f}><span>{f}</span><b>—</b></div>)}<h2 className="mt-8">{recovery?'RECOVERY STATUS':'ROUTER STATUS'}</h2><p>Not connected</p><div className="health-band"><div><ShieldCheck size={20}/><div><strong>{recovery?'Fault-tolerant by design':'Capability-aware selection'}</strong><small>{recovery?'Recovery is not currently executing.':'No worker selection has been made.'}</small></div></div></div></aside></div></main>;
+import {
+  ArrowDownToLine,
+  ScanSearch,
+  Layers,
+  HeartPulse,
+  Gauge,
+  Timer,
+  Cpu,
+  Server,
+  Network,
+  ShieldCheck,
+  CircleAlert,
+  Ban,
+  RefreshCw,
+  GitBranch,
+  CheckCircle2,
+} from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { routingFactors } from "@/data/platform";
+const routingSteps = [
+  ["Incoming Request", "Unified AI interface", ArrowDownToLine],
+  ["Capability Detection", "Text, code, image or document", ScanSearch],
+  ["Eligible Models", "Capability-compatible model services", Layers],
+  ["Worker Health", "Availability and health checks", HeartPulse],
+  ["Workload", "Current worker demand", Gauge],
+  ["Latency", "Response-time conditions", Timer],
+  ["Resource Availability", "Compute and memory capacity", Cpu],
+  ["Selected Worker", "Best appropriate available worker", Server],
+] as const;
+const recoverySteps = [
+  ["Worker A", "Assigned inference worker", Server],
+  ["Health Check Failed", "Worker stops responding", CircleAlert],
+  ["Marked Unavailable", "Removed from the eligible pool", Ban],
+  ["Router Re-evaluates Workers", "Health and capacity considered again", RefreshCw],
+  ["Worker B Selected", "An alternative healthy worker", GitBranch],
+  ["Request Continues", "Inference resumes through the selected worker", CheckCircle2],
+] as const;
+export function RoutingPipeline({ recovery = false }: { recovery?: boolean }) {
+  const steps = recovery ? recoverySteps : routingSteps;
+  return (
+    <main className="platform-page">
+      <PageHeader
+        eyebrow={recovery ? "PLATFORM / RESILIENCE" : "PLATFORM / ORCHESTRATION"}
+        title={recovery ? "Failure Recovery" : "Intelligent Routing"}
+        description={
+          recovery
+            ? "Resilient request orchestration when a worker becomes unavailable."
+            : "From one request to the most appropriate available AI worker."
+        }
+      />
+      <div className="architecture-badge">
+        <Network size={12} />
+        {recovery ? "RECOVERY ARCHITECTURE" : "ROUTING ARCHITECTURE"} · NOT CONNECTED
+      </div>
+      <div className="pipeline-layout">
+        <div className="pipeline">
+          {steps.map(([title, description, Icon], i) => (
+            <div key={title}>
+              <div className="pipeline-step">
+                <span className="pipeline-step-index">0{i + 1}</span>
+                <div
+                  className={`pipeline-node ${recovery ? "recovery-node" : ""} ${recovery && (i === 1 || i === 2) ? "failed" : ""} ${recovery && i >= 4 ? "recovered" : ""}`}
+                >
+                  <Icon />
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                  <span>—</span>
+                </div>
+              </div>
+              {i < steps.length - 1 && <div className="pipeline-link" />}
+            </div>
+          ))}
+        </div>
+        <aside className="pipeline-summary">
+          <h2>{recovery ? "RECOVERY CONDITIONS" : "DECISION SIGNALS"}</h2>
+          {(recovery
+            ? [
+                "Health check",
+                "Unavailable worker",
+                "Alternative workers",
+                "Re-evaluation",
+                "Recovery latency",
+                "Request outcome",
+              ]
+            : routingFactors
+          ).map((f) => (
+            <div className="detail-row" key={f}>
+              <span>{f}</span>
+              <b>—</b>
+            </div>
+          ))}
+          <h2 className="mt-8">{recovery ? "RECOVERY STATUS" : "ROUTER STATUS"}</h2>
+          <p>Not connected</p>
+          <div className="health-band">
+            <div>
+              <ShieldCheck size={20} />
+              <div>
+                <strong>
+                  {recovery ? "Fault-tolerant by design" : "Capability-aware selection"}
+                </strong>
+                <small>
+                  {recovery
+                    ? "Recovery is not currently executing."
+                    : "No worker selection has been made."}
+                </small>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  );
 }
