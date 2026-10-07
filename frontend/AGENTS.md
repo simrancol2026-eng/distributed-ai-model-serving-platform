@@ -1,4 +1,5 @@
 # NEXUS AI architecture
+
 - Root layout owns the shared application shell and header; content lives in individual file-based TanStack routes with unique metadata so navigation and indexing stay consistent.
 - UI colors, typography and shadows use semantic tokens in src/styles.css so themes remain coherent.
 - Client API access goes exclusively through src/services/platform.ts and a single environment-configured API base so Spring Boot integration does not leak into presentation components.
