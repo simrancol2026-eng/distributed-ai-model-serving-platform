@@ -21,6 +21,7 @@ import {
 import { NexusLogo } from "@/components/NexusLogo";
 import { capabilities, platformNav } from "@/data/platform";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useBackendHealth } from "@/hooks/use-backend-health";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RoutingPanel } from "@/components/RoutingPanel";
@@ -37,6 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const workspace = useWorkspace();
+  const backend = useBackendHealth();
   useEffect(() => {
     document.documentElement.classList.toggle("light", light);
   }, [light]);
@@ -210,7 +212,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               {isWorkspace ? (workspace.currentId ? "Conversation" : "New request") : "Platform"}{" "}
               <span>/</span> {isWorkspace ? "Intelligent workspace" : "NEXUS AI"}
             </span>
-            <StatusBadge label="Not connected" />
+            <StatusBadge
+              label={backend.connected ? "Backend connected" : "Not connected"}
+              online={backend.connected}
+            />
             <Button
               variant="ghost"
               size="icon"

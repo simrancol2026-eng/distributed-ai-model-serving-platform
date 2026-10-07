@@ -20,11 +20,13 @@ import { NetworkVisualization } from "./NetworkVisualization";
 import { NexusLogo } from "./NexusLogo";
 import { capabilities } from "@/data/platform";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useBackendHealth } from "@/hooks/use-backend-health";
 import type { Capability } from "@/types/platform";
 import { StatusBadge } from "./StatusBadge";
 export function AIWorkspace() {
   const { capability, setCapability, entries, currentId, pending, submit, toggleSave, feedback } =
     useWorkspace();
+  const backend = useBackendHealth();
   const [prompt, setPrompt] = useState(""),
     [files, setFiles] = useState<File[]>([]),
     [error, setError] = useState(""),
@@ -332,7 +334,7 @@ export function AIWorkspace() {
           </span>
           <span className="connection-note">
             <span className="tiny-dot" />
-            Not connected
+            {backend.connected ? "Backend connected" : "Not connected"}
           </span>
         </div>
       </div>

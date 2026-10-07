@@ -51,3 +51,80 @@ Phase 0 · Claude
 
 - **Problem:** `frontend/vite.config.ts` uses `@lovable.dev/vite-tanstack-config`, the website generator's shared configuration.
 - **Decision:** Leave it for now. Phase 0 must not redesign the application, and replacing the build configuration risks breaking a build that currently works. This is listed under Known issues in the README for a later cleanup.
+
+---
+
+## Phase 1 — First end-to-end inference path
+
+### D-007 — Keep the existing text-sentiment worker for Phase 1
+Phase 1 · Claude, within ChatGPT's plan
+
+- **Context:** The only working model in the repo is DistilBERT text sentiment. The lung-image models are not in the repo.
+- **Decision:** Prove the end-to-end path with this model, as the plan allows ("use the correct payload for the actual model").
+- **Benefits:**
+  - Phase 1 is not blocked waiting for the image models.
+  - It demonstrates that the platform is model-agnostic. Image workers will be added next to it rather than replacing it.
+
+### D-008 — Worker accepts a JSON body instead of a query parameter
+Phase 1 · Claude
+
+- **Before:** `POST /predict?text=...`, with the text in the URL.
+- **After:** `POST /predict` with the JSON body `{"text": "..."}`.
+- **Why:**
+  - URLs have length limits and get logged by proxies.
+  - JSON bodies are the standard for model-serving APIs.
+  - JSON extends naturally to other input types later.
+  - The old form had no users, so nothing breaks.
+
+### D-009 — The worker reports only metadata it actually knows
+Phase 1 · Claude
+
+- The response includes `model`, `task` and `inferenceMs` (measured around the model call).
+- It also includes `version`, which is the Hugging Face revision hash when the library exposes it, and otherwise `null`. A version string is never invented.
+
+### D-010 — Truncate input to the model's limit
+Phase 1 · Claude
+
+- **Problem:** DistilBERT accepts at most 512 tokens. Longer text made the original worker raise an error.
+- **Decision:** Call the model with `truncation=True`, so only the first 512 tokens are classified.
+- **Limits:** Separately, both the API and the worker reject input over 10,000 characters.
+
+### D-011 — Unified API shape: `{capability, input}` → normalized response with error codes
+Phase 1 · Claude
+
+- **Design:**
+  - The request carries the capability, so that later phases can route by capability.
+  - The response carries `worker`, `model` and the latencies, so that each request can be traced through the system.
+  - Errors use stable codes (`WORKER_UNAVAILABLE` etc.), so the UI can show a clear message instead of crashing.
+- **Capability check:** Even with one worker, a request for a capability no worker serves gets `422 NO_ELIGIBLE_WORKER`. This is the first, smallest piece of "find compatible workers, then route".
+
+### D-012 — Spring `RestClient` with explicit timeouts; no extra libraries
+Phase 1 · Claude
+
+- **Timeouts:** connect 2 s, read 30 s, both configurable.
+- **Without timeouts:** a hung worker would hang the backend.
+- **Why RestClient:** it is part of Spring itself. WebClient and Feign would add dependencies that Phase 1 does not need.
+
+### D-013 — CORS restricted to the React dev origins, not `*`
+Phase 1 · Claude (plan requirement)
+
+- **Allowed origins:** only `http://localhost:5173` and `http://127.0.0.1:5173`.
+- **Allowed methods:** GET and POST on `/api/**`.
+- **Configuration:** the list can be overridden with `PLATFORM_CORS_ORIGINS` for deployment.
+
+### D-014 — `/api/health` stays plain text
+Phase 1 · Claude
+
+- **Rule:** The frontend treats any HTTP 200 as "connected".
+- **Why:** This keeps the existing, already-verified health contract (`Backend is healthy`) unchanged. Richer structured health reporting belongs to the health-monitoring phase.
+
+### D-015 — How Phase 1 is tested, and what each test does and does not prove
+Phase 1 · Claude
+
+| Test | Proves | Does not prove |
+|---|---|---|
+| Worker `pytest` (stub model) | HTTP contract, validation | That the model works |
+| Worker `REAL_MODEL=1 pytest` | Real predictions, truncation | — |
+| Backend JUnit tests (fake worker over HTTP) | Validation, mapping, 502/503/422 handling, CORS | Real model |
+| Frontend vitest | Response → UI mapping, including errors | Network |
+| `scripts/phase1_e2e_test.py` | The whole real path, plus worker-down and recovery | UI (Test E is manual) |

@@ -1,11 +1,13 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useBackendHealth } from "@/hooks/use-backend-health";
 import { capabilities, routingFactors } from "@/data/platform";
 import { StatusBadge } from "./StatusBadge";
 import { Button } from "./ui/button";
 export function RoutingPanel() {
   const { capability, entries, currentId } = useWorkspace();
+  const backend = useBackendHealth();
   const entry = entries.find((e) => e.id === currentId);
   const selected = entry?.capability ?? capability;
   const task = capabilities.find((c) => c.id === selected)?.task ?? "Automatic detection";
@@ -56,7 +58,7 @@ export function RoutingPanel() {
       <div className="router-bottom">
         <div>
           <span className="tiny-dot" />
-          <span>Not connected to backend</span>
+          <span>{backend.connected ? "Backend connected" : "Not connected to backend"}</span>
         </div>
         <Button asChild variant="ghost" size="sm">
           <Link to="/routing">
