@@ -1,0 +1,56 @@
+# Root .gitignore for the whole monorepo.
+# Sub-projects (frontend/, backend/spring-boot/) keep their own .gitignore too.
+
+# --- Secrets / local environment ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Java / Maven ---
+target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Node / frontend build output ---
+node_modules/
+dist/
+.output/
+.nitro/
+.wrangler/
+.tanstack/
+
+# --- Model artifacts and datasets (too large for git; document where to get them) ---
+*.pt
+*.pth
+*.onnx
+*.h5
+*.safetensors
+*.ckpt
+# (root-anchored so frontend/src/data/ source code is NOT ignored)
+/data/
+/datasets/
+model-workers/*/data/
+model-workers/*/weights/
+
+# --- Logs and OS / IDE noise ---
+logs/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.swp
+
+# .vscode/settings.json is intentionally tracked (shared Java null-analysis setting).
