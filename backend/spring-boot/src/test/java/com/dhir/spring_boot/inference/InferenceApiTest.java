@@ -89,12 +89,17 @@ class InferenceApiTest {
     }
 
     @Test
-    void healthEndpointStillWorks() throws Exception {
-        HttpResponse<String> r = http.send(HttpRequest.newBuilder(
-                URI.create("http://127.0.0.1:" + port + "/api/health")).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, r.statusCode());
-        assertEquals("Backend is healthy", r.body());
+    void healthEndpointIsPlainTextLiveness() throws Exception {
+        for (String accept : new String[] { "*/*", "application/json" }) {
+            HttpResponse<String> r = http.send(HttpRequest.newBuilder(
+                    URI.create("http://127.0.0.1:" + port + "/api/health")).header("Accept", accept).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, r.statusCode(), "Accept: " + accept);
+            assertEquals("Backend is healthy", r.body(), "Accept: " + accept);
+            String type = r.headers().firstValue("Content-Type").orElse("");
+            // Must never claim JSON while returning text (Grok TEST REPORT round 1, bug 4).
+            assertTrue(type.startsWith("text/plain"), "Accept: " + accept + " gave Content-Type " + type);
+        }
     }
 
     @Test

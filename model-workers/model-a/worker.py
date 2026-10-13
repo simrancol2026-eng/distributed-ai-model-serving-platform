@@ -13,7 +13,9 @@ import os
 import time
 
 import transformers
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from transformers import pipeline
 
@@ -30,6 +32,18 @@ classifier = pipeline(TASK, model=MODEL_NAME)
 MODEL_VERSION = getattr(classifier.model.config, "_commit_hash", None)
 
 app = FastAPI(title=f"Model worker {WORKER_ID}")
+
+
+@app.exception_handler(RequestValidationError)
+async def concise_validation_error(request: Request, exc: RequestValidationError):
+    """422 with the field and the reason only.
+
+    FastAPI's default 422 echoes the rejected input back, so a 20 KB text was
+    returned in full. We keep `loc`, `msg` and `type`, and drop `input` and `ctx`.
+    """
+    errors = [{"loc": list(e.get("loc", [])), "msg": e.get("msg", ""), "type": e.get("type", "")}
+              for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": errors})
 
 
 class PredictRequest(BaseModel):

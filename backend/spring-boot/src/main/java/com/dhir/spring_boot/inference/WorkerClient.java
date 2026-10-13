@@ -33,6 +33,8 @@ public class WorkerClient {
             @Value("${platform.worker.capability}") String capability,
             @Value("${platform.worker.connect-timeout-ms}") long connectTimeoutMs,
             @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs) {
+        // Fail fast at startup on a blank/malformed URL instead of returning 500s later.
+        workerUrl = WorkerUrlValidator.validate("platform.worker.url", workerUrl);
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));

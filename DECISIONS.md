@@ -128,3 +128,62 @@ Phase 1 · Claude
 | Backend JUnit tests (fake worker over HTTP) | Validation, mapping, 502/503/422 handling, CORS | Real model |
 | Frontend vitest | Response → UI mapping, including errors | Network |
 | `scripts/phase1_e2e_test.py` | The whole real path, plus worker-down and recovery | UI (Test E is manual) |
+
+---
+
+## Phase 1 — Review round 1 (after Grok's TEST REPORT on `65d404b`)
+
+### D-016 — Architecture review: JSON inference contract confirmed; migration from `main`'s query API
+Phase 1 · decided by ChatGPT (architect) · implemented by Claude
+
+- **Trigger:** Grok's round-1 TEST REPORT flagged that the contract had changed:
+  - the worker no longer accepts `POST /predict?text=...`, which is what `main` used
+  - `/api/inference` is not multipart
+  - `/api/health` is not JSON
+- **Ruling (ChatGPT):** keep the JSON contracts:
+  - `POST /api/inference` with `{capability, input}`
+  - worker `POST /predict` with `{text}`
+  - No owner or rubric requirement asks for multipart or query-string inference.
+- **Migration from `main`:**
+  - The old worker endpoint `POST /predict?text=...` is replaced by `POST /predict` with the JSON body `{"text": ...}`.
+  - Old-style calls now get `422` from the worker (or `415` from the backend for multipart).
+  - Nothing else in the repository called the old endpoint, so no other code changes are needed.
+  - Acceptance tests must use the JSON contract, as `scripts/phase1_e2e_test.py` already does.
+- **Earlier entries:** D-008, D-011 and D-014 stay as they were written. This entry records the review.
+
+### D-017 — Validate the worker URL at startup (fail fast)
+Phase 1 review · Claude
+
+- **Problem:** `PLATFORM_WORKER_URL=` (set but empty) let Spring start, and every inference then failed with a generic `500 URI is not absolute`.
+- **Decision:** `WorkerUrlValidator` runs when `WorkerClient` is created. It requires a non-blank, absolute `http`/`https` URL with a host. Otherwise the application refuses to start, with a message naming `platform.worker.url` / `PLATFORM_WORKER_URL`.
+- **Why fail at startup:** a configuration mistake shows up immediately, rather than as confusing errors on every request.
+
+### D-018 — `/api/health` is explicitly `text/plain` liveness
+Phase 1 review · ruling by ChatGPT
+
+- **Behavior:**
+  - Always returns `200`, the body `Backend is healthy`, and `Content-Type: text/plain`, even when the client sends `Accept: application/json`.
+  - Before this change, Spring labelled the plain-text body as JSON in that case.
+- **Scope:** it only means "the backend process is up". It does **not** check worker readiness; that belongs to the health-monitoring phase.
+
+### D-019 — Connection badge: first client render matches the server
+Phase 1 review · Claude
+
+- **Problem:** the header badge, workspace footer and routing panel share one health query. When the answer arrived before a later component hydrated, that component's first render said "Backend connected", while the server HTML said "Not connected". This is a React hydration error.
+- **Fix:** `useBackendHealth` reports "not connected" until the component has mounted, then shows the live value.
+- **Measured in a headless browser** (stand-in health server, 3 page loads per run):
+  - before the fix: 3 hydration errors
+  - after the fix: 0, on two separate runs
+  - The badge still switches to "Backend connected" when the backend is up, and stays "Not connected" when it is down.
+
+### D-020 — Concise worker validation errors
+Phase 1 review · Claude
+
+- **Problem:** FastAPI's default `422` echoed the rejected input back, so a ~20 KB text was returned in full.
+- **Fix:** the worker returns `{"detail": [{"loc", "msg", "type"}]}` only. That still names the field and the reason (for example "String should have at most 10000 characters").
+
+### D-021 — `mvnw` is executable in Git
+Phase 1 review · Claude
+
+- **Problem:** the file mode was `100644`, so `./mvnw` failed with exit code 126 on Linux and macOS.
+- **Fix:** set to `100755` with `git update-index --chmod=+x`.

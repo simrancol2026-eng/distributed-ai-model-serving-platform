@@ -71,6 +71,26 @@ def test_real_model_handles_text_longer_than_512_tokens():
     assert r.status_code == 200
 
 
+def test_oversized_input_error_is_concise_and_does_not_echo_text():
+    # Grok TEST REPORT round 1, bug 6: the 422 used to echo the whole ~20 KB input back.
+    marker = "SECRET-PAYLOAD-"
+    text = marker + "y" * 20_000
+    r = client.post("/predict", json={"text": text})
+    assert r.status_code == 422
+    assert len(r.content) < 1000, f"422 body is {len(r.content)} bytes"
+    assert marker not in r.text
+    detail = r.json()["detail"]
+    assert detail[0]["loc"] == ["body", "text"]
+    assert "10000" in detail[0]["msg"]  # still says why it was rejected
+    assert set(detail[0]) == {"loc", "msg", "type"}
+
+
+def test_missing_field_error_names_the_field():
+    detail = client.post("/predict", json={"wrong": "x"}).json()["detail"]
+    assert detail[0]["loc"] == ["body", "text"]
+    assert detail[0]["type"] == "missing"
+
+
 @pytest.mark.parametrize(
     "payload",
     [{}, {"text": ""}, {"text": "x" * (worker.MAX_TEXT_CHARS + 1)}, {"wrong": "field"}],

@@ -18,7 +18,7 @@ Last updated: Phase 1 (first end-to-end inference path). Status: **built, awaiti
 
 | Component | Status | Evidence / notes |
 |---|---|---|
-| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` returns plain text `Backend is healthy`. `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. Has 10 tests that use a fake worker. **Not yet compiled or run with real Spring**, because Maven Central is blocked in Claude's sandbox. |
+| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok ran `./mvnw test` on `65d404b`: 11/11 passed (10 inference tests that use a fake worker, plus context-load). The review-round-1 changes add tests that still need to be re-run by Grok. |
 | React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Models, Workers and Monitoring pages still show "Not connected" because their APIs come in later phases. 6 tests pass, and build and typecheck pass. |
 | Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model. **Real inference has not yet been run**, because Hugging Face is blocked in Claude's sandbox. |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
@@ -69,11 +69,14 @@ cd backend/spring-boot
 Check it:
 
 ```bash
-curl http://localhost:8080/api/health
-# Backend is healthy
+curl -i http://localhost:8080/api/health
+# HTTP 200, Content-Type: text/plain, body: Backend is healthy
+# This only means the backend process is up. It does not check the worker.
 ```
 
 Run the tests: `./mvnw test`
+
+The backend reads the worker address from `PLATFORM_WORKER_URL` (default `http://localhost:8001`). If it is blank or not an absolute `http(s)` URL, the backend **refuses to start** with an `Invalid configuration: platform.worker.url ...` message.
 
 ### 2. Python worker: http://localhost:8001
 
@@ -144,6 +147,8 @@ Errors use the shape `{ "status": "error", "error": "<CODE>", "message": "…", 
 | 422 | `NO_ELIGIBLE_WORKER` | No worker serves the requested capability (e.g. `IMAGE`) |
 | 503 | `WORKER_UNAVAILABLE` | The worker is down or timed out |
 | 502 | `WORKER_ERROR` | The worker answered with an error or an unreadable response |
+
+The worker's own validation errors (`422` from `POST /predict`) look like `{"detail": [{"loc": ["body", "text"], "msg": "...", "type": "..."}]}`. They do not echo the rejected text back.
 
 ### Phase 1 end-to-end test
 

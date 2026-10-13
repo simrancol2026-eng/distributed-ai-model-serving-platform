@@ -91,8 +91,11 @@ def main():
     print(f"Worker healthy after {startup_s:.1f} s\n")
     try:
         # A - backend health
-        s, body, _ = http("GET", BACKEND + "/api/health")
-        record("A  Backend health", s == 200 and body == "Backend is healthy", f"HTTP {s} body={body!r}")
+        s, body, h = http("GET", BACKEND + "/api/health", headers={"Accept": "application/json"})
+        ctype = {k.lower(): v for k, v in h.items()}.get("content-type", "")
+        record("A  Backend health (plain-text liveness)",
+               s == 200 and body == "Backend is healthy" and ctype.startswith("text/plain"),
+               f"HTTP {s} body={body!r} content-type={ctype!r} (requested Accept: application/json)")
 
         # B - worker health
         s, body, _ = http("GET", WORKER + "/health")
