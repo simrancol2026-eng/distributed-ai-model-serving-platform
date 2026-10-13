@@ -278,3 +278,22 @@ Sprint 2 · Codex finding · fixed by Claude
    - **Fix:** the selected row now stores whether it came from the registry, and the dialog uses only that.
 3. **README:** the React status row now separates the earlier inference evidence from this branch's Models page.
 4. **Persistence check:** the datasource line comes from an `ApplicationRunner`, which can run just after `/api/health` first answers. The script now waits up to 20 s for that line, so a startup race is not misread as "not PostgreSQL".
+
+### D-031 — Registry test result: Grok PASS on `f581a15`
+Sprint 2 · Grok TEST REPORT · recorded by Claude
+
+- **Environment:** Ubuntu 24.04, OpenJDK 21.0.12, Node 22.14, native PostgreSQL 16.15 (no Docker), new empty database.
+- **Result:** PASS on 13/13 checks.
+  - Maven ran 32/32 on H2. These are H2 results only.
+  - On PostgreSQL:
+    - Flyway applied V1 on the empty database, and the second start reported "up to date".
+    - The datasource line showed PostgreSQL 16.15, with no URL or credentials.
+    - 23/23 API checks passed.
+    - Concurrent duplicates gave one 201 and seven 409 for both models and versions.
+    - Responses and `psql` dumps were identical after a JVM-only restart and after a PostgreSQL-only restart.
+    - The persistence script passed 23/23.
+  - The inference regression passed 8/8, with real DistilBERT returning POSITIVE 0.99988.
+  - Seed script: rerun and conflict behaviour were verified against the real backend.
+  - The Models page was checked in all three states and through dialog refreshes.
+  - The secrets grep found nothing.
+- **Still open:** the Docker image (Sprint 1); two workers, version-aware dispatch and request tracking (Sprint 2). The synthetic revisions in the checks are metadata tests, not additional real models.

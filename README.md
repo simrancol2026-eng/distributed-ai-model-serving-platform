@@ -14,21 +14,29 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: Sprint 2 model registry built on branch `sprint2-model-registry` (Oct 13, 2026). It is waiting for Grok's independent test on real PostgreSQL.
+Last updated: after Grok's TEST REPORT (PASS) on the Sprint 2 model registry, commit `f581a15` (Oct 13, 2026).
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented on branch `sprint2-model-registry` and not yet accepted** (see below). Multiple workers and request tracking are not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Multiple workers and request tracking are not started.
 
 Neither sprint is signed off.
 
 | Component | Status | Evidence / notes |
 |---|---|---|
 | Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
-| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Workers and Monitoring pages still show "Not connected" because their APIs come in later sprints. Evidence for the inference UI: 6 tests passed, plus build and typecheck, and Grok reported (round 2, `8bfc496`) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. **Models page (Sprint 2 branch `sprint2-model-registry`, not yet accepted):** reads `GET /api/models`, shows "No models registered yet" when the registry is empty, and when the registry is unavailable it shows the static catalog labelled "Example only". |
+| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Workers and Monitoring pages still show "Not connected" because their APIs come in later sprints. Evidence for the inference UI: 6 tests passed, plus build and typecheck, and Grok reported (round 2, `8bfc496`) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. **Models page (Sprint 2 registry, Grok PASS on `f581a15`):** reads `GET /api/models`, shows "No models registered yet" when the registry is empty, and when the registry is unavailable it shows the static catalog labelled "Example only". Grok saw all three states in headless Chrome. An open detail dialog kept its own label when refreshing in either direction. |
 | Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model (run by Claude). Real DistilBERT inference was **reported by Grok** on `65d404b` (round 1) and `8bfc496` (round 2): `REAL_MODEL=1 pytest` 10 passed, and the worker and Spring return the same `POSITIVE 0.99988`. Logs are attached in the team Slack thread. Claude's sandbox cannot download the model. The worker Docker image is **not verified** (Sprint 1 item, open). |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
-| Model registry + versions (PostgreSQL) | **IMPLEMENTED ON BRANCH, NOT YET ACCEPTED** | `/api/models` create/list/get and `/api/models/{id}/versions` create/list/get, stored in PostgreSQL through Flyway migration `V1__registry.sql`. Spring tests run on **in-memory H2 (PostgreSQL mode)**, which is not evidence of real PostgreSQL behaviour. Claude checked the migration and constraints directly on PostgreSQL 16.15 with `psql`. The Spring + PostgreSQL restart proof (`scripts/registry_persistence_check.py`) is Grok's acceptance test and has not run yet. |
+| Model registry + versions (PostgreSQL) | **IMPLEMENTED (Sprint 2, Grok PASS on `f581a15`)** | `/api/models` create/list/get and `/api/models/{id}/versions` create/list/get, stored in PostgreSQL through Flyway migration `V1__registry.sql`. Spring tests run on **in-memory H2 (PostgreSQL mode)**, which is not evidence of real PostgreSQL behaviour. Claude checked the migration and constraints directly on PostgreSQL 16.15 with `psql`. Grok's TEST REPORT on `f581a15` (Ubuntu 24.04, Java 21, native PostgreSQL 16.15, empty database) reported PASS:
+- `./mvnw -B test` passed 32/32 on H2 (RegistryApi 14, InferenceApi 9, WorkerUrlValidator 7, WorkerDown 1, Application 1).
+- Flyway applied V1 once, and the second start reported "No migration necessary".
+- 23/23 API checks passed, covering 400, 404 and 409.
+- 8 concurrent creates gave one 201 and seven 409, for both models and versions.
+- Records were identical after a JVM-only restart and after a PostgreSQL-only restart.
+- `registry_persistence_check.py` passed 23/23.
+- The inference regression passed 8/8.
+- The seed script created on the first run, did nothing on a rerun, and on a conflicting `v1` exited 1 without overwriting. |
 | Multiple workers, routing engine | PLANNED | |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
