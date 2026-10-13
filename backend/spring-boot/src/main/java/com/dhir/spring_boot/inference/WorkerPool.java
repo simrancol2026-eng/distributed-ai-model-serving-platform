@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -35,19 +37,30 @@ public class WorkerPool {
     private final List<WorkerClient> workers;
     private final String capability;
     private final AtomicLong position = new AtomicLong();
+    /** Separate round-robin position per served (artifact, revision), for version-specific requests. */
+    private final ConcurrentHashMap<String, AtomicLong> versionPositions = new ConcurrentHashMap<>();
+    private final long identityMaxAgeMs;
 
+    public WorkerPool(String urls, String capability, long connectTimeoutMs, long readTimeoutMs) {
+        this(urls, capability, connectTimeoutMs, readTimeoutMs, 2000, 30000);
+    }
+
+    @Autowired
     public WorkerPool(
             @Value("${platform.worker.urls}") String urls,
             @Value("${platform.worker.capability}") String capability,
             @Value("${platform.worker.connect-timeout-ms}") long connectTimeoutMs,
-            @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs) {
+            @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs,
+            @Value("${platform.worker.probe-timeout-ms:2000}") long probeTimeoutMs,
+            @Value("${platform.worker.identity-max-age-ms:30000}") long identityMaxAgeMs) {
         List<String> validated = parse(urls);
         List<WorkerClient> clients = new ArrayList<>();
         for (String url : validated) {
-            clients.add(new WorkerClient(url, connectTimeoutMs, readTimeoutMs));
+            clients.add(new WorkerClient(url, connectTimeoutMs, readTimeoutMs, probeTimeoutMs));
         }
         this.workers = List.copyOf(clients);
         this.capability = capability;
+        this.identityMaxAgeMs = identityMaxAgeMs;
         log.info("worker pool: {} worker(s), round-robin order {}", workers.size(), endpoints());
     }
 
@@ -79,6 +92,24 @@ public class WorkerPool {
     public WorkerClient next() {
         int index = (int) Math.floorMod(position.getAndIncrement(), (long) workers.size());
         return workers.get(index);
+    }
+
+    /**
+     * Workers whose own /health reports exactly this artifact and revision, in configured order.
+     * Workers with an unknown identity are excluded (fail closed).
+     */
+    public List<WorkerClient> eligible(String artifact, String revision) {
+        WorkerClient.ServedModel wanted = new WorkerClient.ServedModel(artifact, revision);
+        return workers.stream()
+                .filter(w -> w.servedModel(identityMaxAgeMs).map(wanted::equals).orElse(false))
+                .toList();
+    }
+
+    /** Round-robin among the given eligible workers, fair per (artifact, revision). Thread-safe. */
+    public WorkerClient next(List<WorkerClient> eligible, String artifact, String revision) {
+        AtomicLong pos = versionPositions.computeIfAbsent(artifact + "@" + revision, k -> new AtomicLong());
+        int index = (int) Math.floorMod(pos.getAndIncrement(), (long) eligible.size());
+        return eligible.get(index);
     }
 
     public String capability() {

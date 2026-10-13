@@ -354,3 +354,43 @@ Sprint 2 · found by Grok (TEST REPORT on `133dbe9`) · fixed by Claude
   - A real HTTP 500 from a worker is still `502`.
 - **Test:** `StalledWorkerTest` runs a server that accepts and never responds, with the read timeout set to 1.5 s. It expects `503`, the endpoint named in the message, and an elapsed time of at least the timeout and less than the timeout plus 5 s.
 - **Checked here:** plain JDK `HttpClient` against such a server threw `HttpTimeoutException` after 1520 ms with a 1500 ms timeout. Spring and Maven were not run here.
+
+---
+
+## Sprint 2 — version-aware dispatch (branch `sprint2-version-aware-dispatch`)
+
+### D-037 — Optional `model`/`version` on inference requests; unchanged without them
+Sprint 2 · Codex task · Claude
+
+- **Request shape:** `POST /api/inference` accepts optional `model` (a registry id) and `version` (a label, or `latest`, the default when `model` is given). Without `model`, the code path is the previous one: all workers, round-robin, no registry access.
+- **Rules:**
+  - `version` without `model` gives 400.
+  - The label `latest` is reserved and cannot be registered, so it can never be ambiguous.
+  - "Latest" uses the registry's existing definition: most recently registered (`created_at`, then id).
+
+### D-038 — Workers are eligible by what they report, not by configuration
+Sprint 2 · Claude
+
+- **Identity:** each worker's `/health` now includes `revision`, the commit it actually loaded (the same value `/predict` reports as `version`).
+- **Eligibility:** the backend probes `/health` (2 s timeout) and caches the reported (artifact, revision) for 30 s. A worker is eligible for a resolved registry version only if both match exactly.
+- **Why not configuration:** a hand-typed mapping could claim a version a process does not run. The task asks for routing to workers *verified* to serve the version.
+- **Fail closed:** a worker whose identity is unknown (never reachable, or no revision reported) is not eligible.
+- **Known, then down:** such a worker keeps its last known identity, so requests routed to it still give 503. This avoids hidden failover, which was not requested.
+- **Round-robin:** among eligible workers, with a separate fair counter per (artifact, revision).
+- **Checking the answer:** a `/predict` reply whose artifact or revision differs from the resolved version gives `502 WORKER_MODEL_MISMATCH`, and that worker's cached identity is dropped.
+
+### D-039 — No version substitution
+Sprint 2 · Codex task
+
+- **Rule:** if the requested (or latest) version's revision is not served by any worker, the answer is `422 NO_ELIGIBLE_WORKER`, naming the model, version and revision. It never falls back to another version.
+- **Other errors:**
+  - an unknown model or version gives 404;
+  - a requested capability that differs from the model's gives `422 CAPABILITY_MISMATCH`;
+  - an unreadable registry gives `503 REGISTRY_UNAVAILABLE`.
+
+### D-040 — Honest scope: one real version today
+Sprint 2 · Claude
+
+- **Today:** both DistilBERT workers load the same revision, so only one registered version is servable.
+- **Path to a second version:** the worker accepts an optional `MODEL_REVISION`, passed to Hugging Face `pipeline(revision=...)`. That makes a genuine second revision possible on one worker.
+- **Status:** that two-revision setup has not been demonstrated, and the docs do not claim multi-version serving.

@@ -18,7 +18,7 @@ Last updated: after Grok's TEST REPORT (PASS) on the Sprint 2 model registry, co
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Two workers with round-robin routing are **implemented on branch `sprint2-two-workers-round-robin` and not yet tested independently** (see "Two workers" below). Request tracking is not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Two workers with round-robin routing are **implemented on branch `sprint2-two-workers-round-robin` and not yet tested independently** (see "Two workers" below). Version-aware dispatch is **implemented on branch `sprint2-version-aware-dispatch` and not yet tested independently**. Request tracking is not started.
 
 Neither sprint is signed off.
 
@@ -170,6 +170,51 @@ Each worker's `/health` reports its `pid` and `predictionsServed`, the number of
 - the two workers are different processes;
 - 8 requests alternate between them;
 - each worker served exactly half.
+
+### 2c. Version-aware dispatch (Sprint 2)
+
+An inference request can name a registered model, and optionally a version:
+```json
+{ "capability": "TEXT", "input": "I love this", "model": "sentiment-distilbert", "version": "v1" }
+```
+- **No `model`:** the request behaves exactly as before. It goes round-robin over all workers, and the registry is not consulted.
+- **`model` without `version`, or `"version": "latest"`:** uses the most recently registered version of that model.
+- **`version` without `model`:** rejected with 400.
+
+The backend resolves the version in the PostgreSQL registry, which gives an artifact and a 40-hex revision. It then sends the request only to workers whose own `GET /health` reports exactly that artifact and revision, round-robin among them. The worker's `/predict` reply must report the same artifact and revision. If it does not, the request fails with `502 WORKER_MODEL_MISMATCH`.
+
+**No substitution:** if no worker runs the requested revision, the answer is `422 NO_ELIGIBLE_WORKER`. The backend never falls back to another version.
+
+Worker identities are cached for 30 s (`platform.worker.identity-max-age-ms`) and probed with a 2 s timeout (`platform.worker.probe-timeout-ms`).
+
+How worker availability affects versioned requests:
+- **Unknown identity:** a worker whose identity is unknown is not used for versioned requests (it fails closed). This covers a worker that never answered `/health`, or one that reports no revision.
+- **Known, then down:** a worker that was known and then went down keeps its last known identity. Requests routed to it still get `503`. There is no failover.
+
+The response adds `modelId` and `modelVersion`, the registry label that was served. Both are `null` when no model was named.
+
+| HTTP | Code | When |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | `version` without `model`; malformed model id or version label |
+| 404 | `MODEL_NOT_FOUND` / `VERSION_NOT_FOUND` | Not registered. A model with no versions gives `VERSION_NOT_FOUND`. |
+| 422 | `CAPABILITY_MISMATCH` | The requested capability (not `AUTO`) differs from the model's capability |
+| 422 | `NO_ELIGIBLE_WORKER` | No worker serves that capability, or that exact artifact and revision |
+| 503 | `REGISTRY_UNAVAILABLE` | The registry database cannot be read |
+| 502 | `WORKER_MODEL_MISMATCH` | The worker answered with a different artifact or revision |
+
+The label `latest` is reserved and cannot be registered as a version.
+
+**What is real today:**
+- Both workers load the same DistilBERT revision, so only one registered version can actually be served.
+- Any version with another revision fails closed with 422.
+- To serve a genuinely different revision, start a worker with `MODEL_REVISION=<hugging face commit>`. That revision is passed to `pipeline(revision=...)`, and the worker reports the commit it actually loaded. Then register that commit as another version.
+- Two-revision serving has not been demonstrated yet.
+
+`python scripts/version_dispatch_e2e_test.py` checks this on the real stack. It registers a model whose `v1` has the workers' real revision and whose `v2` has a synthetic revision that no worker runs. It then checks:
+- the A/B order for `v1`;
+- `latest` (`v2`) returns 422, and no worker runs;
+- the 404, 400 and 422 error cases;
+- a request without a model still works.
 
 ### 3. Frontend: http://localhost:5173
 

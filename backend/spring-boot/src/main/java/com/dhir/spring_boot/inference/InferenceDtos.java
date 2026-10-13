@@ -9,8 +9,12 @@ public final class InferenceDtos {
     private InferenceDtos() {
     }
 
-    /** Body of POST /api/inference, e.g. {"capability": "TEXT", "input": "I love this"}. */
-    public record InferenceRequest(String capability, String input) {
+    /**
+     * Body of POST /api/inference, e.g. {"capability": "TEXT", "input": "I love this"}.
+     * Optional (Sprint 2): "model" = registry model id, "version" = registry version label or "latest"
+     * (default when "model" is given). Without "model" the request behaves exactly as before.
+     */
+    public record InferenceRequest(String capability, String input, String model, String version) {
     }
 
     /** What the Python worker returns from POST /predict (field names must match its JSON). */
@@ -39,7 +43,9 @@ public final class InferenceDtos {
             String task,
             Prediction prediction,
             double workerInferenceMs,
-            long totalLatencyMs) {
+            long totalLatencyMs,
+            String modelId,       // registry model id, only when the request named a model (else null)
+            String modelVersion) { // registry version label that was resolved and served (else null)
     }
 
     /** Uniform error body: status is always "error"; error is a stable machine-readable code. */

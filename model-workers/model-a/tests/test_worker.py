@@ -44,6 +44,9 @@ def test_health_reports_model_and_capability():
     assert body["status"] == "healthy"
     assert body["capability"] == "TEXT"
     assert body["model"] == worker.MODEL_NAME
+    # The revision on /health is the one /predict reports (the backend routes versioned requests by it).
+    assert body["revision"] == worker.MODEL_VERSION
+    assert body["revision"] == client.post("/predict", json={"text": "good"}).json()["version"]
 
 
 def test_health_counts_successful_predictions_only():

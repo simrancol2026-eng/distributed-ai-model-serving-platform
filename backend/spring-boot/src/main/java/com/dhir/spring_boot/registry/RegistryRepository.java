@@ -151,7 +151,7 @@ public class RegistryRepository {
                 .optional();
     }
 
-    Optional<ModelVersion> latestVersion(String modelId) {
+    public Optional<ModelVersion> latestVersion(String modelId) {
         return jdbc.sql("SELECT * FROM model_versions WHERE model_id = :modelId " + LATEST_ORDER
                 + " FETCH FIRST 1 ROW ONLY")
                 .param("modelId", modelId)
