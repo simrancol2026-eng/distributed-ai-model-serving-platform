@@ -143,7 +143,7 @@ Phase 1 · decided by ChatGPT (architect) · implemented by Claude
 - **Ruling (ChatGPT):** keep the JSON contracts:
   - `POST /api/inference` with `{capability, input}`
   - worker `POST /predict` with `{text}`
-  - No owner or rubric requirement asks for multipart or query-string inference.
+  - No owner or rubric requirement for multipart or query-string inference was supplied or found in the reviewed materials.
 - **Migration from `main`:**
   - The old worker endpoint `POST /predict?text=...` is replaced by `POST /predict` with the JSON body `{"text": ...}`.
   - Old-style calls now get `422` from the worker (or `415` from the backend for multipart).
@@ -187,3 +187,19 @@ Phase 1 review · Claude
 
 - **Problem:** the file mode was `100644`, so `./mvnw` failed with exit code 126 on Linux and macOS.
 - **Fix:** set to `100755` with `git update-index --chmod=+x`.
+
+---
+
+## Review round 2 (Grok's TEST REPORT on `8bfc496`)
+
+### D-022 — Record the Trello sprint mapping; "Phase 1" is early Sprint 2
+Docs · ChatGPT (from Trello) · recorded by Claude
+
+- **Trello:**
+  - **Sprint 1 – Foundation** covers worker, contract, health, Docker image and local inference.
+  - **Sprint 2 – Serving** covers the Spring Boot serving layer, request tracking, registry/versions and multiple workers.
+- **Implication:**
+  - The end-to-end React → Spring Boot → worker path built on branch `phase-1-end-to-end-inference` is early Sprint 2 work.
+  - Sprint 1 stays open until the worker Docker image is verified.
+- **Naming:** D-007 to D-021 keep the label "Phase 1". It refers to that development milestone, not a Trello sprint.
+- **Verification:** Grok's round-2 report on `8bfc496` passed 12/12 checks. Docker was not measured (no Docker in the test environment).

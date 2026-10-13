@@ -14,13 +14,19 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: Phase 1 (first end-to-end inference path). Status: **built, awaiting real-environment verification**. See the Phase 1 section below.
+Last updated: after Grok's TEST REPORT round 2 on `8bfc496` (Oct 12, 2026).
+
+**Sprint mapping (Trello):**
+- **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Registry, versions, multiple workers and request tracking are not started.
+
+Neither sprint is signed off.
 
 | Component | Status | Evidence / notes |
 |---|---|---|
-| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok ran `./mvnw test` on `65d404b`: 11/11 passed (10 inference tests that use a fake worker, plus context-load). The review-round-1 changes add tests that still need to be re-run by Grok. |
-| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Models, Workers and Monitoring pages still show "Not connected" because their APIs come in later phases. 6 tests pass, and build and typecheck pass. |
-| Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model. **Real inference has not yet been run**, because Hugging Face is blocked in Claude's sandbox. |
+| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
+| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Models, Workers and Monitoring pages still show "Not connected" because their APIs come in later phases. 6 tests pass, and build and typecheck pass. Grok reported (round 2) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. |
+| Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model (run by Claude). Real DistilBERT inference was **reported by Grok** on `65d404b` (round 1) and `8bfc496` (round 2): `REAL_MODEL=1 pytest` 10 passed, and the worker and Spring return the same `POSITIVE 0.99988`. Logs are attached in the team Slack thread. Claude's sandbox cannot download the model. The worker Docker image is **not verified** (Sprint 1 item, open). |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
 | Multiple workers, registry, routing engine | PLANNED | |
 | PostgreSQL, Redis, Kafka | PLANNED | |
@@ -174,5 +180,6 @@ It writes `phase1_e2e_results.json` and prints the steps for the manual UI test 
 
 - The frontend build still depends on `@lovable.dev/vite-tanstack-config`, the generator's shared Vite config. It works, but it should be replaced with an explicit Vite config in a later cleanup.
 - The frontend's production build targets Cloudflare Workers by default (via nitro). This is irrelevant for local development.
+- The welcome-page network graphic shows a static "Not connected" label even when the header shows "Backend connected". This is cosmetic, not a hydration error, and is noted for Sprint 2.
 - The worker's `/health` only reports that the process is up. The model loads at startup, and the process exits if loading fails. Deeper health checks (resource usage, readiness under load) belong to the health-monitoring phase.
 - The Models, Workers and Monitoring pages call `/api/models`, `/api/workers` and `/api/metrics`, which do not exist yet. They fall back to "Not connected", and the browser console shows 404s for those calls.
