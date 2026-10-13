@@ -46,6 +46,13 @@ def test_health_reports_model_and_capability():
     assert body["model"] == worker.MODEL_NAME
 
 
+def test_health_counts_successful_predictions_only():
+    before = client.get("/health").json()["predictionsServed"]
+    assert client.post("/predict", json={"text": "good"}).status_code == 200
+    assert client.post("/predict", json={"text": ""}).status_code == 422  # rejected: not counted
+    assert client.get("/health").json()["predictionsServed"] == before + 1
+
+
 def test_predict_returns_label_score_and_metadata():
     r = client.post("/predict", json={"text": "This movie was really good"})
     assert r.status_code == 200

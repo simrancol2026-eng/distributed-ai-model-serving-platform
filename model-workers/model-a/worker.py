@@ -1,15 +1,22 @@
 """Model worker "model-a": serves one Hugging Face text-classification model over HTTP.
 
 Contract (used by the Spring Boot control plane):
-  GET  /health   -> {"status": "healthy", "worker": ..., "model": ..., "capability": ..., "task": ...}
+  GET  /health   -> {"status": "healthy", "worker": ..., "model": ..., "capability": ..., "task": ...,
+                     "predictionsServed": <successful /predict calls since this process started>,
+                     "pid": <process id>}
   POST /predict  JSON {"text": "..."}
               -> {"worker", "model", "version", "task", "label", "score", "inferenceMs"}
 
 The model loads once at startup. If loading fails, the process fails to start,
 so a worker that answers /health always has a loaded model.
+
+Several workers = several processes of this file, each with its own port and WORKER_ID, e.g.
+  WORKER_ID=worker-a uvicorn worker:app --port 8001
+  WORKER_ID=worker-b uvicorn worker:app --port 8002
 """
 
 import os
+import threading
 import time
 
 import transformers
@@ -32,6 +39,11 @@ classifier = pipeline(TASK, model=MODEL_NAME)
 MODEL_VERSION = getattr(classifier.model.config, "_commit_hash", None)
 
 app = FastAPI(title=f"Model worker {WORKER_ID}")
+
+# Count of successful predictions by THIS process. Evidence that a request really reached this
+# worker (e.g. round-robin tests). In memory only: resets when the process restarts.
+_served_lock = threading.Lock()
+_predictions_served = 0
 
 
 @app.exception_handler(RequestValidationError)
@@ -59,6 +71,8 @@ def health():
         "capability": CAPABILITY,
         "task": TASK,
         "transformers": transformers.__version__,
+        "predictionsServed": _predictions_served,
+        "pid": os.getpid(),  # different processes have different pids
     }
 
 
@@ -68,6 +82,9 @@ def predict(request: PredictRequest):
     # truncation=True: DistilBERT accepts at most 512 tokens; longer input would raise an error.
     result = classifier(request.text, truncation=True)[0]
     inference_ms = (time.perf_counter() - started) * 1000
+    global _predictions_served
+    with _served_lock:  # FastAPI runs sync endpoints on a thread pool
+        _predictions_served += 1
     return {
         "worker": WORKER_ID,
         "model": MODEL_NAME,

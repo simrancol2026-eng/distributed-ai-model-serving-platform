@@ -3,10 +3,8 @@ package com.dhir.spring_boot.inference;
 import java.time.Duration;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -15,41 +13,29 @@ import org.springframework.web.client.RestClientResponseException;
 import com.dhir.spring_boot.inference.InferenceDtos.WorkerPrediction;
 
 /**
- * HTTP client for the single Python model worker (Phase 1).
- * In later phases the routing engine will choose among many workers; this class
- * stays responsible only for "talk to one worker".
+ * HTTP client for ONE Python model worker process ("talk to one worker").
+ * Which worker handles a request is decided by {@link WorkerPool}; this class does not choose.
+ * Not a Spring bean: WorkerPool creates one WorkerClient per configured URL.
  */
-@Component
 public class WorkerClient {
 
     private final RestClient restClient;
-    private final String workerId;
-    private final String workerUrl;
-    private final String capability;
+    private final String endpoint;
 
-    public WorkerClient(
-            @Value("${platform.worker.id}") String workerId,
-            @Value("${platform.worker.url}") String workerUrl,
-            @Value("${platform.worker.capability}") String capability,
-            @Value("${platform.worker.connect-timeout-ms}") long connectTimeoutMs,
-            @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs) {
-        // Fail fast at startup on a blank/malformed URL instead of returning 500s later.
-        workerUrl = WorkerUrlValidator.validate("platform.worker.url", workerUrl);
+    /**
+     * @param workerUrl already validated by {@link WorkerUrlValidator}
+     */
+    public WorkerClient(String workerUrl, long connectTimeoutMs, long readTimeoutMs) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
         this.restClient = RestClient.builder().baseUrl(workerUrl).requestFactory(factory).build();
-        this.workerId = workerId;
-        this.workerUrl = workerUrl;
-        this.capability = capability;
+        this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
     }
 
-    public String workerId() {
-        return workerId;
-    }
-
-    public String capability() {
-        return capability;
+    /** host:port of this worker, safe to log and return (no path, no credentials). */
+    public String endpoint() {
+        return endpoint;
     }
 
     /**
@@ -73,13 +59,13 @@ public class WorkerClient {
         } catch (ResourceAccessException e) {
             // Connection refused, DNS failure, or timeout: the worker is not usable right now.
             throw new WorkerUnavailableException(
-                    "Worker " + workerId + " at " + workerUrl + " is unavailable: " + e.getMessage(), e);
+                    "Worker at " + endpoint + " is unavailable: " + e.getMessage(), e);
         } catch (RestClientResponseException e) {
             throw new WorkerErrorException(
-                    "Worker " + workerId + " returned HTTP " + e.getStatusCode().value(), e);
+                    "Worker at " + endpoint + " returned HTTP " + e.getStatusCode().value(), e);
         } catch (RestClientException e) {
             // Anything else from the HTTP client, e.g. a response body that is not the expected JSON.
-            throw new WorkerErrorException("Worker " + workerId + " response could not be read: " + e.getMessage(), e);
+            throw new WorkerErrorException("Worker at " + endpoint + " response could not be read: " + e.getMessage(), e);
         }
     }
 

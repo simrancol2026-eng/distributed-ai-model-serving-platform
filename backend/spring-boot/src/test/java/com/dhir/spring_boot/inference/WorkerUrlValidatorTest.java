@@ -51,10 +51,17 @@ class WorkerUrlValidatorTest {
     }
 
     @Test
-    void workerClientRefusesToBeCreatedWithBlankUrl() {
+    void workerPoolRefusesToBeCreatedWithBlankUrl() {
         // This is the reported bug: PLATFORM_WORKER_URL= (empty) used to start fine and then return 500s.
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> new WorkerClient("model-a", "", "TEXT", 2000, 30000));
+                () -> new WorkerPool("", "TEXT", 2000, 30000));
         assertTrue(e.getMessage().startsWith("Invalid configuration"), e.getMessage());
+    }
+
+    @Test
+    void rejectsCredentialsInUrl() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> WorkerUrlValidator.validate(PROP, "http://user:secret@localhost:8001"));
+        assertTrue(!e.getMessage().contains("secret"), "the password must not be echoed: " + e.getMessage());
     }
 }
