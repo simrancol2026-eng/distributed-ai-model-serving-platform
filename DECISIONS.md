@@ -203,3 +203,65 @@ Docs · ChatGPT (from Trello) · recorded by Claude
   - Sprint 1 stays open until the worker Docker image is verified.
 - **Naming:** D-007 to D-021 keep the label "Phase 1". It refers to that development milestone, not a Trello sprint.
 - **Verification:** Grok's round-2 report on `8bfc496` passed 12/12 checks. Docker was not measured (no Docker in the test environment).
+
+---
+
+## Sprint 2 — model registry and versions (branch `sprint2-model-registry`)
+
+### D-023 — PostgreSQL + Spring JdbcClient + Flyway for the registry
+Sprint 2 · proposed by Claude, approved with amendments by ChatGPT
+
+- **Choice:** plain SQL through `JdbcClient` (spring-boot-starter-jdbc). The schema lives in a versioned Flyway migration, `db/migration/V1__registry.sql`.
+- **Why:**
+  - The planned database is PostgreSQL.
+  - Plain SQL is easy to read and defend.
+  - Flyway makes schema setup reproducible on an empty database. It never re-applies a migration (`spring.flyway.clean-disabled=true`).
+- **Not chosen:** JPA/Hibernate. It is more machinery than two tables need.
+- **Config:** `PLATFORM_DB_URL`, `PLATFORM_DB_USER` and `PLATFORM_DB_PASSWORD` come from the environment. No credentials are committed.
+
+### D-024 — Uniqueness is enforced by the database, and races become 409
+Sprint 2 · Claude
+
+- **Constraints:**
+  - `models.id` is the primary key.
+  - `UNIQUE(model_id, version)`.
+  - `UNIQUE(model_id, artifact, artifact_revision)`.
+  - The foreign key `model_versions.model_id` references `models.id`.
+- **Why:** checking first in Java and then inserting can let two simultaneous requests both pass the check. The database rejects the second insert, and the API translates that rejection into 409.
+- **Which 409:** after a duplicate-key error, the API asks the database whether the label already exists. If it does, the response is `VERSION_ALREADY_EXISTS`; otherwise it is `DUPLICATE_ARTIFACT`. This avoids parsing vendor-specific error text.
+- **Aliases:** the same artifact and revision under a second label is rejected. Two labels for one artifact must not be presented as two distinct versions.
+
+### D-025 — Full 40-hex revision; registration is metadata only
+Sprint 2 · ChatGPT amendment
+
+- **Rule:** `artifactRevision` must be the full 40-hex commit. A 7-character prefix is not guaranteed unique, so it is rejected. Uppercase input is stored as lowercase.
+- **Limit:** registering a revision records metadata only. It does not prove the artifact was downloaded or executed.
+- **Seed:** `scripts/seed_registry.py` takes the revision from a real inference response rather than a hand-typed value.
+
+### D-026 — "Latest" means most recently registered
+Sprint 2 · ChatGPT amendment
+
+- **Rule:** latest = newest `created_at`, with ties broken by the higher id.
+- **Not:** semantic-version order, and not "active" or "deployed". Deployment state belongs to later Sprint 2 tasks (version-aware dispatch).
+
+### D-027 — Tests use in-memory H2; acceptance needs real PostgreSQL
+Sprint 2 · ChatGPT amendment
+
+- **Tests:** Spring tests run against H2 in PostgreSQL mode, set in `src/test/resources/config/application.properties`. That file overrides only the datasource.
+- **Evidence:** H2 results test the API logic and constraint translation. They are **not** evidence of PostgreSQL behaviour or persistence.
+- **Acceptance:** Grok's Spring + real PostgreSQL run of `scripts/registry_persistence_check.py`, plus its own `psql` checks.
+- **Datasource log:** the backend logs the database product, version and active profiles at startup, never the URL or credentials. This lets evidence show which engine was used.
+
+### D-028 — Database setup and the persistence check are non-destructive
+Sprint 2 · ChatGPT amendment, Grok request
+
+- **Setup:** `scripts/setup_registry_db.sh` creates the role and database only if they are missing. It never drops or alters existing ones. It reads the password with psql `\getenv`, so the password is not on any command line.
+- **Persistence check:** `registry_persistence_check.py` starts its own backend, refuses to run if the port is already in use, and stops only the process group it started. It adds uniquely named synthetic rows and never deletes, truncates or drops anything. Port and database come from arguments or the environment.
+
+### D-029 — Models page: registry data, empty state, labelled examples
+Sprint 2 · ChatGPT amendment
+
+- **Registry answers:** `GET /api/models` returns 200 with an array. The page shows those rows, or "No models registered yet" when the array is empty.
+- **Registry unavailable:** any other response, or no backend, means unavailable. The page says so and shows the static catalog with the status "Example only" and the footer "example entries".
+- **Never:** a failure is never shown as registered models.
+- **List fields:** `workers` is `null` (not tracked yet). `status` is `REGISTERED`, meaning recorded, not running.

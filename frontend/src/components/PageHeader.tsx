@@ -5,11 +5,14 @@ export function PageHeader({
   title,
   description,
   action,
+  status,
 }: {
   eyebrow: string;
   title: string;
   description: string;
   action?: ReactNode;
+  /** Page-specific connection badge; pages without a backend feature keep "Not connected". */
+  status?: { label: string; online: boolean };
 }) {
   return (
     <header className="page-heading">
@@ -20,7 +23,7 @@ export function PageHeader({
       </div>
       <div className="page-heading-actions">
         {action}
-        <StatusBadge />
+        {status ? <StatusBadge label={status.label} online={status.online} /> : <StatusBadge />}
       </div>
     </header>
   );
