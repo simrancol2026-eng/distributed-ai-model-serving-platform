@@ -7,6 +7,9 @@ export type Model = {
   version: string | null;
   workers: number | null;
   status: string;
+  /** Present for registry entries (Sprint 2); absent in the static example catalog. */
+  description?: string | null;
+  createdAt?: string;
 };
 export type Worker = {
   id: string;

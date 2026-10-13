@@ -9,10 +9,18 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import type { Model } from "@/types/platform";
 export const modelsQuery = { queryKey: ["models"], queryFn: platformService.models };
 export function ModelRegistry() {
-  const { data: models, refetch, isFetching } = useSuspenseQuery(modelsQuery);
+  const { data, refetch, isFetching } = useSuspenseQuery(modelsQuery);
+  // Registry rows are real registrations; examples are a static catalog shown only when the
+  // registry cannot be read, and are labelled as examples everywhere they appear.
+  const isRegistry = data.source === "registry";
+  const models = isRegistry ? data.models : data.examples;
   const [filter, setFilter] = useState("ALL"),
     [search, setSearch] = useState(""),
-    [detail, setDetail] = useState<Model | null>(null);
+    // The selected row keeps its own provenance, so a refresh that switches between registry
+    // and example data can never relabel an open example as a registered model (or vice versa).
+    [selected, setSelected] = useState<{ model: Model; registered: boolean } | null>(null);
+  const detail = selected?.model ?? null;
+  const detailRegistered = selected?.registered ?? false;
   const visible = models.filter(
     (m) =>
       (filter === "ALL" || m.capability === filter) &&
@@ -24,6 +32,11 @@ export function ModelRegistry() {
         eyebrow="PLATFORM / MODELS"
         title="Model Registry"
         description="Specialized intelligence, unified through one routing layer."
+        status={
+          isRegistry
+            ? { label: "Registry connected", online: true }
+            : { label: "Registry unavailable", online: false }
+        }
         action={
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={isFetching ? "animate-spin" : ""} />
@@ -54,10 +67,19 @@ export function ModelRegistry() {
           />
         </label>
       </div>
-      <p className="catalog-note">
-        <Info size={12} />
-        Intended model catalog · Registration and availability are not connected.
-      </p>
+      {isRegistry ? (
+        <p className="catalog-note" data-testid="registry-note">
+          <Info size={12} />
+          Registered models from the platform registry · Registered means recorded, not deployed or
+          running.
+        </p>
+      ) : (
+        <p className="catalog-note" role="status" data-testid="examples-note">
+          <Info size={12} />
+          Registry unavailable ({data.reason}). The rows below are EXAMPLE data only — they are not
+          registered models.
+        </p>
+      )}
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
@@ -83,7 +105,7 @@ export function ModelRegistry() {
                 <td className="font-mono text-muted-foreground">{m.version ?? "—"}</td>
                 <td className="font-mono text-muted-foreground">{m.workers ?? "—"}</td>
                 <td>
-                  <StatusBadge label={m.status} />
+                  <StatusBadge label={isRegistry ? m.status : "Example only"} />
                 </td>
                 <td>
                   <Button
@@ -91,7 +113,7 @@ export function ModelRegistry() {
                     size="icon"
                     aria-label={`Inspect ${m.name}`}
                     title={`Inspect ${m.name}`}
-                    onClick={() => setDetail(m)}
+                    onClick={() => setSelected({ model: m, registered: isRegistry })}
                   >
                     <ArrowUpRight />
                   </Button>
@@ -102,8 +124,17 @@ export function ModelRegistry() {
               <tr className="table-empty">
                 <td colSpan={6}>
                   <Layers size={24} className="mx-auto" />
-                  <strong>No matching models</strong>
-                  <p>Change the capability or search.</p>
+                  {isRegistry && !models.length ? (
+                    <>
+                      <strong>No models registered yet</strong>
+                      <p>Register one with POST /api/models (see scripts/seed_registry.py).</p>
+                    </>
+                  ) : (
+                    <>
+                      <strong>No matching models</strong>
+                      <p>Change the capability or search.</p>
+                    </>
+                  )}
                 </td>
               </tr>
             )}
@@ -111,23 +142,34 @@ export function ModelRegistry() {
         </table>
       </div>
       <div className="table-footer">
-        <span>{visible.length} catalog entries</span>
-        <span>Registry connection: —</span>
+        <span>
+          {visible.length}{" "}
+          {isRegistry
+            ? `registered model${visible.length === 1 ? "" : "s"}`
+            : `example entr${visible.length === 1 ? "y" : "ies"}`}
+        </span>
+        <span>Registry connection: {isRegistry ? "connected" : "unavailable"}</span>
       </div>
       <Dialog
         open={Boolean(detail)}
         onOpenChange={(open) => {
-          if (!open) setDetail(null);
+          if (!open) setSelected(null);
         }}
       >
         <DialogContent>
           <DialogTitle>{detail?.name}</DialogTitle>
-          <DialogDescription>Intended model configuration · Not connected</DialogDescription>
+          <DialogDescription>
+            {detailRegistered
+              ? `Registered model · ${detail?.id ?? ""}`
+              : "Example entry · not a registered model"}
+          </DialogDescription>
           {[
-            ["Capability", detail?.task],
-            ["Version", detail?.version],
+            ["Capability", detail?.capability],
+            ["Task", detail?.task],
+            ["Latest registered version", detail?.version],
             ["Workers", detail?.workers],
-            ["Status", detail?.status],
+            ["Status", detailRegistered ? detail?.status : "Example only"],
+            ["Description", detail?.description],
           ].map(([key, value]) => (
             <div className="settings-row" key={key}>
               <span>{key}</span>

@@ -5,8 +5,9 @@ const apiBase = import.meta.env["VITE_API_BASE_URL"]?.replace(/\/$/, "");
 export const endpoints = {
   health: "/api/health",
   inference: "/api/inference",
-  // Not implemented by the backend yet (later phases); the UI falls back to "Not connected".
+  // Sprint 2 model registry (GET list of registered models).
   models: "/api/models",
+  // Not implemented by the backend yet (later sprints); the UI shows "Not connected".
   workers: "/api/workers",
   routing: "/api/routing",
   requests: "/api/requests",
@@ -22,6 +23,28 @@ async function read<T>(endpoint: string, fallback: T): Promise<T> {
     return fallback;
   }
 }
+/**
+ * Result of loading the Models page.
+ * "registry": the backend answered; models is the real registry (possibly empty).
+ * "unavailable": the registry could not be read; examples is the static EXAMPLE catalog,
+ * which must never be presented as registered models.
+ */
+export type ModelsResult =
+  | { source: "registry"; models: Model[] }
+  | { source: "unavailable"; reason: string; examples: Model[] };
+
+/** Interprets a GET /api/models response. Anything but 200 + JSON array counts as unavailable. */
+export function toModelsResult(httpStatus: number, body: unknown): ModelsResult {
+  if (httpStatus === 200 && Array.isArray(body)) {
+    return { source: "registry", models: body as Model[] };
+  }
+  return {
+    source: "unavailable",
+    reason: `Registry responded with HTTP ${httpStatus}`,
+    examples: modelCatalog,
+  };
+}
+
 export const disconnectedResult: RoutingResult = {
   status: "not-connected",
   answer:
@@ -92,7 +115,29 @@ export const platformService = {
       return { connected: false };
     }
   },
-  models: () => read<Model[]>(endpoints.models, modelCatalog),
+  async models(): Promise<ModelsResult> {
+    if (!apiBase) {
+      return {
+        source: "unavailable",
+        reason: "Backend URL not configured",
+        examples: modelCatalog,
+      };
+    }
+    try {
+      const response = await fetch(`${apiBase}${endpoints.models}`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      let body: unknown = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
+      return toModelsResult(response.status, body);
+    } catch {
+      return { source: "unavailable", reason: "Backend not reachable", examples: modelCatalog };
+    }
+  },
   workers: () => read<Worker[]>(endpoints.workers, []),
   routing: () => read(endpoints.routing, { selectedWorker: null, status: "Not connected" }),
   requests: () => read(endpoints.requests, []),
