@@ -265,3 +265,16 @@ Sprint 2 · ChatGPT amendment
 - **Registry unavailable:** any other response, or no backend, means unavailable. The page says so and shows the static catalog with the status "Example only" and the footer "example entries".
 - **Never:** a failure is never shown as registered models.
 - **List fields:** `workers` is `null` (not tracked yet). `status` is `REGISTERED`, meaning recorded, not running.
+
+### D-030 — Review fixes on `6f1cedc` (Codex code review)
+Sprint 2 · Codex finding · fixed by Claude
+
+1. **Seed script:**
+   - **Problem:** `seed_registry.py` treated any 409 as success, so a pre-existing `v1` pointing at a different revision was silently accepted.
+   - **Fix:** on a duplicate, the script reads the existing model or version back and compares it. A match means a rerun: exit 0. A mismatch is reported: exit 1, nothing overwritten. Any other failure exits 1.
+   - **Tests:** `scripts/tests/test_seed_registry.py`, 8 cases against an in-memory fake API.
+2. **Models dialog:**
+   - **Problem:** the open detail dialog used the page's *current* data source for its label. After a refresh from offline to the real registry, an example entry could be labelled "Registered model".
+   - **Fix:** the selected row now stores whether it came from the registry, and the dialog uses only that.
+3. **README:** the React status row now separates the earlier inference evidence from this branch's Models page.
+4. **Persistence check:** the datasource line comes from an `ApplicationRunner`, which can run just after `/api/health` first answers. The script now waits up to 20 s for that line, so a startup race is not misread as "not PostgreSQL".

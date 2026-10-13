@@ -25,7 +25,7 @@ Neither sprint is signed off.
 | Component | Status | Evidence / notes |
 |---|---|---|
 | Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
-| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Models, Workers and Monitoring pages still show "Not connected" because their APIs come in later phases. 6 tests pass, and build and typecheck pass. Grok reported (round 2) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. |
+| React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Workers and Monitoring pages still show "Not connected" because their APIs come in later sprints. Evidence for the inference UI: 6 tests passed, plus build and typecheck, and Grok reported (round 2, `8bfc496`) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. **Models page (Sprint 2 branch `sprint2-model-registry`, not yet accepted):** reads `GET /api/models`, shows "No models registered yet" when the registry is empty, and when the registry is unavailable it shows the static catalog labelled "Example only". |
 | Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model (run by Claude). Real DistilBERT inference was **reported by Grok** on `65d404b` (round 1) and `8bfc496` (round 2): `REAL_MODEL=1 pytest` 10 passed, and the worker and Spring return the same `POSITIVE 0.99988`. Logs are attached in the team Slack thread. Claude's sandbox cannot download the model. The worker Docker image is **not verified** (Sprint 1 item, open). |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
 | Model registry + versions (PostgreSQL) | **IMPLEMENTED ON BRANCH, NOT YET ACCEPTED** | `/api/models` create/list/get and `/api/models/{id}/versions` create/list/get, stored in PostgreSQL through Flyway migration `V1__registry.sql`. Spring tests run on **in-memory H2 (PostgreSQL mode)**, which is not evidence of real PostgreSQL behaviour. Claude checked the migration and constraints directly on PostgreSQL 16.15 with `psql`. The Spring + PostgreSQL restart proof (`scripts/registry_persistence_check.py`) is Grok's acceptance test and has not run yet. |
@@ -144,6 +144,8 @@ npm run dev
 
 Other commands:
 - `npm test` — unit tests
+
+Registry seed-script tests: `python -m pytest scripts/tests/test_seed_registry.py` (they use an in-memory fake of the API, not the backend).
 - `npm run lint` — lint
 - `npm run build` — production build
 
@@ -223,7 +225,7 @@ curl -X POST localhost:8080/api/models/sentiment-distilbert/versions -H "Content
 - `latestVersion`, and `version` in the list, is the **most recently registered** version: newest `created_at`, ties broken by id. It is not semantic-version order, and it does not mean the version is active or deployed.
 - Uniqueness is enforced by PostgreSQL constraints. Two simultaneous identical requests therefore give one 201 and one 409.
 
-**Seed the real model:** with the worker and backend running, run `python scripts/seed_registry.py`. It reads the revision from a real `/api/inference` response, so the revision is never typed by hand.
+**Seed the real model:** with the worker and backend running, run `python scripts/seed_registry.py`. It reads the revision from a real `/api/inference` response, so the revision is never typed by hand. Re-running is safe: if the model or `v1` already exists with the same values the script reports it and exits 0. If `v1` already points to a different artifact or revision, it reports the mismatch, changes nothing and exits 1.
 
 **Persistence check on real PostgreSQL:** use a dedicated test database. The script starts the backend itself, creates records, restarts only the process it started, and compares the records. It never deletes data.
 ```bash

@@ -116,6 +116,17 @@ def datasource_line(log_text: str) -> str:
     return lines[-1].split("registry datasource:", 1)[1].strip() if lines else ""
 
 
+def wait_datasource_line(log_path: str, timeout_s: int = 20) -> str:
+    """The datasource line is logged by an ApplicationRunner, which can run just AFTER the web
+    server first answers /api/health. Wait briefly for it instead of treating a race as "not PostgreSQL"."""
+    deadline = time.time() + timeout_s
+    while True:
+        line = datasource_line(read(log_path))
+        if line or time.time() > deadline:
+            return line
+        time.sleep(0.5)
+
+
 def snapshot(base: str, model_id: str) -> dict:
     out = {}
     for path in (f"/api/models/{model_id}", f"/api/models/{model_id}/versions",
@@ -174,8 +185,8 @@ def main() -> int:
         if not check(wait_healthy(base, proc, args.startup_timeout), "run 1: backend started and /api/health is 200"):
             print(read(logs[0])[-3000:])
             return 1
+        ds = wait_datasource_line(logs[0])
         log1 = read(logs[0])
-        ds = datasource_line(log1)
         check(ds.startswith("product=PostgreSQL"), f"run 1: registry datasource is PostgreSQL ({ds or 'line not found'})")
         flyway = [l.strip() for l in log1.splitlines() if "Successfully applied" in l or "up to date" in l]
         print("info run 1 Flyway: " + (flyway[-1] if flyway else "no Flyway summary line found"))
@@ -216,8 +227,8 @@ def main() -> int:
         if not check(wait_healthy(base, proc, args.startup_timeout), "run 2: backend restarted and /api/health is 200"):
             print(read(logs[1])[-3000:])
             return 1
+        ds = wait_datasource_line(logs[1])
         log2 = read(logs[1])
-        ds = datasource_line(log2)
         check(ds.startswith("product=PostgreSQL"), f"run 2: registry datasource is PostgreSQL ({ds or 'line not found'})")
         check("Successfully applied" not in log2, "run 2: Flyway applied no migrations (schema kept, not recreated)")
         after = snapshot(base, model_id)

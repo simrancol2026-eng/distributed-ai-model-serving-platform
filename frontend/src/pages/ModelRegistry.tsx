@@ -16,7 +16,11 @@ export function ModelRegistry() {
   const models = isRegistry ? data.models : data.examples;
   const [filter, setFilter] = useState("ALL"),
     [search, setSearch] = useState(""),
-    [detail, setDetail] = useState<Model | null>(null);
+    // The selected row keeps its own provenance, so a refresh that switches between registry
+    // and example data can never relabel an open example as a registered model (or vice versa).
+    [selected, setSelected] = useState<{ model: Model; registered: boolean } | null>(null);
+  const detail = selected?.model ?? null;
+  const detailRegistered = selected?.registered ?? false;
   const visible = models.filter(
     (m) =>
       (filter === "ALL" || m.capability === filter) &&
@@ -109,7 +113,7 @@ export function ModelRegistry() {
                     size="icon"
                     aria-label={`Inspect ${m.name}`}
                     title={`Inspect ${m.name}`}
-                    onClick={() => setDetail(m)}
+                    onClick={() => setSelected({ model: m, registered: isRegistry })}
                   >
                     <ArrowUpRight />
                   </Button>
@@ -149,13 +153,13 @@ export function ModelRegistry() {
       <Dialog
         open={Boolean(detail)}
         onOpenChange={(open) => {
-          if (!open) setDetail(null);
+          if (!open) setSelected(null);
         }}
       >
         <DialogContent>
           <DialogTitle>{detail?.name}</DialogTitle>
           <DialogDescription>
-            {isRegistry
+            {detailRegistered
               ? `Registered model · ${detail?.id ?? ""}`
               : "Example entry · not a registered model"}
           </DialogDescription>
@@ -164,7 +168,7 @@ export function ModelRegistry() {
             ["Task", detail?.task],
             ["Latest registered version", detail?.version],
             ["Workers", detail?.workers],
-            ["Status", isRegistry ? detail?.status : "Example only"],
+            ["Status", detailRegistered ? detail?.status : "Example only"],
             ["Description", detail?.description],
           ].map(([key, value]) => (
             <div className="settings-row" key={key}>
