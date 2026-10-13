@@ -18,7 +18,7 @@ Last updated: after Grok's TEST REPORT (PASS) on the Sprint 2 model registry, co
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Multiple workers and request tracking are not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Two workers with round-robin routing are **implemented on branch `sprint2-two-workers-round-robin` and not yet tested independently** (see "Two workers" below). Request tracking is not started.
 
 Neither sprint is signed off.
 
@@ -37,7 +37,8 @@ Neither sprint is signed off.
 - `registry_persistence_check.py` passed 23/23.
 - The inference regression passed 8/8.
 - The seed script created on the first run, did nothing on a rerun, and on a conflicting `v1` exited 1 without overwriting. |
-| Multiple workers, routing engine | PLANNED | |
+| Two workers + round-robin | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes. The real two-worker check (`scripts/round_robin_e2e_test.py`) is Grok's acceptance test and has not run yet. |
+| Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
 | Docker (multi-service), Kubernetes, autoscaling | PLANNED | `model-a` has a single Dockerfile (build not yet verified). |
@@ -141,6 +142,35 @@ pytest                 # contract tests with a stub model (fast, offline)
 REAL_MODEL=1 pytest    # same tests and more, against the real model (PowerShell: $env:REAL_MODEL=1; pytest)
 ```
 
+### 2b. Two workers (Sprint 2, round-robin)
+
+Run the same worker code twice, as two separate processes, each with its own port and id:
+```bash
+cd model-workers/model-a
+WORKER_ID=worker-a uvicorn worker:app --port 8001    # terminal 1
+WORKER_ID=worker-b uvicorn worker:app --port 8002    # terminal 2
+# PowerShell: $env:WORKER_ID="worker-a"; uvicorn worker:app --port 8001
+```
+Then start the backend with both URLs. The list order is the round-robin order:
+```bash
+cd backend/spring-boot
+PLATFORM_WORKER_URLS=http://localhost:8001,http://localhost:8002 ./mvnw spring-boot:run
+# PowerShell: $env:PLATFORM_WORKER_URLS="http://localhost:8001,http://localhost:8002"; .\mvnw.cmd spring-boot:run
+```
+At startup the backend logs `worker pool: 2 worker(s), round-robin order [localhost:8001, localhost:8002]`.
+
+How it behaves:
+- **Order:** each valid request goes to the next worker in the list: A, B, A, B. The counter is thread-safe, so concurrent requests are also split evenly. Requests rejected with 400 or 422 do not take a turn.
+- **Response:** shows both which process answered (`worker`, the worker's own `WORKER_ID`) and where the backend sent the request (`workerEndpoint`, host:port only).
+- **No failover:** if the chosen worker is down or times out (2 s to connect, 30 s to answer), that request fails with `503 WORKER_UNAVAILABLE`. The message names the endpoint that was tried. The next request goes to the next worker. Failover is not implemented.
+- **Configuration checks:** the backend refuses to start if the list is empty, has an empty entry, contains an invalid URL, contains a user name or password, or lists the same worker twice. Two different host names for the same machine (`localhost` and `127.0.0.1`) cannot be detected.
+- **Unchanged default:** without `PLATFORM_WORKER_URLS`, the single `PLATFORM_WORKER_URL` is used exactly as before.
+
+Each worker's `/health` reports its `pid` and `predictionsServed`, the number of successful predictions since that process started. `python scripts/round_robin_e2e_test.py` uses these to check that:
+- the two workers are different processes;
+- 8 requests alternate between them;
+- each worker served exactly half.
+
 ### 3. Frontend: http://localhost:5173
 
 ```bash
@@ -167,11 +197,12 @@ Request:
 ```json
 { "capability": "TEXT", "input": "I love this" }
 ```
-- `capability` is `TEXT` or `AUTO`. In Phase 1 only one text worker exists.
+- `capability` is `TEXT` or `AUTO`. All configured workers serve `TEXT`.
 
 Success (`200`):
 ```json
-{ "status": "success", "requestId": "…", "capability": "TEXT", "worker": "model-a",
+{ "status": "success", "requestId": "…", "capability": "TEXT", "worker": "worker-a",
+  "workerEndpoint": "localhost:8001",
   "model": "distilbert-base-uncased-finetuned-sst-2-english", "version": "<hf revision or null>",
   "task": "sentiment-analysis", "prediction": { "label": "POSITIVE", "score": 0.9998 },
   "workerInferenceMs": 14.2, "totalLatencyMs": 31 }
@@ -184,8 +215,8 @@ Errors use the shape `{ "status": "error", "error": "<CODE>", "message": "…", 
 |---|---|---|
 | 400 | `INVALID_REQUEST` | `input` is missing, blank, or longer than 10,000 characters |
 | 422 | `NO_ELIGIBLE_WORKER` | No worker serves the requested capability (e.g. `IMAGE`) |
-| 503 | `WORKER_UNAVAILABLE` | The worker is down or timed out |
-| 502 | `WORKER_ERROR` | The worker answered with an error or an unreadable response |
+| 503 | `WORKER_UNAVAILABLE` | The chosen worker is down or timed out (no retry on another worker) |
+| 502 | `WORKER_ERROR` | The chosen worker answered with an error or an unreadable response |
 
 The worker's own validation errors (`422` from `POST /predict`) look like `{"detail": [{"loc": ["body", "text"], "msg": "...", "type": "..."}]}`. They do not echo the rejected text back.
 

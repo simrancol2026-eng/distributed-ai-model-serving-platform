@@ -32,7 +32,8 @@ public final class InferenceDtos {
             String status,
             String requestId,
             String capability,
-            String worker,
+            String worker,          // id reported by the worker process itself (its WORKER_ID)
+            String workerEndpoint,  // host:port the backend sent this request to (round-robin choice)
             String model,
             String version,
             String task,

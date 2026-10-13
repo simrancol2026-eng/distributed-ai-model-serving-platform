@@ -297,3 +297,60 @@ Sprint 2 · Grok TEST REPORT · recorded by Claude
   - The Models page was checked in all three states and through dialog refreshes.
   - The secrets grep found nothing.
 - **Still open:** the Docker image (Sprint 1); two workers, version-aware dispatch and request tracking (Sprint 2). The synthetic revisions in the checks are metadata tests, not additional real models.
+
+---
+
+## Sprint 2 — two live workers + round-robin (branch `sprint2-two-workers-round-robin`)
+
+### D-032 — Two workers are two processes of the same worker code
+Sprint 2 · Codex task · Claude
+
+- **Choice:** `model-workers/model-a/worker.py` runs twice. Each process gets its own port and `WORKER_ID` (`worker-a` on :8001, `worker-b` on :8002).
+- **Why:**
+  - The task asks for two independent live workers, not two models.
+  - Reusing the tested worker keeps the slice small.
+- **Evidence that both really served:** each process reports its `pid` and a `predictionsServed` counter on `/health`, so a test can see the work split between two different processes.
+- **Not done:** different models or versions per worker. That needs version-aware dispatch, a later task.
+
+### D-033 — Round-robin selection with an atomic counter
+Sprint 2 · Claude
+
+- **Configuration:** `platform.worker.urls` (env `PLATFORM_WORKER_URLS`) is a comma-separated list. It defaults to the single `platform.worker.url`, so the single-worker setup is unchanged.
+- **Selection:** `WorkerPool.next()` takes `position.getAndIncrement()` from an `AtomicLong`, modulo the number of workers (`floorMod`, so overflow is safe).
+  - Every request gets a distinct turn, so the split is exact even under concurrency.
+  - No locks are needed.
+- **When a turn is taken:** only after a request passes input validation and the capability check. Rejected requests do not shift the order.
+- **Observability:**
+  - Responses carry `worker`, the id reported by the process, and `workerEndpoint`, the host:port the backend chose.
+  - Log lines include `routedTo=host:port`.
+  - Neither ever includes a URL path or credentials.
+
+### D-034 — No failover; a failed worker gives a clear 503 or 502
+Sprint 2 · Claude
+
+- **Rule:** if the chosen worker is unreachable or times out (connect 2 s, read 30 s), the response is `503 WORKER_UNAVAILABLE`. An HTTP error from the worker gives `502 WORKER_ERROR`. Both messages name the endpoint that was tried.
+- **No retry:** there is no retry on another worker, so a dead worker fails about every other request. That is visible and honest; it does not silently look healthy.
+- **Later:** health checks and failover belong to Sprint 3 and Sprint 4 (health-aware routing, failure recovery).
+
+### D-035 — Worker list is validated at startup
+Sprint 2 · Claude
+
+- **Fails fast on:**
+  - an empty list or an empty entry;
+  - an invalid URL, reported by index (`platform.worker.urls[1]`);
+  - a URL containing a user name or password;
+  - the same worker listed twice (same scheme, host, port and path; case-insensitive; default ports filled in).
+- **Known limit:** different host names that point to the same machine (`localhost` and `127.0.0.1`) cannot be told apart.
+
+### D-036 — A stalled worker (read timeout) is 503, not 502
+Sprint 2 · found by Grok (TEST REPORT on `133dbe9`) · fixed by Claude
+
+- **Bug:**
+  - A worker that accepts the connection but never answers (for example `kill -STOP`) returned `502 WORKER_ERROR` after the 30 s read timeout.
+  - With the `HttpURLConnection`-based request factory, that timeout surfaced as a generic read error instead of an I/O error.
+- **Fix:**
+  - Switched to Spring's `JdkClientHttpRequestFactory` (the JDK `HttpClient`, forced to HTTP/1.1). Connect and read timeouts both raise `HttpTimeoutException`, an `IOException`, which Spring reports as "unreachable", giving `503 WORKER_UNAVAILABLE`.
+  - As a safety net, `WorkerClient` also treats any `RestClientException` with a socket or HTTP timeout in its cause chain as unavailable.
+  - A real HTTP 500 from a worker is still `502`.
+- **Test:** `StalledWorkerTest` runs a server that accepts and never responds, with the read timeout set to 1.5 s. It expects `503`, the endpoint named in the message, and an elapsed time of at least the timeout and less than the timeout plus 5 s.
+- **Checked here:** plain JDK `HttpClient` against such a server threw `HttpTimeoutException` after 1520 ms with a 1500 ms timeout. Spring and Maven were not run here.

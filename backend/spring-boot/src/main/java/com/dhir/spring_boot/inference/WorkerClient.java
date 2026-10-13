@@ -3,10 +3,8 @@ package com.dhir.spring_boot.inference;
 import java.time.Duration;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -15,41 +13,36 @@ import org.springframework.web.client.RestClientResponseException;
 import com.dhir.spring_boot.inference.InferenceDtos.WorkerPrediction;
 
 /**
- * HTTP client for the single Python model worker (Phase 1).
- * In later phases the routing engine will choose among many workers; this class
- * stays responsible only for "talk to one worker".
+ * HTTP client for ONE Python model worker process ("talk to one worker").
+ * Which worker handles a request is decided by {@link WorkerPool}; this class does not choose.
+ * Not a Spring bean: WorkerPool creates one WorkerClient per configured URL.
  */
-@Component
 public class WorkerClient {
 
     private final RestClient restClient;
-    private final String workerId;
-    private final String workerUrl;
-    private final String capability;
+    private final String endpoint;
 
-    public WorkerClient(
-            @Value("${platform.worker.id}") String workerId,
-            @Value("${platform.worker.url}") String workerUrl,
-            @Value("${platform.worker.capability}") String capability,
-            @Value("${platform.worker.connect-timeout-ms}") long connectTimeoutMs,
-            @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs) {
-        // Fail fast at startup on a blank/malformed URL instead of returning 500s later.
-        workerUrl = WorkerUrlValidator.validate("platform.worker.url", workerUrl);
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
+    /**
+     * @param workerUrl already validated by {@link WorkerUrlValidator}
+     */
+    public WorkerClient(String workerUrl, long connectTimeoutMs, long readTimeoutMs) {
+        // JDK HttpClient: a connect timeout and a read timeout both surface as HttpTimeoutException,
+        // which Spring reports as ResourceAccessException -> 503. (With the previous
+        // HttpURLConnection-based factory a stalled worker could surface as a generic read error -> 502;
+        // Grok TEST REPORT on 133dbe9.) HTTP/1.1 explicitly: no h2c upgrade attempt to uvicorn.
+        java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
         this.restClient = RestClient.builder().baseUrl(workerUrl).requestFactory(factory).build();
-        this.workerId = workerId;
-        this.workerUrl = workerUrl;
-        this.capability = capability;
+        this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
     }
 
-    public String workerId() {
-        return workerId;
-    }
-
-    public String capability() {
-        return capability;
+    /** host:port of this worker, safe to log and return (no path, no credentials). */
+    public String endpoint() {
+        return endpoint;
     }
 
     /**
@@ -73,14 +66,31 @@ public class WorkerClient {
         } catch (ResourceAccessException e) {
             // Connection refused, DNS failure, or timeout: the worker is not usable right now.
             throw new WorkerUnavailableException(
-                    "Worker " + workerId + " at " + workerUrl + " is unavailable: " + e.getMessage(), e);
+                    "Worker at " + endpoint + " is unavailable: " + e.getMessage(), e);
         } catch (RestClientResponseException e) {
             throw new WorkerErrorException(
-                    "Worker " + workerId + " returned HTTP " + e.getStatusCode().value(), e);
+                    "Worker at " + endpoint + " returned HTTP " + e.getStatusCode().value(), e);
         } catch (RestClientException e) {
+            // A worker that accepts the connection but never answers hits the READ timeout. Depending on
+            // where it fires, the HTTP client reports that as a generic RestClientException (e.g. while
+            // reading the body), not as ResourceAccessException. It is still "worker not usable" -> 503.
+            if (isTimeout(e)) {
+                throw new WorkerUnavailableException(
+                        "Worker at " + endpoint + " timed out: " + e.getMessage(), e);
+            }
             // Anything else from the HTTP client, e.g. a response body that is not the expected JSON.
-            throw new WorkerErrorException("Worker " + workerId + " response could not be read: " + e.getMessage(), e);
+            throw new WorkerErrorException("Worker at " + endpoint + " response could not be read: " + e.getMessage(), e);
         }
+    }
+
+    /** True if a socket/read timeout appears anywhere in the cause chain. */
+    static boolean isTimeout(Throwable e) {
+        for (Throwable t = e; t != null; t = (t.getCause() == t ? null : t.getCause())) {
+            if (t instanceof java.net.SocketTimeoutException || t instanceof java.net.http.HttpTimeoutException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class WorkerUnavailableException extends RuntimeException {
