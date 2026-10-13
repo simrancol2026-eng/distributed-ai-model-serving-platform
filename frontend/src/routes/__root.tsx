@@ -124,7 +124,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <WorkspaceProvider><AppShell><Outlet /></AppShell></WorkspaceProvider>
+      <WorkspaceProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+      </WorkspaceProvider>
     </QueryClientProvider>
   );
 }
