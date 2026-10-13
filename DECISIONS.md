@@ -394,3 +394,34 @@ Sprint 2 · Claude
 - **Today:** both DistilBERT workers load the same revision, so only one registered version is servable.
 - **Path to a second version:** the worker accepts an optional `MODEL_REVISION`, passed to Hugging Face `pipeline(revision=...)`. That makes a genuine second revision possible on one worker.
 - **Status:** that two-revision setup has not been demonstrated, and the docs do not claim multi-version serving.
+
+## Sprint 2 — persistent request lifecycle tracking (branch `sprint2-request-lifecycle`)
+
+### D-041 — One row per inference request, in the registry database
+Sprint 2 · Codex queue (#4) · Claude
+
+- **Storage:** table `inference_requests` (Flyway `V2__inference_requests.sql`) in the same PostgreSQL database as the registry. No new infrastructure. It is keyed by the `requestId` the API already returns, so a client can look up any answer it received.
+- **Lifecycle:** `RECEIVED → DISPATCHED → SUCCEEDED | FAILED`.
+  - A request rejected before a worker is chosen goes `RECEIVED → FAILED`.
+  - Every update has a `WHERE status ...` guard, so a row only moves forward.
+  - A row left in `RECEIVED` or `DISPATCHED` shows that the backend stopped mid-request. That is the reason to persist the intermediate states and not only the outcome.
+- **What is stored:** what was asked, what the platform decided (resolved version, artifact, revision, worker endpoint), and the outcome (HTTP status, error code, worker id, total ms). Timestamps come from the database clock.
+- **Ordering:** list order is the identity column (arrival order), so ties in timestamps cannot reorder it.
+
+### D-042 — Tracking is best-effort; it never changes an inference answer
+Sprint 2 · Claude
+
+- **Rule:** if a tracking write fails, it is logged (`request tracking failed requestId=... step=...`) and the request continues unchanged.
+- **Why:** tracking is an audit trail. Making it mandatory would turn a database outage into an inference outage, including for requests that name no model, which Grok verified still return 200 while PostgreSQL is down. The cost is that requests served during such an outage are not recorded. This is documented and covered by a test.
+- **No stall when the database is down:**
+  - The connection wait is capped at 2 s (`spring.datasource.hikari.connection-timeout`, env `PLATFORM_DB_CONNECT_TIMEOUT_MS`; the Hikari default is 30 s).
+  - After a failed write, tracking writes are skipped for `platform.tracking.pause-after-failure-ms` (10 s).
+  - So while PostgreSQL is down, at most one request per pause window pays the 2 s wait, instead of every request paying up to three waits.
+  - The shorter connection wait also makes the registry's `503 REGISTRY_UNAVAILABLE` arrive faster.
+- **Reads:** reads are not best-effort. `GET /api/requests...` returns `503 TRACKING_UNAVAILABLE` when the table cannot be read.
+
+### D-043 — The input text is not persisted
+Sprint 2 · Claude
+
+- **Rule:** only `inputChars` (the length) is stored. The text a user submits could be personal. Storing it is not needed to trace routing or failures, and it would make the tracking table a copy of user content.
+- **Other fields:** they are capped to their column sizes before writing, so an oversized client value cannot make the tracking insert fail.

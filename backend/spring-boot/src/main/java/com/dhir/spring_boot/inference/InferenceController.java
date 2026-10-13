@@ -24,6 +24,7 @@ import com.dhir.spring_boot.registry.RegistryDtos.ModelDetail;
 import com.dhir.spring_boot.registry.RegistryDtos.ModelVersion;
 import com.dhir.spring_boot.registry.RegistryRepository;
 import com.dhir.spring_boot.registry.RegistryValidation;
+import com.dhir.spring_boot.tracking.RequestTracker;
 
 /**
  * Unified inference API: POST /api/inference.
@@ -52,21 +53,44 @@ public class InferenceController {
 
     private final WorkerPool workers;
     private final RegistryRepository registry;
+    private final RequestTracker tracker;
 
-    public InferenceController(WorkerPool workers, RegistryRepository registry) {
+    public InferenceController(WorkerPool workers, RegistryRepository registry, RequestTracker tracker) {
         this.workers = workers;
         this.registry = registry;
+        this.tracker = tracker;
     }
 
     /** A registry version resolved for this request. */
     record Target(String modelId, ModelVersion version) {
     }
 
+    /**
+     * Every request is tracked (Sprint 2, see RequestTracker): RECEIVED on arrival, DISPATCHED when a
+     * worker is chosen (in call()), then SUCCEEDED or FAILED with the exact status and error code returned.
+     * Tracking is best-effort and never changes the response.
+     */
     @PostMapping("/api/inference")
     public ResponseEntity<?> infer(@RequestBody(required = false) InferenceRequest request) {
         String requestId = UUID.randomUUID().toString();
         long started = System.nanoTime();
+        tracker.received(requestId,
+                request == null ? null : blankToNull(request.capability()),
+                request == null ? null : blankToNull(request.model()),
+                request == null ? null : blankToNull(request.version()),
+                request == null || request.input() == null ? null : request.input().length());
 
+        ResponseEntity<?> response = handle(request, requestId, started);
+
+        Object body = response.getBody();
+        String errorCode = body instanceof ErrorResponse e ? e.error() : null;
+        String workerId = body instanceof InferenceResponse r ? r.worker() : null;
+        tracker.completed(requestId, response.getStatusCode().value(), errorCode, workerId,
+                (System.nanoTime() - started) / 1_000_000);
+        return response;
+    }
+
+    private ResponseEntity<?> handle(InferenceRequest request, String requestId, long started) {
         if (request == null || request.input() == null || request.input().isBlank()) {
             return error(400, "INVALID_REQUEST", "Field 'input' is required and must not be blank.", requestId);
         }
@@ -140,6 +164,10 @@ public class InferenceController {
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
     private ResponseEntity<?> call(WorkerClient worker, String input, Target target, String requestId,
             long started) {
+        tracker.dispatched(requestId, worker.endpoint(),
+                target == null ? null : target.version().version(),
+                target == null ? null : target.version().artifact(),
+                target == null ? null : target.version().artifactRevision());
         try {
             WorkerPrediction p = worker.predict(input);
             if (target != null && !(target.version().artifact().equals(p.model())

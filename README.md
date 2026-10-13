@@ -14,11 +14,11 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: after Grok's TEST REPORT (PASS) on the Sprint 2 model registry, commit `f581a15` (Oct 13, 2026).
+Last updated: on branch `sprint2-request-lifecycle` (request lifecycle tracking, not yet independently tested), Oct 13, 2026.
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. **Early**: the end-to-end path React → Spring Boot → worker (branch `phase-1-end-to-end-inference`, called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. The model registry with versions is **implemented and reported passing** on real PostgreSQL (Grok, `f581a15`; see below). Two workers with round-robin routing are **implemented on branch `sprint2-two-workers-round-robin` and not yet tested independently** (see "Two workers" below). Version-aware dispatch is **implemented on branch `sprint2-version-aware-dispatch` and not yet tested independently**. Request tracking is not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is **implemented on branch `sprint2-request-lifecycle` and not yet tested independently** (see "Request lifecycle tracking" below). Detailed routing decision logs are not started.
 
 Neither sprint is signed off.
 
@@ -37,7 +37,9 @@ Neither sprint is signed off.
 - `registry_persistence_check.py` passed 23/23.
 - The inference regression passed 8/8.
 - The seed script created on the first run, did nothing on a rerun, and on a conflicting `v1` exited 1 without overwriting. |
-| Two workers + round-robin | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes. The real two-worker check (`scripts/round_robin_e2e_test.py`) is Grok's acceptance test and has not run yet. |
+| Two workers + round-robin | **MERGED (Sprint 2, Grok PASS on `0a056a9`)** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes; the real two-worker check is `scripts/round_robin_e2e_test.py`. |
+| Version-aware dispatch | **MERGED (Sprint 2, Grok PASS on `4351f23`)** | Optional `model`/`version` on `/api/inference`, resolved in the registry and routed only to workers that report that exact revision. Grok reported 22/22 checks, Maven 55/55, `version_dispatch_e2e_test.py` 19/19, and real two-revision routing (see "Version-aware dispatch"). |
+| Request lifecycle tracking | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Claude checked the migration and the lifecycle SQL directly on PostgreSQL 16 with `psql`; the Spring tests and `scripts/request_tracking_e2e_test.py` have not been run by Claude (no Maven or real model in its sandbox). |
 | Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
@@ -208,13 +210,43 @@ The label `latest` is reserved and cannot be registered as a version.
 - Both workers load the same DistilBERT revision, so only one registered version can actually be served.
 - Any version with another revision fails closed with 422.
 - To serve a genuinely different revision, start a worker with `MODEL_REVISION=<hugging face commit>`. That revision is passed to `pipeline(revision=...)`, and the worker reports the commit it actually loaded. Then register that commit as another version.
-- Two-revision serving has not been demonstrated yet.
+- Two-revision serving was demonstrated by Grok on `4351f23` (reported): worker B was started with `MODEL_REVISION` set to commit `da4550f9…` while A kept `714eb0fa…`; v1 requests went only to A and v2 only to B, including 40 concurrent requests per version with 0 errors.
 
 `python scripts/version_dispatch_e2e_test.py` checks this on the real stack. It registers a model whose `v1` has the workers' real revision and whose `v2` has a synthetic revision that no worker runs. It then checks:
 - the A/B order for `v1`;
 - `latest` (`v2`) returns 422, and no worker runs;
 - the 404, 400 and 422 error cases;
 - a request without a model still works.
+
+### 2d. Request lifecycle tracking (Sprint 2)
+
+Every `POST /api/inference` request is stored in the PostgreSQL table `inference_requests` (Flyway migration `V2__inference_requests.sql`), keyed by the `requestId` the API already returns:
+
+| Status | Meaning |
+|---|---|
+| `RECEIVED` | The request arrived (row created). |
+| `DISPATCHED` | A worker was chosen and the request was sent to it. |
+| `SUCCEEDED` | 200 was returned. |
+| `FAILED` | Any error was returned; `httpStatus` and `errorCode` are the exact values the client got. |
+
+A request rejected before a worker is chosen (400, 404, 422, `REGISTRY_UNAVAILABLE`) goes straight from `RECEIVED` to `FAILED` and has no `dispatchedAt`. A row left in `RECEIVED` or `DISPATCHED` means the backend stopped before answering. Each step only moves a row forward, so a late write cannot rewind a finished request.
+
+Each row stores: requested capability, model and version; the input **length** (`inputChars`) but **never the input text**; the resolved version, artifact and revision (versioned requests); the worker endpoint it was sent to and the worker id that answered; `httpStatus`, `errorCode`, `totalMs`; and `receivedAt`, `dispatchedAt`, `completedAt` (database clock, UTC).
+
+| Method and path | Success | Errors |
+|---|---|---|
+| `GET /api/requests/{requestId}` | 200 + one request | 400 `INVALID_REQUEST` (not a lowercase UUID), 404 `REQUEST_NOT_FOUND` |
+| `GET /api/requests?limit=N` | 200 + array, newest first (`N` 1–100, default 20) | 400 `INVALID_REQUEST` |
+| either, database unreadable | | 503 `TRACKING_UNAVAILABLE` |
+
+```bash
+curl -s localhost:8080/api/requests?limit=5
+curl -s localhost:8080/api/requests/<requestId from an /api/inference response>
+```
+
+**Best-effort writes:** if the tracking table cannot be written, the failure is logged as `request tracking failed requestId=... step=...` and the inference request is answered exactly as it would be without tracking. A request without `model` therefore still works while PostgreSQL is down, but that request is not recorded. To avoid slowing every request while the database is down, a failed write pauses tracking writes for 10 s (`platform.tracking.pause-after-failure-ms`), and a database connection wait is capped at 2 s (`PLATFORM_DB_CONNECT_TIMEOUT_MS`, default 2000; this also applies to the registry). A body that is not valid JSON is rejected by Spring before the controller runs and is not tracked.
+
+`python scripts/request_tracking_e2e_test.py` checks tracking on the real stack: success, invalid input, unknown model, list order and limits, concurrent requests, and read errors. For persistence across a backend restart, run it with `--save /tmp/tracked.json`, restart the backend on the same database, then run it with `--verify /tmp/tracked.json`.
 
 ### 3. Frontend: http://localhost:5173
 
