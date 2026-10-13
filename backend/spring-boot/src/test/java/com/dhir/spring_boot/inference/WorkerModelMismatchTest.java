@@ -50,9 +50,9 @@ class WorkerModelMismatchTest {
     void registry() {
         jdbc.sql("DELETE FROM model_versions").update();
         jdbc.sql("DELETE FROM models").update();
-        jdbc.sql("INSERT INTO models (id, name, task, capability) VALUES ('m', 'm', 't', 'TEXT')").update();
+        jdbc.sql("INSERT INTO models (id, name, task, capability) VALUES ('mismatch-model', 'm', 't', 'TEXT')").update();
         jdbc.sql("INSERT INTO model_versions (model_id, version, artifact, artifact_revision) "
-                + "VALUES ('m', 'v1', 'art', :r)").param("r", CLAIMED).update();
+                + "VALUES ('mismatch-model', 'v1', 'art', :r)").param("r", CLAIMED).update();
     }
 
     HttpResponse<String> post(String json) throws Exception {
@@ -65,11 +65,11 @@ class WorkerModelMismatchTest {
 
     @Test
     void answerWithAnotherRevisionIsRejectedAndIdentityReProbed() throws Exception {
-        HttpResponse<String> r = post("{\"input\":\"x\",\"model\":\"m\",\"version\":\"v1\"}");
+        HttpResponse<String> r = post("{\"input\":\"x\",\"model\":\"mismatch-model\",\"version\":\"v1\"}");
         assertEquals(502, r.statusCode(), r.body());
         assertTrue(r.body().contains("\"error\":\"WORKER_MODEL_MISMATCH\""), r.body());
         int probes = LIAR.healthHits.get();
-        post("{\"input\":\"x\",\"model\":\"m\",\"version\":\"v1\"}");
+        post("{\"input\":\"x\",\"model\":\"mismatch-model\",\"version\":\"v1\"}");
         assertTrue(LIAR.healthHits.get() > probes, "identity was asked again after the mismatch");
         // Requests that name no model are not checked against the registry (unchanged behaviour).
         assertEquals(200, post("{\"input\":\"x\"}").statusCode());
