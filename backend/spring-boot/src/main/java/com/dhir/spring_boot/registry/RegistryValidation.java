@@ -11,7 +11,7 @@ import com.dhir.spring_boot.registry.RegistryDtos.CreateVersionRequest;
  * Input rules for the registry. Every string is trimmed first; then it is checked.
  * Invalid input throws InvalidRequestException, which the controller turns into 400 INVALID_REQUEST.
  */
-final class RegistryValidation {
+public final class RegistryValidation {
 
     /** Model id: lowercase slug, 2-63 chars, safe in a URL path. */
     static final Pattern MODEL_ID = Pattern.compile("^[a-z0-9][a-z0-9-]{1,62}$");
@@ -28,6 +28,9 @@ final class RegistryValidation {
      * artifact was downloaded or ever executed.
      */
     static final Pattern REVISION = Pattern.compile("^[0-9a-f]{40}$");
+
+    /** Reserved version alias used by inference requests (case-insensitive). */
+    public static final String LATEST = "latest";
 
     static final Set<String> CAPABILITIES = Set.of("TEXT", "CODE", "IMAGE", "DOCUMENT");
 
@@ -68,6 +71,10 @@ final class RegistryValidation {
             throw new InvalidRequestException(
                     "Field 'version' must be 1-64 characters: letters, digits, '.', '_' or '-', starting with a letter or digit.");
         }
+        if (version.equalsIgnoreCase(LATEST)) {
+            // "latest" is reserved: inference requests use it to mean "most recently registered".
+            throw new InvalidRequestException("Version label 'latest' is reserved and cannot be registered.");
+        }
         String artifact = required("artifact", r.artifact(), 200);
         if (!ARTIFACT.matcher(artifact).matches()) {
             throw new InvalidRequestException(
@@ -83,11 +90,11 @@ final class RegistryValidation {
         return new CreateVersionRequest(version, artifact, revision, framework, notes);
     }
 
-    static boolean isModelId(String s) {
+    public static boolean isModelId(String s) {
         return s != null && MODEL_ID.matcher(s).matches();
     }
 
-    static boolean isVersionLabel(String s) {
+    public static boolean isVersionLabel(String s) {
         return s != null && VERSION_LABEL.matcher(s).matches();
     }
 

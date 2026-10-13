@@ -16,11 +16,26 @@ import com.sun.net.httpserver.HttpServer;
 final class FakeWorker {
 
     final String id;
+    final String model;
+    final String healthRevision;   // what GET /health claims
+    final String predictRevision;  // what POST /predict reports (normally the same)
     final HttpServer server;
     final AtomicInteger hits = new AtomicInteger();
+    final AtomicInteger healthHits = new AtomicInteger();
 
     FakeWorker(String id) {
+        this(id, "fake-model", "rev1", "rev1");
+    }
+
+    FakeWorker(String id, String model, String revision) {
+        this(id, model, revision, revision);
+    }
+
+    FakeWorker(String id, String model, String healthRevision, String predictRevision) {
         this.id = id;
+        this.model = model;
+        this.healthRevision = healthRevision;
+        this.predictRevision = predictRevision;
         try {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         } catch (IOException e) {
@@ -30,8 +45,19 @@ final class FakeWorker {
         server.createContext("/predict", exchange -> {
             exchange.getRequestBody().readAllBytes();
             hits.incrementAndGet();
-            byte[] out = ("{\"worker\":\"" + id + "\",\"model\":\"fake-model\",\"version\":\"rev1\","
+            byte[] out = ("{\"worker\":\"" + id + "\",\"model\":\"" + model + "\",\"version\":\"" + predictRevision + "\","
                     + "\"task\":\"sentiment-analysis\",\"label\":\"POSITIVE\",\"score\":0.9,\"inferenceMs\":1.0}")
+                    .getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, out.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(out);
+            }
+        });
+        server.createContext("/health", exchange -> {
+            healthHits.incrementAndGet();
+            byte[] out = ("{\"status\":\"healthy\",\"worker\":\"" + id + "\",\"model\":\"" + model
+                    + "\",\"revision\":\"" + healthRevision + "\",\"capability\":\"TEXT\"}")
                     .getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, out.length);

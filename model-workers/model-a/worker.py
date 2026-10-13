@@ -1,7 +1,7 @@
 """Model worker "model-a": serves one Hugging Face text-classification model over HTTP.
 
 Contract (used by the Spring Boot control plane):
-  GET  /health   -> {"status": "healthy", "worker": ..., "model": ..., "capability": ..., "task": ...,
+  GET  /health   -> {"status": "healthy", "worker": ..., "model": ..., "revision": ..., "capability": ..., "task": ...,
                      "predictionsServed": <successful /predict calls since this process started>,
                      "pid": <process id>}
   POST /predict  JSON {"text": "..."}
@@ -28,11 +28,15 @@ from transformers import pipeline
 
 WORKER_ID = os.getenv("WORKER_ID", "model-a")
 MODEL_NAME = os.getenv("MODEL_NAME", "distilbert-base-uncased-finetuned-sst-2-english")
+# Optional: load a specific Hugging Face revision (commit hash, tag or branch). Default: the latest.
+# The revision actually loaded is what /health and /predict report, not this setting.
+MODEL_REVISION = os.getenv("MODEL_REVISION") or None
 TASK = "sentiment-analysis"
 CAPABILITY = "TEXT"
 MAX_TEXT_CHARS = 10_000
 
-classifier = pipeline(TASK, model=MODEL_NAME)
+classifier = pipeline(TASK, model=MODEL_NAME, revision=MODEL_REVISION) if MODEL_REVISION \
+    else pipeline(TASK, model=MODEL_NAME)
 
 # Exact model revision (Hugging Face git commit) when the library exposes it; otherwise None.
 # We report None rather than inventing a version string.
@@ -68,6 +72,7 @@ def health():
         "status": "healthy",
         "worker": WORKER_ID,
         "model": MODEL_NAME,
+        "revision": MODEL_VERSION,  # commit actually loaded; the backend routes versioned requests by it
         "capability": CAPABILITY,
         "task": TASK,
         "transformers": transformers.__version__,

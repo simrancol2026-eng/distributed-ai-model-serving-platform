@@ -212,6 +212,8 @@ class RegistryApiTest {
         assertError(post(path, version("v1", "g".repeat(40))), 400, "INVALID_REQUEST"); // not hex
         assertError(post(path, version("v1/2", REV_A)), 400, "INVALID_REQUEST"); // not path-safe
         assertError(post(path, version(".hidden", REV_A)), 400, "INVALID_REQUEST");
+        assertError(post(path, version("latest", REV_A)), 400, "INVALID_REQUEST"); // reserved alias
+        assertError(post(path, version("LATEST", REV_A)), 400, "INVALID_REQUEST");
         assertError(post(path, version("v".repeat(65), REV_A)), 400, "INVALID_REQUEST");
         assertError(post(path, """
                 {"version":"v1","artifact":"bad artifact","artifactRevision":"%s"}""".formatted(REV_A)),

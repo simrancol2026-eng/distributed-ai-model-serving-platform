@@ -20,12 +20,28 @@ import com.dhir.spring_boot.inference.InferenceDtos.WorkerPrediction;
 public class WorkerClient {
 
     private final RestClient restClient;
+    private final RestClient probeClient;
     private final String endpoint;
+
+    /** What this worker reported serving on GET /health: artifact (model name) and loaded revision. */
+    public record ServedModel(String artifact, String revision) {
+    }
+
+    // Last identity reported by the worker, and when (System.nanoTime). Null = unknown.
+    private volatile ServedModel served;
+    private volatile long servedAtNanos;
 
     /**
      * @param workerUrl already validated by {@link WorkerUrlValidator}
      */
     public WorkerClient(String workerUrl, long connectTimeoutMs, long readTimeoutMs) {
+        this(workerUrl, connectTimeoutMs, readTimeoutMs, Math.min(2000, readTimeoutMs));
+    }
+
+    /**
+     * @param probeTimeoutMs read timeout for the short GET /health identity probe
+     */
+    public WorkerClient(String workerUrl, long connectTimeoutMs, long readTimeoutMs, long probeTimeoutMs) {
         // JDK HttpClient: a connect timeout and a read timeout both surface as HttpTimeoutException,
         // which Spring reports as ResourceAccessException -> 503. (With the previous
         // HttpURLConnection-based factory a stalled worker could surface as a generic read error -> 502;
@@ -37,12 +53,48 @@ public class WorkerClient {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
         this.restClient = RestClient.builder().baseUrl(workerUrl).requestFactory(factory).build();
+        JdkClientHttpRequestFactory probeFactory = new JdkClientHttpRequestFactory(httpClient);
+        probeFactory.setReadTimeout(Duration.ofMillis(probeTimeoutMs));
+        this.probeClient = RestClient.builder().baseUrl(workerUrl).requestFactory(probeFactory).build();
         this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
     }
 
     /** host:port of this worker, safe to log and return (no path, no credentials). */
     public String endpoint() {
         return endpoint;
+    }
+
+    /**
+     * The (artifact, revision) this worker says it serves, from its GET /health.
+     * A cached answer younger than maxAgeMs is reused; otherwise the worker is asked again.
+     * If the probe fails, the last known answer is kept (a worker that is down is NOT silently
+     * dropped: requests routed to it still fail with 503, no failover). Empty = never known, or the
+     * worker does not report a revision: such a worker is not used for version-specific requests.
+     */
+    public java.util.Optional<ServedModel> servedModel(long maxAgeMs) {
+        ServedModel current = served;
+        if (current != null && System.nanoTime() - servedAtNanos < maxAgeMs * 1_000_000L) {
+            return java.util.Optional.of(current);
+        }
+        try {
+            Map<?, ?> health = probeClient.get().uri("/health").retrieve().body(Map.class);
+            Object model = health == null ? null : health.get("model");
+            Object revision = health == null ? null : health.get("revision");
+            if (model instanceof String m && revision instanceof String r && !m.isBlank() && !r.isBlank()) {
+                served = new ServedModel(m, r);
+                servedAtNanos = System.nanoTime();
+            } else {
+                served = null; // reachable, but does not say which revision it loaded
+            }
+        } catch (RestClientException e) {
+            // Unreachable or unreadable right now: keep the last known identity (may be null).
+        }
+        return java.util.Optional.ofNullable(served);
+    }
+
+    /** Forget the cached identity (used when a response contradicts it). */
+    public void forgetServedModel() {
+        served = null;
     }
 
     /**
