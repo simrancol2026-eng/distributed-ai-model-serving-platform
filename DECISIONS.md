@@ -341,3 +341,16 @@ Sprint 2 · Claude
   - a URL containing a user name or password;
   - the same worker listed twice (same scheme, host, port and path; case-insensitive; default ports filled in).
 - **Known limit:** different host names that point to the same machine (`localhost` and `127.0.0.1`) cannot be told apart.
+
+### D-036 — A stalled worker (read timeout) is 503, not 502
+Sprint 2 · found by Grok (TEST REPORT on `133dbe9`) · fixed by Claude
+
+- **Bug:**
+  - A worker that accepts the connection but never answers (for example `kill -STOP`) returned `502 WORKER_ERROR` after the 30 s read timeout.
+  - With the `HttpURLConnection`-based request factory, that timeout surfaced as a generic read error instead of an I/O error.
+- **Fix:**
+  - Switched to Spring's `JdkClientHttpRequestFactory` (the JDK `HttpClient`, forced to HTTP/1.1). Connect and read timeouts both raise `HttpTimeoutException`, an `IOException`, which Spring reports as "unreachable", giving `503 WORKER_UNAVAILABLE`.
+  - As a safety net, `WorkerClient` also treats any `RestClientException` with a socket or HTTP timeout in its cause chain as unavailable.
+  - A real HTTP 500 from a worker is still `502`.
+- **Test:** `StalledWorkerTest` runs a server that accepts and never responds, with the read timeout set to 1.5 s. It expects `503`, the endpoint named in the message, and an elapsed time of at least the timeout and less than the timeout plus 5 s.
+- **Checked here:** plain JDK `HttpClient` against such a server threw `HttpTimeoutException` after 1520 ms with a 1500 ms timeout. Spring and Maven were not run here.

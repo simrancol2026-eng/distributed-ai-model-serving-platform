@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -26,8 +26,15 @@ public class WorkerClient {
      * @param workerUrl already validated by {@link WorkerUrlValidator}
      */
     public WorkerClient(String workerUrl, long connectTimeoutMs, long readTimeoutMs) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
+        // JDK HttpClient: a connect timeout and a read timeout both surface as HttpTimeoutException,
+        // which Spring reports as ResourceAccessException -> 503. (With the previous
+        // HttpURLConnection-based factory a stalled worker could surface as a generic read error -> 502;
+        // Grok TEST REPORT on 133dbe9.) HTTP/1.1 explicitly: no h2c upgrade attempt to uvicorn.
+        java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
         this.restClient = RestClient.builder().baseUrl(workerUrl).requestFactory(factory).build();
         this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
@@ -64,9 +71,26 @@ public class WorkerClient {
             throw new WorkerErrorException(
                     "Worker at " + endpoint + " returned HTTP " + e.getStatusCode().value(), e);
         } catch (RestClientException e) {
+            // A worker that accepts the connection but never answers hits the READ timeout. Depending on
+            // where it fires, the HTTP client reports that as a generic RestClientException (e.g. while
+            // reading the body), not as ResourceAccessException. It is still "worker not usable" -> 503.
+            if (isTimeout(e)) {
+                throw new WorkerUnavailableException(
+                        "Worker at " + endpoint + " timed out: " + e.getMessage(), e);
+            }
             // Anything else from the HTTP client, e.g. a response body that is not the expected JSON.
             throw new WorkerErrorException("Worker at " + endpoint + " response could not be read: " + e.getMessage(), e);
         }
+    }
+
+    /** True if a socket/read timeout appears anywhere in the cause chain. */
+    static boolean isTimeout(Throwable e) {
+        for (Throwable t = e; t != null; t = (t.getCause() == t ? null : t.getCause())) {
+            if (t instanceof java.net.SocketTimeoutException || t instanceof java.net.http.HttpTimeoutException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class WorkerUnavailableException extends RuntimeException {
