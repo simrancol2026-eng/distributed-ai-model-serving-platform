@@ -404,7 +404,7 @@ Sprint 2 · Codex queue (#4) · Claude
 - **Lifecycle:** `RECEIVED → DISPATCHED → SUCCEEDED | FAILED`.
   - A request rejected before a worker is chosen goes `RECEIVED → FAILED`.
   - Every update has a `WHERE status ...` guard, so a row only moves forward.
-  - A row left in `RECEIVED` or `DISPATCHED` shows that the backend stopped mid-request. That is the reason to persist the intermediate states and not only the outcome.
+  - A row left in `RECEIVED` or `DISPATCHED` means tracking is **incomplete** for that request. A write may have been skipped or failed (best-effort, D-042), or the backend may have stopped mid-request. It is not by itself proof of a crash. It is still worth persisting the intermediate states, because they show how far a request got.
 - **What is stored:** what was asked, what the platform decided (resolved version, artifact, revision, worker endpoint), and the outcome (HTTP status, error code, worker id, total ms). Timestamps come from the database clock.
 - **Ordering:** list order is the identity column (arrival order), so ties in timestamps cannot reorder it.
 
@@ -413,11 +413,15 @@ Sprint 2 · Claude
 
 - **Rule:** if a tracking write fails, it is logged (`request tracking failed requestId=... step=...`) and the request continues unchanged.
 - **Why:** tracking is an audit trail. Making it mandatory would turn a database outage into an inference outage, including for requests that name no model, which Grok verified still return 200 while PostgreSQL is down. The cost is that requests served during such an outage are not recorded. This is documented and covered by a test.
-- **No stall when the database is down:**
-  - The connection wait is capped at 2 s (`spring.datasource.hikari.connection-timeout`, env `PLATFORM_DB_CONNECT_TIMEOUT_MS`; the Hikari default is 30 s).
-  - After a failed write, tracking writes are skipped for `platform.tracking.pause-after-failure-ms` (10 s).
-  - So while PostgreSQL is down, at most one request per pause window pays the 2 s wait, instead of every request paying up to three waits.
-  - The shorter connection wait also makes the registry's `503 REGISTRY_UNAVAILABLE` arrive faster.
+- **Bounded waits (revised after Codex review of `2fe8f4f`):**
+  - *Connection:* waiting for a pool connection is capped at 2 s (`spring.datasource.hikari.connection-timeout`, env `PLATFORM_DB_CONNECT_TIMEOUT_MS`; the Hikari default is 30 s).
+  - *Statement:* tracking uses its own `JdbcTemplate` with a JDBC query timeout of 2 s (`platform.tracking.statement-timeout-seconds`). The driver cancels a statement that runs longer, including one waiting on a table lock such as `ACCESS EXCLUSIVE`, and the cancellation is handled as a failed write.
+  - *Per write:* at most about connection timeout + statement timeout (about 4 s worst case, about 2 s in the usual case).
+- **Pause and probe (`TrackingGate`):**
+  - After a failed write, no new tracking write starts for `platform.tracking.pause-after-failure-ms` (10 s).
+  - After the pause, exactly one write at a time is admitted as a probe (compare-and-set). Others are skipped while it runs. Success reopens tracking, and failure starts a new pause.
+- **What is NOT guaranteed:** requests whose writes had already started when the database failed cannot be recalled. At the start of an outage, every such in-flight write waits once, up to the per-write bound. So "one request per pause window" holds for writes that *start* during the outage, not for writes already running at its start.
+- **Worst case for a single request:** after its first failed write the pause is active, so its later writes are skipped. A request is therefore slowed by tracking at most once, up to about 4 s.
 - **Reads:** reads are not best-effort. `GET /api/requests...` returns `503 TRACKING_UNAVAILABLE` when the table cannot be read.
 
 ### D-043 — The input text is not persisted

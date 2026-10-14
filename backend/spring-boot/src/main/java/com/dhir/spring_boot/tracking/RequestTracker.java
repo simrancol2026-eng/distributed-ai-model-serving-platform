@@ -9,7 +9,10 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import javax.sql.DataSource;
+
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -22,12 +25,18 @@ import org.springframework.stereotype.Component;
  * without tracking. Tracking is an audit trail; it must not make inference less available
  * (requests that name no model do not need the database at all).
  *
- * After a failed write, tracking PAUSES for platform.tracking.pause-after-failure-ms (default 10 s):
- * writes in that window are skipped instead of each waiting for a database that is down
- * (up to the connection timeout every time). The next write after the pause tries again.
+ * Every tracking statement is BOUNDED: tracking uses its own JdbcTemplate with a query timeout
+ * (platform.tracking.statement-timeout-seconds, default 2 s), so a slow statement or a lock held on
+ * inference_requests is cancelled and handled as a failed write. Waiting for a pool connection is
+ * bounded separately by spring.datasource.hikari.connection-timeout (2 s).
+ *
+ * After a failed write, tracking PAUSES (platform.tracking.pause-after-failure-ms, default 10 s; see
+ * TrackingGate): new writes are skipped; after the pause exactly one write at a time probes the database.
  *
  * Each step only moves a row forward (the WHERE clause checks the current status), so a late or
- * repeated write can never move a finished request back to an earlier state.
+ * repeated write can never move a finished request back to an earlier state. Because writes are
+ * best-effort, a row left in RECEIVED or DISPATCHED means tracking is INCOMPLETE for that request
+ * (a write was skipped or failed, or the backend stopped); it is not by itself proof of a crash.
  *
  * Reads (find, recent) are NOT best-effort: they throw DataAccessException, which the API maps to 503.
  */
@@ -38,15 +47,17 @@ public class RequestTracker {
     private static final Logger log = LoggerFactory.getLogger(RequestTracker.class);
 
     private final JdbcClient jdbc;
-    private final long pauseNanos;
-    /** While paused, writes are skipped until System.nanoTime() reaches pausedUntil. */
-    private volatile long pausedUntil;
-    private volatile boolean paused;
+    private final TrackingGate gate;
 
-    public RequestTracker(JdbcClient jdbc,
+    public RequestTracker(DataSource dataSource,
+            @Value("${platform.tracking.statement-timeout-seconds:2}") int statementTimeoutSeconds,
             @Value("${platform.tracking.pause-after-failure-ms:10000}") long pauseAfterFailureMs) {
-        this.jdbc = jdbc;
-        this.pauseNanos = pauseAfterFailureMs * 1_000_000L;
+        JdbcTemplate template = new JdbcTemplate(dataSource);
+        // JDBC Statement.setQueryTimeout: the driver cancels the statement when it runs longer
+        // (on PostgreSQL this also ends a wait for a table lock).
+        template.setQueryTimeout(Math.max(1, statementTimeoutSeconds));
+        this.jdbc = JdbcClient.create(template);
+        this.gate = new TrackingGate(pauseAfterFailureMs);
     }
 
     /** Step 1: the request arrived. Values are what the client sent (trimmed, length-capped). */
@@ -114,21 +125,20 @@ public class RequestTracker {
     }
 
     private void write(String step, String requestId, Runnable sql) {
-        if (paused && System.nanoTime() - pausedUntil < 0) {
+        TrackingGate.Admission ticket = gate.admit();
+        if (ticket == TrackingGate.Admission.SKIP) {
             log.debug("request tracking skipped (paused) requestId={} step={}", requestId, step);
             return;
         }
         try {
             sql.run();
-            if (paused) {
-                paused = false;
+            if (gate.succeeded(ticket)) {
                 log.info("request tracking resumed");
             }
         } catch (DataAccessException e) {
-            pausedUntil = System.nanoTime() + pauseNanos;
-            paused = pauseNanos > 0;
-            log.warn("request tracking failed requestId={} step={} reason={}; writes paused for {} ms",
-                    requestId, step, e.getMessage(), pauseNanos / 1_000_000);
+            gate.failed(ticket);
+            log.warn("request tracking failed requestId={} step={} reason={}; new writes paused",
+                    requestId, step, e.getMessage());
         }
     }
 
