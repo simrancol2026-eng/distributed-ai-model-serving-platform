@@ -394,3 +394,39 @@ Sprint 2 · Claude
 - **Today:** both DistilBERT workers load the same revision, so only one registered version is servable.
 - **Path to a second version:** the worker accepts an optional `MODEL_REVISION`, passed to Hugging Face `pipeline(revision=...)`. That makes a genuine second revision possible on one worker.
 - **Status:** that two-revision setup has not been demonstrated, and the docs do not claim multi-version serving.
+
+## Sprint 2 — persistent request lifecycle tracking (branch `sprint2-request-lifecycle`)
+
+### D-041 — One row per inference request, in the registry database
+Sprint 2 · Codex queue (#4) · Claude
+
+- **Storage:** table `inference_requests` (Flyway `V2__inference_requests.sql`) in the same PostgreSQL database as the registry. No new infrastructure. It is keyed by the `requestId` the API already returns, so a client can look up any answer it received.
+- **Lifecycle:** `RECEIVED → DISPATCHED → SUCCEEDED | FAILED`.
+  - A request rejected before a worker is chosen goes `RECEIVED → FAILED`.
+  - Every update has a `WHERE status ...` guard, so a row only moves forward.
+  - A row left in `RECEIVED` or `DISPATCHED` means tracking is **incomplete** for that request. A write may have been skipped or failed (best-effort, D-042), or the backend may have stopped mid-request. It is not by itself proof of a crash. It is still worth persisting the intermediate states, because they show how far a request got.
+- **What is stored:** what was asked, what the platform decided (resolved version, artifact, revision, worker endpoint), and the outcome (HTTP status, error code, worker id, total ms). Timestamps come from the database clock.
+- **Ordering:** list order is the identity column (arrival order), so ties in timestamps cannot reorder it.
+
+### D-042 — Tracking is best-effort; it never changes an inference answer
+Sprint 2 · Claude
+
+- **Rule:** if a tracking write fails, it is logged (`request tracking failed requestId=... step=...`) and the request continues unchanged.
+- **Why:** tracking is an audit trail. Making it mandatory would turn a database outage into an inference outage, including for requests that name no model, which Grok verified still return 200 while PostgreSQL is down. The cost is that requests served during such an outage are not recorded. This is documented and covered by a test.
+- **Bounded waits (revised after Codex review of `2fe8f4f`):**
+  - *Connection:* waiting for a pool connection is capped at 2 s (`spring.datasource.hikari.connection-timeout`, env `PLATFORM_DB_CONNECT_TIMEOUT_MS`; the Hikari default is 30 s).
+  - *Statement:* tracking uses its own `JdbcTemplate` with a JDBC query timeout of 2 s (`platform.tracking.statement-timeout-seconds`). The driver cancels a statement that runs longer, including one waiting on a table lock such as `ACCESS EXCLUSIVE`, and the cancellation is handled as a failed write.
+  - *Per write attempt:* at most about connection timeout + statement timeout (about 4 s worst case, about 2 s in the usual case). This is a budget for one attempt (connection acquisition + query), not a per-request total.
+- **Pause and probe (`TrackingGate`):**
+  - After a failed write, no new tracking write starts for `platform.tracking.pause-after-failure-ms` (10 s).
+  - After the pause, exactly one write at a time is admitted as a probe (decided inside a `synchronized` method; see Atomicity below). Others are skipped while it runs. Success reopens tracking, and failure starts a new pause.
+- **What is NOT guaranteed:** requests whose writes had already started when the database failed cannot be recalled. At the start of an outage, every such in-flight write waits once, up to the per-write bound. So "one request per pause window" holds for writes that *start* during the outage, not for writes already running at its start.
+- **Atomicity (revised after Codex review of `e47c600`):** the gate's open flag, deadline and probe slot change inside one short `synchronized` section. Checking the deadline and claiming the probe slot is therefore one step, and no caller can be admitted against a deadline that another thread has just replaced. A controlled interleaving test covers this.
+- **Per request (revised after Codex review of `e47c600`):** each request carries a `Trace`. Once one of its writes fails, or is skipped because tracking is paused, its later writes are skipped too. This holds even if the worker takes longer than the pause. Guarantee: after a request's first failed or skipped tracking write, no further tracking attempts are made for that request. Worker time is not tracking overhead and is not counted.
+- **Reads:** reads are not best-effort. `GET /api/requests...` returns `503 TRACKING_UNAVAILABLE` when the table cannot be read.
+
+### D-043 — The input text is not persisted
+Sprint 2 · Claude
+
+- **Rule:** only `inputChars` (the length) is stored. The text a user submits could be personal. Storing it is not needed to trace routing or failures, and it would make the tracking table a copy of user content.
+- **Other fields:** they are capped to their column sizes before writing, so an oversized client value cannot make the tracking insert fail.
