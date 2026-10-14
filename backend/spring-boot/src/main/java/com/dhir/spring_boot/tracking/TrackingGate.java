@@ -1,7 +1,5 @@
 package com.dhir.spring_boot.tracking;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 
 /**
@@ -9,12 +7,16 @@ import java.util.function.LongSupplier;
  *
  *   OPEN    - every write goes to the database.
  *   PAUSED  - after a failed write: every write is skipped until the pause ends.
- *   PROBING - after the pause: exactly ONE write at a time is admitted (compare-and-set);
- *             all others are skipped while it runs. Success -> OPEN, failure -> PAUSED again.
+ *   PROBING - after the pause: exactly ONE write at a time is admitted; all others are skipped
+ *             while it runs. Success -> OPEN, failure -> PAUSED again (new deadline).
  *
- * Writes that were already running when the first failure happened cannot be recalled: each of them
- * still finishes or times out once (bounded by the statement / connection timeouts). The gate only
- * guarantees that no NEW write starts during a pause and that at most one probe runs at a time.
+ * All state (open flag, deadline, probe slot) changes inside one short synchronized section, so
+ * reading the deadline and claiming the probe slot are a single atomic step: a caller can never be
+ * admitted as a probe against a deadline that another thread has just replaced. The sections only
+ * compare and assign a few fields (no I/O), so the lock is held for nanoseconds.
+ *
+ * Writes that were already running when the first failure happened cannot be recalled; each of them
+ * still finishes or times out once (bounded by the statement / connection timeouts).
  *
  * Plain Java with an injectable clock so it can be unit-tested without Spring or a database.
  */
@@ -25,9 +27,10 @@ public final class TrackingGate {
 
     private final long pauseNanos;
     private final LongSupplier clock;
-    /** 0 = open; otherwise the clock value at which the current pause ends. */
-    private final AtomicLong pausedUntil = new AtomicLong(0);
-    private final AtomicBoolean probing = new AtomicBoolean(false);
+
+    private boolean open = true;
+    private long pausedUntil;   // meaningful only while !open
+    private boolean probing;    // a probe is currently running
 
     public TrackingGate(long pauseMs) {
         this(pauseMs, System::nanoTime);
@@ -38,39 +41,39 @@ public final class TrackingGate {
         this.clock = clock;
     }
 
-    public Admission admit() {
-        long until = pausedUntil.get();
-        if (until == 0) {
+    public synchronized Admission admit() {
+        if (open) {
             return Admission.RUN;
         }
-        if (clock.getAsLong() - until < 0) {
-            return Admission.SKIP; // still paused
+        if (clock.getAsLong() - pausedUntil < 0 || probing) {
+            return Admission.SKIP; // still paused, or another probe is running
         }
-        return probing.compareAndSet(false, true) ? Admission.PROBE : Admission.SKIP;
+        probing = true;
+        return Admission.PROBE;
     }
 
     /** The admitted write succeeded. Returns true if this ended a pause (tracking resumed). */
-    public boolean succeeded(Admission a) {
+    public synchronized boolean succeeded(Admission a) {
         if (a != Admission.PROBE) {
             return false;
         }
-        pausedUntil.set(0);
-        probing.set(false);
+        probing = false;
+        open = true;
         return true;
     }
 
     /** The admitted write failed: start (or restart) the pause. No pause when pauseMs is 0. */
-    public void failed(Admission a) {
-        if (pauseNanos > 0) {
-            long until = clock.getAsLong() + pauseNanos;
-            pausedUntil.set(until == 0 ? 1 : until);
-        }
+    public synchronized void failed(Admission a) {
         if (a == Admission.PROBE) {
-            probing.set(false);
+            probing = false;
+        }
+        if (pauseNanos > 0) {
+            open = false;
+            pausedUntil = clock.getAsLong() + pauseNanos;
         }
     }
 
-    public boolean isOpen() {
-        return pausedUntil.get() == 0;
+    public synchronized boolean isOpen() {
+        return open;
     }
 }
