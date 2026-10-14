@@ -1,5 +1,6 @@
 package com.dhir.spring_boot.inference;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -44,6 +45,9 @@ import com.dhir.spring_boot.tracking.RequestTracker;
  *   503 WORKER_UNAVAILABLE     the chosen worker is down or timed out (no failover)
  *   502 WORKER_ERROR           the chosen worker answered with an error
  *   502 WORKER_MODEL_MISMATCH  the chosen worker answered with a different artifact/revision than expected
+ *
+ * Every request also gets a RoutingDecision (Sprint 2 #5, D-044): logged as one
+ * "routing decision requestId=..." line, stored with the tracking row, and returned in the success body.
  */
 @RestController
 public class InferenceController {
@@ -65,6 +69,13 @@ public class InferenceController {
     record Target(String modelId, ModelVersion version) {
     }
 
+    /** The response plus the routing decision that produced it. */
+    record Routed(ResponseEntity<?> response, RoutingDecision decision) {
+    }
+
+    /** Max stored length of routing_decision (V3 column is VARCHAR(8000)). */
+    static final int MAX_DECISION_JSON = 8000;
+
     /**
      * Every request is tracked (Sprint 2, see RequestTracker): RECEIVED on arrival, DISPATCHED when a
      * worker is chosen (in call()), then SUCCEEDED or FAILED with the exact status and error code returned.
@@ -80,23 +91,26 @@ public class InferenceController {
                 request == null ? null : blankToNull(request.version()),
                 request == null || request.input() == null ? null : request.input().length());
 
-        ResponseEntity<?> response = handle(request, trace, started);
+        Routed routed = handle(request, trace, started);
+        ResponseEntity<?> response = routed.response();
+        RoutingDecision decision = routed.decision();
+        log.info("routing decision requestId={} {}", requestId, decision.toLogString());
 
         Object body = response.getBody();
         String errorCode = body instanceof ErrorResponse e ? e.error() : null;
         String workerId = body instanceof InferenceResponse r ? r.worker() : null;
         tracker.completed(trace, response.getStatusCode().value(), errorCode, workerId,
-                (System.nanoTime() - started) / 1_000_000);
+                (System.nanoTime() - started) / 1_000_000, decision.toJson(MAX_DECISION_JSON));
         return response;
     }
 
-    private ResponseEntity<?> handle(InferenceRequest request, RequestTracker.Trace trace, long started) {
+    private Routed handle(InferenceRequest request, RequestTracker.Trace trace, long started) {
         String requestId = trace.requestId();
         if (request == null || request.input() == null || request.input().isBlank()) {
-            return error(400, "INVALID_REQUEST", "Field 'input' is required and must not be blank.", requestId);
+            return rejected(400, "INVALID_REQUEST", "Field 'input' is required and must not be blank.", requestId);
         }
         if (request.input().length() > MAX_INPUT_CHARS) {
-            return error(400, "INVALID_REQUEST",
+            return rejected(400, "INVALID_REQUEST",
                     "Field 'input' must be at most " + MAX_INPUT_CHARS + " characters.", requestId);
         }
         // AUTO (or missing) means "any capability"; otherwise it must match.
@@ -106,24 +120,33 @@ public class InferenceController {
         String version = blankToNull(request.version());
 
         if (modelId == null && version != null) {
-            return error(400, "INVALID_REQUEST", "Field 'version' requires field 'model'.", requestId);
+            return rejected(400, "INVALID_REQUEST", "Field 'version' requires field 'model'.", requestId);
         }
         if (modelId == null) {
             // Unchanged behaviour: any worker, round-robin over all of them.
             if (!capability.equals("AUTO") && !capability.equals(workers.capability())) {
-                return error(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
+                return rejected(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
                         + ". Available: " + workers.capability() + ".", requestId);
             }
-            return call(workers.next(), request.input(), null, trace, started);
+            WorkerClient worker = workers.next();
+            List<RoutingDecision.Candidate> all = new ArrayList<>();
+            for (WorkerClient w : workers.all()) {
+                // Identity is not checked here: any worker can serve a request that names no model.
+                all.add(new RoutingDecision.Candidate(w.endpoint(), true, RoutingDecision.ANY_WORKER, null));
+            }
+            RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
+                    all.size(), all, worker.endpoint(),
+                    "no model requested: round-robin over all " + all.size() + " worker(s)");
+            return new Routed(call(worker, request.input(), null, trace, started, decision), decision);
         }
 
         // ---- version-aware dispatch ----
         if (!RegistryValidation.isModelId(modelId)) {
-            return error(400, "INVALID_REQUEST", "Field 'model' is not a valid model id.", requestId);
+            return rejected(400, "INVALID_REQUEST", "Field 'model' is not a valid model id.", requestId);
         }
         boolean latest = version == null || version.equalsIgnoreCase(RegistryValidation.LATEST);
         if (!latest && !RegistryValidation.isVersionLabel(version)) {
-            return error(400, "INVALID_REQUEST", "Field 'version' is not a valid version label.", requestId);
+            return rejected(400, "INVALID_REQUEST", "Field 'version' is not a valid version label.", requestId);
         }
 
         ModelDetail model;
@@ -131,45 +154,64 @@ public class InferenceController {
         try {
             Optional<ModelDetail> found = registry.findModel(modelId);
             if (found.isEmpty()) {
-                return error(404, "MODEL_NOT_FOUND", "No registered model '" + modelId + "'.", requestId);
+                return rejected(404, "MODEL_NOT_FOUND", "No registered model '" + modelId + "'.", requestId);
             }
             model = found.get();
             resolved = latest ? registry.latestVersion(modelId) : registry.findVersion(modelId, version);
         } catch (DataAccessException e) {
             log.warn("inference failed requestId={} reason=REGISTRY_UNAVAILABLE {}", requestId, e.getMessage());
-            return error(503, "REGISTRY_UNAVAILABLE", "The model registry could not be read.", requestId);
+            return rejected(503, "REGISTRY_UNAVAILABLE", "The model registry could not be read.", requestId);
         }
         if (!capability.equals("AUTO") && !capability.equals(model.capability())) {
-            return error(422, "CAPABILITY_MISMATCH", "Model '" + modelId + "' has capability "
+            return rejected(422, "CAPABILITY_MISMATCH", "Model '" + modelId + "' has capability "
                     + model.capability() + ", not " + capability + ".", requestId);
         }
         if (resolved.isEmpty()) {
-            return error(404, "VERSION_NOT_FOUND", latest
+            return rejected(404, "VERSION_NOT_FOUND", latest
                     ? "Model '" + modelId + "' has no registered versions."
                     : "Model '" + modelId + "' has no version '" + version + "'.", requestId);
         }
         ModelVersion v = resolved.get();
         if (!model.capability().equals(workers.capability())) {
-            return error(422, "NO_ELIGIBLE_WORKER", "No worker serves capability " + model.capability()
+            return rejected(422, "NO_ELIGIBLE_WORKER", "No worker serves capability " + model.capability()
                     + " (model '" + modelId + "').", requestId);
         }
-        List<WorkerClient> eligible = workers.eligible(v.artifact(), v.artifactRevision());
+        String target = v.artifact() + "@" + v.artifactRevision();
+        List<WorkerPool.Assessment> assessed = workers.assess(v.artifact(), v.artifactRevision());
+        List<WorkerClient> eligible = new ArrayList<>();
+        List<RoutingDecision.Candidate> candidates = new ArrayList<>();
+        for (WorkerPool.Assessment a : assessed) {
+            String served = a.served() == null ? null : a.served().artifact() + "@" + a.served().revision();
+            String note = a.eligible() ? RoutingDecision.ELIGIBLE
+                    : a.served() == null ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
+            candidates.add(new RoutingDecision.Candidate(a.worker().endpoint(), a.eligible(), note, served));
+            if (a.eligible()) {
+                eligible.add(a.worker());
+            }
+        }
         if (eligible.isEmpty()) {
-            return error(422, "NO_ELIGIBLE_WORKER", "No worker currently serves model '" + modelId + "' version '"
-                    + v.version() + "' (" + v.artifact() + " at revision " + v.artifactRevision() + ").", requestId);
+            RoutingDecision none = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(), 0,
+                    candidates, null, "NO_ELIGIBLE_WORKER: no worker reports " + target);
+            return new Routed(error(422, "NO_ELIGIBLE_WORKER", "No worker currently serves model '" + modelId
+                    + "' version '" + v.version() + "' (" + v.artifact() + " at revision " + v.artifactRevision()
+                    + ").", requestId), none);
         }
         WorkerClient worker = workers.next(eligible, v.artifact(), v.artifactRevision());
-        return call(worker, request.input(), new Target(modelId, v), trace, started);
+        RoutingDecision decision = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(),
+                eligible.size(), candidates, worker.endpoint(), "model '" + modelId + "' version '" + v.version()
+                        + "': round-robin over " + eligible.size() + " eligible of " + workers.size() + " worker(s)");
+        return new Routed(call(worker, request.input(), new Target(modelId, v), trace, started, decision), decision);
     }
 
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
     private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
-            long started) {
+            long started, RoutingDecision decision) {
         String requestId = trace.requestId();
         tracker.dispatched(trace, worker.endpoint(),
                 target == null ? null : target.version().version(),
                 target == null ? null : target.version().artifact(),
-                target == null ? null : target.version().artifactRevision());
+                target == null ? null : target.version().artifactRevision(),
+                decision.toJson(MAX_DECISION_JSON));
         try {
             WorkerPrediction p = worker.predict(input);
             if (target != null && !(target.version().artifact().equals(p.model())
@@ -188,7 +230,8 @@ public class InferenceController {
             return ResponseEntity.ok(new InferenceResponse("success", requestId, workers.capability(),
                     p.worker(), worker.endpoint(), p.model(), p.version(), p.task(),
                     new Prediction(p.label(), p.score()), p.inferenceMs(), totalMs,
-                    target == null ? null : target.modelId(), target == null ? null : target.version().version()));
+                    target == null ? null : target.modelId(), target == null ? null : target.version().version(),
+                    decision));
         } catch (WorkerUnavailableException e) {
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_UNAVAILABLE {}", requestId,
                     worker.endpoint(), e.getMessage());
@@ -200,6 +243,11 @@ public class InferenceController {
             return error(502, "WORKER_ERROR", "The model worker at " + worker.endpoint() + " returned an error.",
                     requestId);
         }
+    }
+
+    /** An error returned before any worker was considered. */
+    private Routed rejected(int status, String code, String message, String requestId) {
+        return new Routed(error(status, code, message, requestId), RoutingDecision.notRouted(workers.size(), code));
     }
 
     private static ResponseEntity<?> error(int status, String code, String message, String requestId) {

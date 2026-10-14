@@ -47,7 +47,11 @@ export function RoutingPanel() {
         <dl className="router-assignment">
           <div>
             <dt>Eligible workers</dt>
-            <dd>—</dd>
+            <dd>
+              {entry?.result.routing
+                ? `${entry.result.routing.eligibleCount} of ${entry.result.routing.poolSize}`
+                : "—"}
+            </dd>
           </div>
           <div>
             <dt>Selected worker</dt>

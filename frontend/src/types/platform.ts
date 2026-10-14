@@ -27,6 +27,16 @@ export type RoutingResult = {
   model: string | null;
   worker: string | null;
   latency: number | null;
+  /** Backend routing decision summary (Sprint 2 #5); absent when the backend sent none. */
+  routing?: RoutingSummary | null;
+};
+/** Why the backend chose this worker (from InferenceResponse.routing). */
+export type RoutingSummary = {
+  strategy: string;
+  eligibleCount: number;
+  poolSize: number;
+  chosen: string | null;
+  reason: string;
 };
 export type RequestEntry = {
   id: string;

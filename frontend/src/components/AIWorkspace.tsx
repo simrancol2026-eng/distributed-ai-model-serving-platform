@@ -136,12 +136,28 @@ export function AIWorkspace() {
                   <div className="response-routing-title">
                     <Network size={14} />
                     Routing details
-                    <StatusBadge />
+                    <StatusBadge
+                      label={
+                        current.result.routing
+                          ? "Backend decision"
+                          : current.result.status === "not-connected"
+                            ? "Not connected"
+                            : "Backend error response"
+                      }
+                      online={Boolean(current.result.routing)}
+                    />
                   </div>
                   <dl>
                     {[
                       ["Model", current.result.model],
                       ["Worker", current.result.worker],
+                      [
+                        "Eligible",
+                        current.result.routing
+                          ? `${current.result.routing.eligibleCount} of ${current.result.routing.poolSize}`
+                          : null,
+                      ],
+                      ["Routing", current.result.routing?.reason ?? null],
                       [
                         "Latency",
                         current.result.latency === null ? null : `${current.result.latency} ms`,

@@ -39,7 +39,8 @@ Neither sprint is signed off.
 - The seed script created on the first run, did nothing on a rerun, and on a conflicting `v1` exited 1 without overwriting. |
 | Two workers + round-robin | **MERGED (Sprint 2, Grok PASS on `0a056a9`)** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes; the real two-worker check is `scripts/round_robin_e2e_test.py`. |
 | Version-aware dispatch | **MERGED (Sprint 2, Grok PASS on `4351f23`)** | Optional `model`/`version` on `/api/inference`, resolved in the registry and routed only to workers that report that exact revision. Grok reported 22/22 checks, Maven 55/55, `version_dispatch_e2e_test.py` 19/19, and real two-revision routing (see "Version-aware dispatch"). |
-| Request lifecycle tracking | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Claude checked the migration and the lifecycle SQL directly on PostgreSQL 16 with `psql`; the Spring tests and `scripts/request_tracking_e2e_test.py` have not been run by Claude (no Maven or real model in its sandbox). |
+| Request lifecycle tracking | **MERGED (Sprint 2, Grok PASS on `e70b733`, merge `87eaf0f`)** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Grok reported 29/29 runnable checks on `e70b733` (Maven 74/74, real pgjdbc lock-hold cancel at ~2.06 s, outage and recovery); Docker was not available on the test VM. |
+| Routing decisions | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | Every request gets a routing decision (strategy, every worker with why it was or was not eligible, the chosen worker, a reason). It is logged as one line, stored with the tracked request (`V3__routing_decision.sql`) and returned in the response; the UI shows it. Claude checked V1→V3 on PostgreSQL 16 with `psql` and the decision formatting with a standalone Java harness; Maven, the Spring app and `scripts/routing_decision_e2e_test.py` on the real stack have not been run by Claude. |
 | Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
@@ -247,6 +248,32 @@ curl -s localhost:8080/api/requests/<requestId from an /api/inference response>
 **Best-effort writes:** if the tracking table cannot be written, the failure is logged as `request tracking failed requestId=... step=...` and the inference request is answered exactly as it would be without tracking. A request without `model` therefore still works while PostgreSQL is down, but that request is not recorded. Every tracking statement is cancelled after 2 s (`platform.tracking.statement-timeout-seconds`), including one blocked by a lock on the table, and a database connection wait is capped at 2 s (`PLATFORM_DB_CONNECT_TIMEOUT_MS`, default 2000; this also applies to the registry). After a failed write, tracking skips new writes for 10 s (`platform.tracking.pause-after-failure-ms`), then lets one write at a time probe the database. Each tracking write attempt is bounded by about 4 s (connection wait + statement timeout); this is a per-attempt budget, not a per-request total. Requests whose tracking writes had already started when the database failed each pay that budget once. After a request's first failed or skipped tracking write, no further tracking attempts are made for that request (worker time is not tracking overhead and is not counted). A body that is not valid JSON is rejected by Spring before the controller runs and is not tracked.
 
 `python scripts/request_tracking_e2e_test.py` checks tracking on the real stack: success, invalid input, unknown model, list order and limits, concurrent requests, and read errors. For persistence across a backend restart, run it with `--save /tmp/tracked.json`, restart the backend on the same database, then run it with `--verify /tmp/tracked.json`.
+
+### 2e. Routing decisions (Sprint 2 #5)
+
+Every `POST /api/inference` request gets one **routing decision** that explains where it went and why. It is built from the same worker list and the same identity reads the router used (nothing is probed again just to explain it, and the round-robin counter moves only once).
+
+| Field | Meaning |
+|---|---|
+| `strategy` | `ROUND_ROBIN_ALL` (no `model`), `VERSION_AWARE` (`model` given), `NOT_ROUTED` (rejected before any worker was considered) |
+| `target` | `artifact@revision` a versioned request needs (else `null`) |
+| `poolSize`, `eligibleCount` | configured workers, and how many could serve this request |
+| `candidates[]` | every configured worker: `endpoint`, `eligible`, `note`, `served` |
+| `chosen` | `host:port` the request was sent to (`null` if none) |
+| `reason` | one short sentence, or the error code for `NOT_ROUTED` |
+
+Candidate `note`: `ANY_WORKER` (no model requested, identity not checked), `ELIGIBLE` (its `/health` reports exactly the target), `SERVES_OTHER` (reports another artifact/revision, shown in `served`), `IDENTITY_UNKNOWN` (identity not known, so not used: fail closed). **Eligible means the right model identity, not "up right now"**: a chosen worker can still be down, the request then fails with 503 and there is no failover. `NOT_ROUTED` decisions have no candidates, because none were evaluated.
+
+Where it appears:
+
+- **Log:** one line per request, e.g. `routing decision requestId=... strategy=VERSION_AWARE target=art@714eb0fa eligible=1/2 candidates=[127.0.0.1:8001:ELIGIBLE, 127.0.0.1:8002:SERVES_OTHER(art@3f5a...)] chosen=127.0.0.1:8001 reason="..."`. The input text is never logged.
+- **Database:** column `routing_decision` (JSON text, Flyway `V3__routing_decision.sql`), written in the same best-effort tracking updates as §2d, so it follows the same timeouts, pause and per-request suppression. Rows from before V3, or whose write was skipped, have `null`.
+- **API:** `GET /api/requests/{id}` returns it as `routing`; a successful `POST /api/inference` also returns it as `routing`. Error responses do not carry it; look the request up by its `requestId`.
+- **UI:** the "Routing details" box shows "Backend decision" plus eligible/total workers and the reason when the backend sent a decision, "Backend error response" when the backend answered with an error, and "Not connected" when there was no backend. The router panel's "Eligible workers" uses the same data.
+
+A body that is not valid JSON is rejected by Spring before the controller runs, so it gets no routing decision (same limitation as §2d).
+
+`python scripts/routing_decision_e2e_test.py [--model sent --version v1] [--log backend.log]` checks this on the real stack: round-robin and versioned decisions, rejected requests, response == stored decision, and (with `--log`) one matching log line per request.
 
 ### 3. Frontend: http://localhost:5173
 

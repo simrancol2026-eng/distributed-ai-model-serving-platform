@@ -66,6 +66,14 @@ export type InferenceSuccess = {
   prediction: { label: string; score: number };
   workerInferenceMs: number;
   totalLatencyMs: number;
+  /** Routing decision (Sprint 2 #5); older backends do not send it. */
+  routing?: {
+    strategy: string;
+    eligibleCount: number;
+    poolSize: number;
+    chosen: string | null;
+    reason: string;
+  } | null;
 };
 /** Error body of POST /api/inference (see backend InferenceDtos.ErrorResponse). */
 export type InferenceError = { status: "error"; error: string; message: string; requestId: string };
@@ -91,6 +99,15 @@ export function toRoutingResult(httpStatus: number, body: unknown): RoutingResul
       model: b.version ? `${b.model} @ ${b.version.slice(0, 8)}` : (b.model ?? null),
       worker: b.worker ?? null,
       latency: typeof b.totalLatencyMs === "number" ? b.totalLatencyMs : null,
+      routing: b.routing
+        ? {
+            strategy: b.routing.strategy,
+            eligibleCount: b.routing.eligibleCount,
+            poolSize: b.routing.poolSize,
+            chosen: b.routing.chosen ?? null,
+            reason: b.routing.reason,
+          }
+        : null,
     };
   }
   const code = b?.error ?? `HTTP_${httpStatus}`;
