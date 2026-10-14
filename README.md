@@ -266,10 +266,10 @@ Candidate `note`: `ANY_WORKER` (no model requested, identity not checked), `ELIG
 
 Where it appears:
 
-- **Log:** one line per request, e.g. `routing decision requestId=... strategy=VERSION_AWARE target=art@714eb0fa eligible=1/2 candidates=[127.0.0.1:8001:ELIGIBLE, 127.0.0.1:8002:SERVES_OTHER(art@3f5a...)] chosen=127.0.0.1:8001 reason="..."`. The input text is never logged.
+- **Log:** one line per request, e.g. `routing decision requestId=... strategy=VERSION_AWARE target=art@714eb0fa eligible=1/2 candidates=[127.0.0.1:8001:ELIGIBLE, 127.0.0.1:8002:SERVES_OTHER(art@3f5a...)] chosen=127.0.0.1:8001 reason="..."`. The input text is never logged. Worker-reported identities are not trusted: control characters (CR, LF, ...) are escaped, so one decision is always one log line.
 - **Database:** column `routing_decision` (JSON text, Flyway `V3__routing_decision.sql`), written in the same best-effort tracking updates as §2d, so it follows the same timeouts, pause and per-request suppression. Rows from before V3, or whose write was skipped, have `null`.
 - **API:** `GET /api/requests/{id}` returns it as `routing`; a successful `POST /api/inference` also returns it as `routing`. Error responses do not carry it; look the request up by its `requestId`.
-- **UI:** the "Routing details" box shows "Backend decision" plus eligible/total workers and the reason when the backend sent a decision, "Backend error response" when the backend answered with an error, and "Not connected" when there was no backend. The router panel's "Eligible workers" uses the same data.
+- **UI:** the "Routing details" badge says "Backend decision" (with eligible/total workers and the reason), "Decision unavailable" (the backend answered but sent no decision, e.g. an older backend), "Backend error response" (the backend answered with an error), "Not sent" (rejected in the browser, e.g. an attachment) or "Not connected" (no backend reached). While a new request is in flight the previous answer is labelled "Previous request" and its routing rows are hidden; the router panel's "Eligible workers" is blank until the new decision arrives. The panel header shows backend reachability only; worker eligibility is per request.
 
 A body that is not valid JSON is rejected by Spring before the controller runs, so it gets no routing decision (same limitation as §2d).
 

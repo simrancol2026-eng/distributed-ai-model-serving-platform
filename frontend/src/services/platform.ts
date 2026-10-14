@@ -85,6 +85,17 @@ const errorMessages: Record<string, string> = {
   WORKER_ERROR: "The model worker returned an error.",
 };
 
+/** Label for the "Routing details" badge. Backend reachability is not worker availability. */
+export function routingBadgeLabel(result: RoutingResult, pending: boolean): string {
+  if (pending) return "Previous request";
+  if (result.routing) return "Backend decision";
+  if (result.origin === "local") return "Not sent";
+  if (result.origin === "backend") {
+    return result.status === "completed" ? "Decision unavailable" : "Backend error response";
+  }
+  return "Not connected";
+}
+
 /** Converts a backend response (HTTP status + parsed JSON) into what the workspace UI displays. */
 export function toRoutingResult(httpStatus: number, body: unknown): RoutingResult {
   // Either shape may arrive, so read every field as optional.
@@ -99,6 +110,7 @@ export function toRoutingResult(httpStatus: number, body: unknown): RoutingResul
       model: b.version ? `${b.model} @ ${b.version.slice(0, 8)}` : (b.model ?? null),
       worker: b.worker ?? null,
       latency: typeof b.totalLatencyMs === "number" ? b.totalLatencyMs : null,
+      origin: "backend",
       routing: b.routing
         ? {
             strategy: b.routing.strategy,
@@ -115,6 +127,7 @@ export function toRoutingResult(httpStatus: number, body: unknown): RoutingResul
   return {
     ...disconnectedResult,
     status: "failed",
+    origin: "backend",
     answer: `Request failed (${code}): ${detail}`,
   };
 }
@@ -173,6 +186,7 @@ export const platformService = {
       return {
         ...disconnectedResult,
         status: "failed",
+        origin: "local",
         answer: "File attachments are not supported yet — only text requests can be served.",
       };
     }

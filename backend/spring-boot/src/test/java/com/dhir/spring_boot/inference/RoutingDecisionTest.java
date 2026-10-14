@@ -65,6 +65,17 @@ class RoutingDecisionTest {
     }
 
     @Test
+    void logLineEscapesControlCharactersFromWorkerReportedIdentities() {
+        RoutingDecision d = new RoutingDecision(RoutingDecision.VERSION_AWARE, "art@r1", 1, 0, List.of(
+                new Candidate("127.0.0.1:8001", false, RoutingDecision.SERVES_OTHER,
+                        "art\r\nFAKE routing decision requestId=x\u001b@r2")),
+                null, "none");
+        String line = d.toLogString();
+        assertFalse(line.contains("\n") || line.contains("\r") || line.contains("\u001b"), line);
+        assertTrue(line.contains("SERVES_OTHER(art\\r\\nFAKE routing decision requestId=x\\u001b@r2)"), line);
+    }
+
+    @Test
     void logLineNamesEachCandidateAndWhyItWasSkipped() {
         String line = sample().toLogString();
         assertEquals("strategy=VERSION_AWARE target=art@r1 eligible=1/3 candidates=[127.0.0.1:8001:ELIGIBLE, "

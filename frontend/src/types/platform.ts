@@ -29,6 +29,11 @@ export type RoutingResult = {
   latency: number | null;
   /** Backend routing decision summary (Sprint 2 #5); absent when the backend sent none. */
   routing?: RoutingSummary | null;
+  /**
+   * Who produced this result: "backend" = the backend answered (success or error body),
+   * "local" = rejected in the browser before sending, absent = no backend reached.
+   */
+  origin?: "backend" | "local";
 };
 /** Why the backend chose this worker (from InferenceResponse.routing). */
 export type RoutingSummary = {

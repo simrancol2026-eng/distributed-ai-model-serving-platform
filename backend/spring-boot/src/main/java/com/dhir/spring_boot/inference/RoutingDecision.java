@@ -62,11 +62,15 @@ public record RoutingDecision(
         return new RoutingDecision(NOT_ROUTED, null, poolSize, 0, List.of(), null, reason);
     }
 
-    /** One log line, e.g. strategy=VERSION_AWARE target=a@r1 eligible=1/2 candidates=[...] chosen=... reason=... */
+    /**
+     * One log line, e.g. strategy=VERSION_AWARE target=a@r1 eligible=1/2 candidates=[...] chosen=... reason=...
+     * Worker-reported identities are not validated, so every text value is passed through oneLine():
+     * a CR/LF or other control character can never split the line or forge another log entry.
+     */
     public String toLogString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("strategy=").append(strategy)
-                .append(" target=").append(target == null ? "-" : target)
+        sb.append("strategy=").append(oneLine(strategy))
+                .append(" target=").append(target == null ? "-" : oneLine(target))
                 .append(" eligible=").append(eligibleCount).append('/').append(poolSize)
                 .append(" candidates=[");
         for (int i = 0; i < candidates.size(); i++) {
@@ -74,13 +78,36 @@ public record RoutingDecision(
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(c.endpoint()).append(':').append(c.note());
+            sb.append(oneLine(c.endpoint())).append(':').append(oneLine(c.note()));
             if (c.served() != null && !c.eligible()) {
-                sb.append('(').append(c.served()).append(')');
+                sb.append('(').append(oneLine(c.served())).append(')');
             }
         }
-        sb.append("] chosen=").append(chosen == null ? "-" : chosen)
-                .append(" reason=\"").append(reason).append('"');
+        sb.append("] chosen=").append(chosen == null ? "-" : oneLine(chosen))
+                .append(" reason=\"").append(oneLine(reason)).append('"');
+        return sb.toString();
+    }
+
+    /** Control characters (incl. CR, LF, DEL, U+2028/9) become visible escapes, e.g. backslash-n. */
+    static String oneLine(String s) {
+        if (s == null) {
+            return "null";
+        }
+        StringBuilder sb = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (ch == '\n') {
+                sb.append("\\n");
+            } else if (ch == '\r') {
+                sb.append("\\r");
+            } else if (ch == '\t') {
+                sb.append("\\t");
+            } else if (ch < 0x20 || ch == 0x7f || ch == '\u2028' || ch == '\u2029') {
+                sb.append(String.format("\\u%04x", (int) ch));
+            } else {
+                sb.append(ch);
+            }
+        }
         return sb.toString();
     }
 

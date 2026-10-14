@@ -6,19 +6,25 @@ import { capabilities, routingFactors } from "@/data/platform";
 import { StatusBadge } from "./StatusBadge";
 import { Button } from "./ui/button";
 export function RoutingPanel() {
-  const { capability, entries, currentId } = useWorkspace();
+  const { capability, entries, currentId, pending } = useWorkspace();
   const backend = useBackendHealth();
-  const entry = entries.find((e) => e.id === currentId);
+  const shown = entries.find((e) => e.id === currentId);
+  // While a new request is in flight, do not show the previous request's routing as if it were current.
+  const entry = pending ? undefined : shown;
   const selected = entry?.capability ?? capability;
   const task = capabilities.find((c) => c.id === selected)?.task ?? "Automatic detection";
   return (
     <div className="router-content geometric-router">
       <div className="router-connection">
         <div>
-          <h2>Awaiting connection</h2>
-          <p>Orchestration service</p>
+          <h2>{backend.connected ? "Backend reachable" : "Awaiting connection"}</h2>
+          <p>Orchestration service (worker eligibility is shown per request below)</p>
         </div>
-        <StatusBadge compact label="Offline" />
+        <StatusBadge
+          compact
+          label={backend.connected ? "Online" : "Offline"}
+          online={backend.connected}
+        />
       </div>
       <div className="router-telemetry">
         <section className="router-detection">
