@@ -1,0 +1,43 @@
+name: Docker integration tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-worker:
+    name: Docker worker build and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build model worker image
+        run: docker build -t model-worker-ci ./model-workers/model-a
+      - name: Start worker container
+        run: |
+          docker run -d --name model-worker-ci -p 8001:8001 model-worker-ci
+      - name: Wait for worker health
+        run: |
+          for i in $(seq 1 90); do
+            if curl --fail --silent http://localhost:8001/health; then
+              exit 0
+            fi
+            if ! docker inspect -f '{{.State.Running}}' model-worker-ci | grep -q true; then
+              docker logs model-worker-ci
+              exit 1
+            fi
+            sleep 5
+          done
+          docker logs model-worker-ci
+          exit 1
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs model-worker-ci || true
+      - name: Clean up
+        if: always()
+        run: docker rm -f model-worker-ci || true
