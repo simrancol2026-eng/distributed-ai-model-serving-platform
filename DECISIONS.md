@@ -416,13 +416,13 @@ Sprint 2 · Claude
 - **Bounded waits (revised after Codex review of `2fe8f4f`):**
   - *Connection:* waiting for a pool connection is capped at 2 s (`spring.datasource.hikari.connection-timeout`, env `PLATFORM_DB_CONNECT_TIMEOUT_MS`; the Hikari default is 30 s).
   - *Statement:* tracking uses its own `JdbcTemplate` with a JDBC query timeout of 2 s (`platform.tracking.statement-timeout-seconds`). The driver cancels a statement that runs longer, including one waiting on a table lock such as `ACCESS EXCLUSIVE`, and the cancellation is handled as a failed write.
-  - *Per write:* at most about connection timeout + statement timeout (about 4 s worst case, about 2 s in the usual case).
+  - *Per write attempt:* at most about connection timeout + statement timeout (about 4 s worst case, about 2 s in the usual case). This is a budget for one attempt (connection acquisition + query), not a per-request total.
 - **Pause and probe (`TrackingGate`):**
   - After a failed write, no new tracking write starts for `platform.tracking.pause-after-failure-ms` (10 s).
-  - After the pause, exactly one write at a time is admitted as a probe (compare-and-set). Others are skipped while it runs. Success reopens tracking, and failure starts a new pause.
+  - After the pause, exactly one write at a time is admitted as a probe (decided inside a `synchronized` method; see Atomicity below). Others are skipped while it runs. Success reopens tracking, and failure starts a new pause.
 - **What is NOT guaranteed:** requests whose writes had already started when the database failed cannot be recalled. At the start of an outage, every such in-flight write waits once, up to the per-write bound. So "one request per pause window" holds for writes that *start* during the outage, not for writes already running at its start.
 - **Atomicity (revised after Codex review of `e47c600`):** the gate's open flag, deadline and probe slot change inside one short `synchronized` section. Checking the deadline and claiming the probe slot is therefore one step, and no caller can be admitted against a deadline that another thread has just replaced. A controlled interleaving test covers this.
-- **Per request (revised after Codex review of `e47c600`):** each request carries a `Trace`. Once one of its writes fails, or is skipped because tracking is paused, its later writes are skipped too. This holds even if the worker takes longer than the pause. So tracking delays one request at most once, by one bounded write (about 4 s worst case). Worker time is not tracking overhead and is not counted.
+- **Per request (revised after Codex review of `e47c600`):** each request carries a `Trace`. Once one of its writes fails, or is skipped because tracking is paused, its later writes are skipped too. This holds even if the worker takes longer than the pause. Guarantee: after a request's first failed or skipped tracking write, no further tracking attempts are made for that request. Its tracking delay is therefore at most one bounded write attempt (the ~4 s per-attempt budget above). Worker time is not tracking overhead and is not counted.
 - **Reads:** reads are not best-effort. `GET /api/requests...` returns `503 TRACKING_UNAVAILABLE` when the table cannot be read.
 
 ### D-043 — The input text is not persisted
