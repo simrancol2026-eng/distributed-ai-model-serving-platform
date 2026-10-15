@@ -204,7 +204,7 @@ All three were fixed in `ed28851`. Retest on `ed28851` (evidence `9f36761`): **P
 
 | Scenario | RR | LIF | HEALTH_LATENCY |
 |---|---|---|---|
-| Worker B never started, 20 requests (200/503) | 10/10 | 10/10 | 20/0 |
+| Worker B never started, 20 requests (200/503), first-run evidence `d33b1e9` on `8a27cea` | 10/10 | 10/10 | 20/0 |
 | Worker B killed (SIGTERM) mid-run, 30 requests (200 on A / 200 on B / 503) | 15/1/14 | 15/1/14 | 26/3/1 |
 
 ### What these show, and what they don't
@@ -217,7 +217,7 @@ All three were fixed in `ed28851`. Retest on `ed28851` (evidence `9f36761`): **P
 ### 7.6 Demo outline
 
 1. Restart the backend with `PLATFORM_ROUTING_POLICY=HEALTH_LATENCY`. Send a request and show the `health` evidence and `score` in the response and in `GET /api/requests/{id}`.
-2. Send several sequential requests. Point out that they stick to the lower-estimate worker, and explain why (7.3).
+2. Send several sequential requests. Point out that they tend to favour the lower-estimate worker, and explain the changing estimates and ties (7.3 and 7.5).
 3. Stop one worker. If a request reaches it before health detection, show its failure (503, no retry) and subsequent `COOLDOWN` or `UNHEALTHY` decisions. A visible failure is not guaranteed: background health checks may exclude it first.
 4. Restart the worker. Within one successful check it is `ELIGIBLE` again.
 5. Present the measured table in 7.5 as recorded evidence, and say plainly: fewer failures after detection, not zero; no speed-up claim; a sudden slowdown is not detected quickly.
