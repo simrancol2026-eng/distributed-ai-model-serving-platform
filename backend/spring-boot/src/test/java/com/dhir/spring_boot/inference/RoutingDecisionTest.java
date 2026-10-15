@@ -84,4 +84,3 @@ class RoutingDecisionTest {
         assertFalse(line.contains("input"));
     }
 }
-
