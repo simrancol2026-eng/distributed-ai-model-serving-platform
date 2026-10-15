@@ -1,0 +1,43 @@
+{
+  "status": "success",
+  "requestId": "90e4623f-8ce0-498a-88d0-faf1482daa83",
+  "capability": "TEXT",
+  "worker": "worker-a",
+  "workerEndpoint": "localhost:8001",
+  "model": "distilbert-base-uncased-finetuned-sst-2-english",
+  "version": "714eb0fa89d2f80546fda750413ed43d93601a13",
+  "task": "sentiment-analysis",
+  "prediction": {
+    "label": "POSITIVE",
+    "score": 0.9998793601989746
+  },
+  "workerInferenceMs": 13.54,
+  "totalLatencyMs": 49,
+  "modelId": "sentiment-distilbert",
+  "modelVersion": "v1",
+  "routing": {
+    "strategy": "VERSION_AWARE",
+    "target": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+    "poolSize": 2,
+    "eligibleCount": 2,
+    "candidates": [
+      {
+        "endpoint": "localhost:8001",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+        "inFlight": 0
+      },
+      {
+        "endpoint": "localhost:8002",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+        "inFlight": 0
+      }
+    ],
+    "chosen": "localhost:8001",
+    "reason": "model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)",
+    "policy": "LEAST_IN_FLIGHT"
+  }
+}

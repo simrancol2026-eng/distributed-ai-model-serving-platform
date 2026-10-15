@@ -1,0 +1,64 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T18:53:03.484Z  INFO 134119 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 134119 (/tmp/s3-60644a1/backend/spring-boot/target/classes started by ubuntu in /tmp/s3-60644a1/backend/spring-boot)
+2026-10-15T18:53:03.486Z  INFO 134119 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T18:53:04.048Z  INFO 134119 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8092 (http)
+2026-10-15T18:53:04.057Z  INFO 134119 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T18:53:04.057Z  INFO 134119 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T18:53:04.082Z  INFO 134119 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 560 ms
+2026-10-15T18:53:04.212Z  INFO 134119 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 3 worker(s), policy=LEAST_IN_FLIGHT order [localhost:8001, localhost:8002, localhost:8003]
+2026-10-15T18:53:04.311Z  INFO 134119 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T18:53:04.459Z  INFO 134119 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5d124d29
+2026-10-15T18:53:04.459Z  INFO 134119 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T18:53:04.473Z  INFO 134119 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/s3_60644a1 (PostgreSQL 16.15)
+2026-10-15T18:53:04.509Z  INFO 134119 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.014s)
+2026-10-15T18:53:04.537Z  INFO 134119 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 3
+2026-10-15T18:53:04.539Z  INFO 134119 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-15T18:53:04.733Z  INFO 134119 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8092 (http) with context path '/'
+2026-10-15T18:53:04.737Z  INFO 134119 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 1.504 seconds (process running for 1.814)
+2026-10-15T18:53:04.738Z  INFO 134119 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T18:53:38.309Z  INFO 134119 --- [spring-boot] [nio-8092-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T18:53:38.310Z  INFO 134119 --- [spring-boot] [nio-8092-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T18:53:38.312Z  INFO 134119 --- [spring-boot] [nio-8092-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-15T18:53:38.491Z  INFO 134119 --- [spring-boot] [nio-8092-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=10894960-cfc5-4e64-a422-cc6e7ed27cdb routedTo=localhost:8001 worker=worker-a model=sentiment-distilbert version=v1 label=POSITIVE totalMs=141
+2026-10-15T18:53:38.492Z  INFO 134119 --- [spring-boot] [nio-8092-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=10894960-cfc5-4e64-a422-cc6e7ed27cdb strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/3 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}, localhost:8003:IDENTITY_UNKNOWN{inFlight=0}] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 3 worker(s)"
+2026-10-15T18:53:38.583Z  INFO 134119 --- [spring-boot] [nio-8092-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=2bf4007b-a597-499b-a0cc-991fe76323b7 strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@233a1d75bc3d7405edb44fe2c0a49480135fa18c eligible=0/3 candidates=[localhost:8001:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}, localhost:8002:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}, localhost:8003:IDENTITY_UNKNOWN{inFlight=0}] chosen=- reason="NO_ELIGIBLE_WORKER: no worker reports distilbert-base-uncased-finetuned-sst-2-english@233a1d75bc3d7405edb44fe2c0a49480135fa18c"
+2026-10-15T18:55:14.499Z  INFO 134119 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T18:55:14.505Z  INFO 134119 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T18:55:14.510Z  INFO 134119 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T18:55:14.542Z  INFO 134119 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

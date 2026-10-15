@@ -1,0 +1,12 @@
+burst_done wall=2.717
+i endpoint worker wall_s totalMs inflight_8001 inflight_8002 policy strategy log_chosen
+0 localhost:8001 worker-a 0.178 79 0 0 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+1 localhost:8002 worker-b 2.465 2457 0 0 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8002 stored_eq True
+2 localhost:8001 worker-a 0.027 20 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+3 localhost:8001 worker-a 0.022 17 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+4 localhost:8001 worker-a 0.021 16 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+5 localhost:8001 worker-a 0.021 15 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+6 localhost:8001 worker-a 0.022 17 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+7 localhost:8001 worker-a 0.021 16 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+8 localhost:8001 worker-a 0.019 14 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True
+9 localhost:8001 worker-a 0.457 451 0 1 LEAST_IN_FLIGHT ROUND_ROBIN_ALL localhost:8001 stored_eq True

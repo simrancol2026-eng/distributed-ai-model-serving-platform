@@ -1,0 +1,44 @@
+{
+  "requestId": "90e4623f-8ce0-498a-88d0-faf1482daa83",
+  "status": "SUCCEEDED",
+  "capability": "TEXT",
+  "requestedModel": "sentiment-distilbert",
+  "requestedVersion": "v1",
+  "inputChars": 24,
+  "resolvedVersion": "v1",
+  "artifact": "distilbert-base-uncased-finetuned-sst-2-english",
+  "artifactRevision": "714eb0fa89d2f80546fda750413ed43d93601a13",
+  "workerEndpoint": "localhost:8001",
+  "workerId": "worker-a",
+  "httpStatus": 200,
+  "errorCode": null,
+  "totalMs": 49,
+  "receivedAt": "2026-10-15T18:54:28.126053Z",
+  "dispatchedAt": "2026-10-15T18:54:28.155708Z",
+  "completedAt": "2026-10-15T18:54:28.174853Z",
+  "routing": {
+    "strategy": "VERSION_AWARE",
+    "policy": "LEAST_IN_FLIGHT",
+    "target": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+    "poolSize": 2,
+    "eligibleCount": 2,
+    "candidates": [
+      {
+        "endpoint": "localhost:8001",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+        "inFlight": 0
+      },
+      {
+        "endpoint": "localhost:8002",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+        "inFlight": 0
+      }
+    ],
+    "chosen": "localhost:8001",
+    "reason": "model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+  }
+}

@@ -1,0 +1,5 @@
+ negative_inflight_rows 
+------------------------
+                      0
+(1 row)
+

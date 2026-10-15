@@ -1,0 +1,8 @@
+Replay at 2026-10-15T18:59:27Z against the same PostgreSQL database s3_60644a1, SHA 60644a168ddcdc5470fd32830425741650bc4e79, policy unset (log: policy=ROUND_ROBIN). Spring pid 135614, then stopped.
+POST /api/models {"id":"Bad_ID",...} -> 400 INVALID_REQUEST requestId=66818a57-d54c-4ec0-be35-80645a499b4d
+GET /api/models/does-not-exist -> 404 MODEL_NOT_FOUND requestId=320bc4c0-eabb-4209-8c7f-184fa5e8c61d
+GET /api/models -> 200 (includes vd-check-20261015184011-91b1, sentiment-distilbert, s3-reg-check)
+GET /api/models/s3-reg-check -> 200 createdAt=2026-10-15T18:49:33.194593Z versionCount=1
+POST /api/models duplicate s3-reg-check -> 409 MODEL_ALREADY_EXISTS requestId=558c523b-aa54-43ff-bdb7-53b96f35095b
+POST /api/models/s3-reg-check/versions artifactRevision=not-a-sha -> 400 INVALID_REQUEST requestId=67a50766-930a-43dd-be0b-675d2f908aec
+Original 18:49:33Z log lines (spring-lif.log): model created s3-reg-check; MODEL_ALREADY_EXISTS; version v1 created; VERSION_ALREADY_EXISTS.

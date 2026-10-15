@@ -1,0 +1,14 @@
+npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+npm warn deprecated whatwg-encoding@2.0.0: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+npm warn deprecated domexception@4.0.0: Use your platform's native DOMException instead
+npm warn deprecated tsconfck@3.1.6: unmaintained
+npm warn deprecated recharts@2.15.4: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 536 packages, and audited 537 packages in 9s
+
+119 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+NPM_CI_RC=0

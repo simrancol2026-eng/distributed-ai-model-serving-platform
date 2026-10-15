@@ -1,0 +1,40 @@
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 12105.11it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:     Started server process [129352]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+INFO:     127.0.0.1:40946 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53964 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53984 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53998 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54008 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54018 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54034 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54048 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53980 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54698 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49900 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49914 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49914 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43162 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [129352]
