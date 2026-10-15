@@ -1,0 +1,24 @@
+worker {"status":"healthy","worker":"model-a","model":"distilbert-base-uncased-finetuned-sst-2-english","revision":"714eb0fa89d2f80546fda750413ed43d93601a13","capability":"TEXT","task":"sentiment-analysis","transformers":"5.17.
+spring pid 112030
+spring healthy
+vite pid 112085 status 200
+ROUTING_BLOCK Routing details | Backend decision | Model | distilbert-base-uncased-finetuned-sst-2-english @ 714eb0fa | Worker | model-a | Eligible | 1 of 1 | Routing | no model requested: round-robin over all 1 worker(s) | Latency | 105 ms | Status | completed
+PANEL_BLOCK Backend reachable |  | ORCHESTRATION SERVICE (WORKER ELIGIBILITY IS SHOWN PER REQUEST BELOW) |  | Online | CAPABILITY DETECTION | TEXT |  | Text Generation |  | Confidence | — | ROUTING FACTORS | 01 | Capability Match | — | 02 | Worker Health | — | 03 | Current Workload | — | 04 | Latency | — | 05 | Resource Availability | — | 06 | Reliability | — | Eligible workers | 1 of 1 | Selected worker | model-a | Backend connected | ROUTING PIPELINE
+BADGE_IS_BACKEND_DECISION True
+ROUTING_BLOCK_HAS_NOT_CONNECTED False
+PANEL_ELIGIBLE True
+PENDING_ROUTING Routing details | Previous request | Model | distilbert-base-uncased-finetuned-sst-2-english @ 714eb0fa | Worker | model-a | Eligible | — | Routing | — | Latency | 105 ms | Status | completed
+PENDING_PANEL Backend reachable |  | ORCHESTRATION SERVICE (WORKER ELIGIBILITY IS SHOWN PER REQUEST BELOW) |  | Online | CAPABILITY DETECTION | TEXT |  | Text Generation |  | Confidence | — | ROUTING FACTORS | 01 | Capability Match | — | 02 | Worker Health | — | 03 | Current Workload | — | 04 | Latency | — | 05 | Resource Availability | — | 06 | Reliability | — | Eligible workers | — | Selected worker | — | Backend connected | ROUTING PIPELINE
+PENDING_BADGE True
+PENDING_WORKSPACE_STALE_ELIGIBLE False
+PENDING_PANEL_STALE_ELIGIBLE False
+UNAVAILABLE_ROUTING Routing details | Decision unavailable | Model | distilbert-base-uncased-finetuned-sst-2-english @ 714eb0fa | Worker | model-a | Eligible | — | Routing | — | Latency | 20 ms | Status | completed
+NOT_SENT_ROUTING Routing details | Not sent | Model | — | Worker | — | Eligible | — | Routing | — | Latency | — | Status | failed
+stop worker pid 112017
+ERROR_ROUTING Routing details | Backend error response | Model | — | Worker | — | Eligible | — | Routing | — | Latency | — | Status | failed
+ERROR_BADGE_BACKEND True
+ERROR_FOOTER_CONNECTED True
+PAGE_ERRORS []
+CONSOLE_INTERESTING ["error: Failed to load resource: net::ERR_FAILED", "error: Failed to load resource: the server responded with a status of 503 ()"]
+stop spring pid 112030
+stop vite pid 112085

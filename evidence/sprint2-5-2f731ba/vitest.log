@@ -1,0 +1,10 @@
+
+ RUN  v4.1.11 /workspace/frontend
+
+
+ Test Files  4 passed (4)
+      Tests  12 passed (12)
+   Start at  02:30:00
+   Duration  1.58s (transform 538ms, setup 224ms, import 1.28s, tests 80ms, environment 1.22s)
+
+VITEST:0
