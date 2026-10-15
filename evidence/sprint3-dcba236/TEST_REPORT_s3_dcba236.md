@@ -1,5 +1,7 @@
 # Retest: HEALTH_LATENCY repair at dcba236
 
+SUPERSEDED / PARTIAL. `dcba236` is a partial repair and is not the full fix. Do not read this report as the completed repair. The later SHA is `ed288514db9a29dd03410d7bce17f7edcfae6768` on branch `evidence-ed28851`. The measurements below stay the record of what this partial SHA did: the scheduled task kept running, and the 5s freshness window and the shared 422/503 sentence were still present.
+
 Product SHA `dcba236543e55315f529d68e7b94a1d3a27744c8` on `codex/sprint3-health-latency`. Parent `8a27ceafa8724903d8b856cf4e80a9f83d6f6393`. This report is only that SHA.
 
 Diff vs parent is one file: `HealthPoller.java`, 14 insertions, 1 deletion (`logs/diff-stat.txt`, `logs/diff-vs-8a27cea.patch`). `scheduleWithFixedDelay` now calls `pollSafely`, which catches `Throwable` and logs `worker health poll failed; will retry on the next interval`. `WorkerHealth`, `HealthRouting`, `InferenceController`, and the tests are unchanged.

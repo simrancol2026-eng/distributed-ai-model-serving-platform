@@ -1,5 +1,7 @@
 # Evidence index for dcba236
 
+SUPERSEDED / PARTIAL. This tree records a partial repair only. It is not the full HEALTH_LATENCY repair. Later evidence is `evidence-ed28851` for SHA `ed288514db9a29dd03410d7bce17f7edcfae6768`.
+
 Product commit `dcba236543e55315f529d68e7b94a1d3a27744c8`, parent `8a27ceafa8724903d8b856cf4e80a9f83d6f6393`. Report: `TEST_REPORT_s3_dcba236.md`.
 
 | Path | What it is |
