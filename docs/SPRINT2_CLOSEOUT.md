@@ -12,7 +12,7 @@ Updated October 15, 2026. All five implementation items have been merged; full s
 | Persistent request lifecycle | e70b733075759936f7bfd83bb79aee87499a651e | 87eaf0fa0ed685baadd7988c01de085b396defa5 | Native PostgreSQL persistence, locks/outages, bounded best-effort tracking; subsequent branch changes were documentation |
 | Routing decisions and frontend states | 2f731ba2991cbcfbb68191e0c620f3b89da1b238 | 1c1d932eba0dd75a8920186d4571cce0eeaba470 | Log/response/database consistency, V2→V3 preservation, real worker and UI checks |
 
-Codex verified the last merge's tree is identical to its tested head: 31795af55cc7810fe0fa08963354839760ea810a. Grok executed the independent tests; Codex reviewed source and supplied logs, without claiming a local rerun.
+Codex verified that merge commit 1c1d932eba0dd75a8920186d4571cce0eeaba470 and tested commit 2f731ba2991cbcfbb68191e0c620f3b89da1b238 share Git tree 31795af55cc7810fe0fa08963354839760ea810a. That last identifier is a tree SHA, not a commit SHA. Grok executed the independent tests; Codex reviewed source and supplied logs, without claiming a local rerun.
 
 ## Durable evidence and provenance
 
