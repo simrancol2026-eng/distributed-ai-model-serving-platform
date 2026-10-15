@@ -40,13 +40,52 @@ public class WorkerPool {
     /** Separate round-robin position per served (artifact, revision), for version-specific requests. */
     private final ConcurrentHashMap<String, AtomicLong> versionPositions = new ConcurrentHashMap<>();
     private final long identityMaxAgeMs;
-    public enum Policy { ROUND_ROBIN, LEAST_IN_FLIGHT }
+    public enum Policy { ROUND_ROBIN, LEAST_IN_FLIGHT, HEALTH_LATENCY }
     private final Policy policy;
     private final java.util.Map<WorkerClient, Integer> inFlight = new java.util.HashMap<>();
+    private HealthRouting healthRouting;
+    private HealthPoller healthPoller;
+
+    public boolean healthAware() { return policy == Policy.HEALTH_LATENCY; }
+    @jakarta.annotation.PreDestroy
+    public void close() { if (healthPoller != null) healthPoller.close(); }
+
+    record HealthSelection(Reservation reservation, RoutingDecision decision, String error) {}
+
+    synchronized HealthSelection reserveHealthy(String artifact, String revision) {
+        var choice = healthRouting.choose(capability, artifact, revision, inFlight);
+        var before = counts();
+        var candidates = choice.candidates().stream().map(c ->
+                new RoutingDecision.Candidate(c.worker().endpoint(), c.eligible(), c.note(),
+                        c.identity() == null ? null : c.identity().artifact() + "@" + c.identity().revision(),
+                        before.get(c.worker().endpoint()), c.evidence())).toList();
+        WorkerClient chosen = choice.worker();
+        var decision = new RoutingDecision(artifact == null ? RoutingDecision.ROUND_ROBIN_ALL : RoutingDecision.VERSION_AWARE,
+                artifact == null ? null : artifact + "@" + revision, size(),
+                (int) candidates.stream().filter(RoutingDecision.Candidate::eligible).count(), candidates,
+                chosen == null ? null : chosen.endpoint(), choice.reason(), policy());
+        if (chosen == null) return new HealthSelection(null, decision, choice.error());
+        inFlight.merge(chosen, 1, Integer::sum);
+        return new HealthSelection(new Reservation(chosen, before), decision, null);
+    }
+
+    synchronized void predictionSucceeded(WorkerClient worker, long durationNanos) {
+        if (healthRouting != null) healthRouting.success(worker, durationNanos);
+    }
+    synchronized void predictionFailed(WorkerClient worker, boolean transport, boolean serverError) {
+        if (healthRouting != null) healthRouting.failure(worker, transport, serverError);
+    }
+    synchronized void predictionMismatch(WorkerClient worker) {
+        if (healthRouting != null) healthRouting.mismatch(worker);
+    }
 
     public String policy() { return policy.name(); }
     public String policyDescription() {
-        return policy == Policy.ROUND_ROBIN ? "round-robin" : "least-in-flight";
+        return switch (policy) {
+            case ROUND_ROBIN -> "round-robin";
+            case LEAST_IN_FLIGHT -> "least-in-flight";
+            case HEALTH_LATENCY -> "health-latency";
+        };
     }
 
     /** Local JVM reservations; no probes or database calls run under this monitor. */
@@ -122,7 +161,7 @@ public class WorkerPool {
         try {
             this.policy = Policy.valueOf(policy);
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new IllegalArgumentException("platform.routing.policy must be ROUND_ROBIN or LEAST_IN_FLIGHT", e);
+            throw new IllegalArgumentException("platform.routing.policy must be ROUND_ROBIN, LEAST_IN_FLIGHT or HEALTH_LATENCY", e);
         }
         List<String> validated = parse(urls);
         List<WorkerClient> clients = new ArrayList<>();
@@ -132,6 +171,14 @@ public class WorkerPool {
         this.workers = List.copyOf(clients);
         this.capability = capability;
         this.identityMaxAgeMs = identityMaxAgeMs;
+        if (healthAware()) {
+            var observations = new java.util.LinkedHashMap<WorkerClient, WorkerHealth>();
+            for (WorkerClient worker : workers) {
+                observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime, 5_000_000_000L));
+            }
+            healthRouting = new HealthRouting(workers, observations, System::nanoTime);
+            healthPoller = new HealthPoller(List.copyOf(observations.values()), 2000);
+        }
         log.info("worker pool: {} worker(s), policy={} order {}", workers.size(), policy, endpoints());
     }
 
