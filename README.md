@@ -14,11 +14,11 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: on branch `sprint2-request-lifecycle` (request lifecycle tracking, not yet independently tested), Oct 13, 2026.
+Last updated: Oct 15, 2026. Routing decisions merged as `1c1d932eba0dd75a8920186d4571cce0eeaba470`; tested code `2f731ba2991cbcfbb68191e0c620f3b89da1b238`.
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is **implemented on branch `sprint2-request-lifecycle` and not yet tested independently** (see "Request lifecycle tracking" below). Detailed routing decision logs are not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is merged as `87eaf0f`, and detailed routing decisions are merged as `1c1d932`. Both received independent Grok testing and Codex review of source and supplied runtime evidence. See [Sprint 2 closeout](docs/SPRINT2_CLOSEOUT.md) and [demo runbook](docs/DEMO.md).
 
 Neither sprint is signed off.
 
@@ -40,7 +40,7 @@ Neither sprint is signed off.
 | Two workers + round-robin | **MERGED (Sprint 2, Grok PASS on `0a056a9`)** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes; the real two-worker check is `scripts/round_robin_e2e_test.py`. |
 | Version-aware dispatch | **MERGED (Sprint 2, Grok PASS on `4351f23`)** | Optional `model`/`version` on `/api/inference`, resolved in the registry and routed only to workers that report that exact revision. Grok reported 22/22 checks, Maven 55/55, `version_dispatch_e2e_test.py` 19/19, and real two-revision routing (see "Version-aware dispatch"). |
 | Request lifecycle tracking | **MERGED (Sprint 2, Grok PASS on `e70b733`, merge `87eaf0f`)** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Grok reported 29/29 runnable checks on `e70b733` (Maven 74/74, real pgjdbc lock-hold cancel at ~2.06 s, outage and recovery); Docker was not available on the test VM. |
-| Routing decisions | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | Every request gets a routing decision (strategy, every worker with why it was or was not eligible, the chosen worker, a reason). It is logged as one line, stored with the tracked request (`V3__routing_decision.sql`) and returned in the response; the UI shows it. Claude checked V1→V3 on PostgreSQL 16 with `psql` and the decision formatting with a standalone Java harness; Maven, the Spring app and `scripts/routing_decision_e2e_test.py` on the real stack have not been run by Claude. |
+| Routing decisions | **MERGED (Sprint 2, tested `2f731ba`, merge `1c1d932`)** | Codex reviewed Grok's supplied native PostgreSQL/real-worker evidence: routing response/log/database consistency, V2→V3 preservation, tracking regressions, Maven 86/86 (H2/fakes), frontend 12/12 and real UI DOM checks. Docker remains deferred/unverified; screenshot visual review and the retrospective are pending. |
 | Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
