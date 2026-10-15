@@ -7,6 +7,17 @@ import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.Test;
 
 class HealthPollerTest {
+    @Test void pollingContinuesAfterAProbeThrowsAnError() throws Exception {
+        var calls = new CountDownLatch(3);
+        var observation = new WorkerHealth(() -> {
+            calls.countDown();
+            throw new AssertionError("probe blew up");
+        }, System::nanoTime, 5_000_000_000L);
+        try (var poller = new HealthPoller(List.of(observation), 10)) {
+            assertTrue(calls.await(3, TimeUnit.SECONDS), "polling stopped after the first Error");
+        }
+    }
+
     @Test void boundedParallelismAndShutdownInterruptsActiveProbes() throws Exception {
         var started = new CountDownLatch(4);
         var interrupted = new CountDownLatch(4);
