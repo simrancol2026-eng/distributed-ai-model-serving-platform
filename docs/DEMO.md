@@ -63,11 +63,62 @@ python scripts/seed_registry.py --base-url http://localhost:8080
 
 The seed reads a real inference response. It is idempotent for matching metadata and fails without overwriting conflicting v1 metadata. Investigate a conflict; do not reset shared data.
 
+## Bash equivalents (Linux/macOS)
+
+Run each service in its own terminal from the repository root. Set the existing demo database environment variables privately before starting Spring. Python 3.12 and the other prerequisites above still apply.
+
+Worker A:
+```bash
+cd model-workers/model-a
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+WORKER_ID=worker-a MODEL_REVISION=714eb0fa89d2f80546fda750413ed43d93601a13 .venv/bin/python -m uvicorn worker:app --port 8001
+```
+
+Worker B (after A's dependency installation finishes):
+```bash
+cd model-workers/model-a
+WORKER_ID=worker-b MODEL_REVISION=714eb0fa89d2f80546fda750413ed43d93601a13 .venv/bin/python -m uvicorn worker:app --port 8002
+```
+
+Backend:
+```bash
+cd backend/spring-boot
+PLATFORM_WORKER_URLS=http://localhost:8001,http://localhost:8002 ./mvnw spring-boot:run
+```
+
+Frontend:
+```bash
+cd frontend
+npm ci
+VITE_API_BASE_URL=http://localhost:8080 npm run dev
+```
+
+Checks and seed from repository root:
+```bash
+curl -fsS http://localhost:8080/api/health
+curl -fsS http://localhost:8001/health
+curl -fsS http://localhost:8002/health
+python3 scripts/seed_registry.py --base-url http://localhost:8080
+curl -fsS http://localhost:8080/api/models/sentiment-distilbert/versions
+body='{"capability":"TEXT","input":"This movie is wonderful.","model":"sentiment-distilbert","version":"v1"}'
+response=$(curl -fsS -H 'Content-Type: application/json' -d "$body" http://localhost:8080/api/inference)
+printf '%s\n' "$response"
+request_id=$(printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["requestId"])')
+curl -fsS "http://localhost:8080/api/requests/$request_id"
+for i in 1 2 3 4 5 6; do
+  curl -fsS -H 'Content-Type: application/json' -d "$body" http://localhost:8080/api/inference
+  printf '\n'
+done
+```
+
+For the optional automated checks below, use python3 instead of python in bash. Grok reports a successful native bash rehearsal at c818172; the literal PowerShell blocks were not executed because that test host lacked pwsh. These newly added bash blocks still require review against that rehearsal.
+
 ## Present (approximately 8–10 minutes)
 
 1. **Architecture and limits.** React sends requests to Spring; Spring resolves registered versions, selects workers and stores best-effort lifecycle/decision data in PostgreSQL. The current workload is text sentiment. Intelligent routing, failover, Kafka, Redis and scaling are future work.
 2. **Registry.** Open Models and show the seeded model. Use GET /api/models/sentiment-distilbert/versions to show the immutable artifact revision. Explain that registration does not deploy a model.
-3. **Real inference.** Submit a positive or negative sentence in the workspace. Read the actual label, confidence, worker and request ID from the response. Do not promise a specific measured latency.
+3. **Real inference.** Submit a positive or negative sentence in the workspace. Read the actual label, confidence and worker shown in the UI. The workspace does not display the request ID; obtain it from the POST response in browser developer tools (Network), or use the terminal request below and trace that separate request. Do not promise a specific measured latency.
 4. **Traceability.** Fetch the request by ID. Compare the response worker/decision with the persisted record and the backend's single routing decision log line.
 5. **Two workers.** Run the sequence below while other clients are idle. Show alternating endpoints and matching chosen endpoints. The starting worker depends on previous requests; do not require A to start.
 6. **Version selection and rejection.** Send a request explicitly naming the seeded v1. If demonstrating an unserved revision, use the existing version-dispatch test below against the dedicated demo database; it creates a synthetic version and proves rejection. Clearly state that the synthetic revision was never loaded or executed.
