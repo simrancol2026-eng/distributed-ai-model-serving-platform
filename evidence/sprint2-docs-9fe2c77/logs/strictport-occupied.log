@@ -1,0 +1,13 @@
+
+> dev
+> vite dev --port 5173 --strictPort
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+error when starting dev server:
+Error: Port 5173 is already in use
+    at httpServerStart (file:///tmp/docs-9fe2c77/frontend/node_modules/vite/dist/node/chunks/node.js:11424:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async startServer (file:///tmp/docs-9fe2c77/frontend/node_modules/vite/dist/node/chunks/node.js:26083:30)
+    at async Object.listen (file:///tmp/docs-9fe2c77/frontend/node_modules/vite/dist/node/chunks/node.js:25900:4)
+    at async CAC.<anonymous> (file:///tmp/docs-9fe2c77/frontend/node_modules/vite/dist/node/cli.js:721:3)
+STRICT_RC=1

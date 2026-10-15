@@ -1,0 +1,9 @@
+role docs_9fe2c77: creating
+database docs_9fe2c77: creating (owner docs_9fe2c77)
+Done. Start the backend with:
+  PLATFORM_DB_URL=jdbc:postgresql://localhost:5432/docs_9fe2c77 PLATFORM_DB_USER=docs_9fe2c77 PLATFORM_DB_PASSWORD=... ./mvnw spring-boot:run
+ public_tables 
+---------------
+             0
+(1 row)
+
