@@ -1,10 +1,12 @@
 # Sprint 2 native-stack demo
 
+For what to say and show, use the [complete presentation script, STAR explanation and simple example](SPRINT2_PRESENTATION.md).
+
 This is a rehearsal runbook, not a record of a completed demo. Code baseline: merge `1c1d932eba0dd75a8920186d4571cce0eeaba470`, whose tree matches tested `2f731ba2991cbcfbb68191e0c620f3b89da1b238`. Record the actual checkout SHA, time, environment and outputs for each rehearsal.
 
 ## Prepare
 
-Use Java 21, Python 3.12, Node 22/npm 10 and a reachable native PostgreSQL database. Docker is deferred and unverified. Follow [the README setup](../README.md#running-locally) to create a dedicated demo database/role and install dependencies. Keep credentials in terminal environment variables, never in recordings or committed files. Flyway applies V1–V3 at backend startup.
+Use Java 21, Python 3.12, Node 22/npm 10 and a reachable native PostgreSQL database. Docker is **WORK IN PROGRESS**: container build/run validation and the full multi-service setup are incomplete; the demo uses native processes. Follow [the README setup](../README.md#running-locally) to create a dedicated demo database/role and install dependencies. Keep credentials in terminal environment variables, never in recordings or committed files. Flyway applies V1–V3 at backend startup.
 
 Run four terminals: worker A, worker B, backend, frontend. Download the model before the presentation. Two processes running the same revision demonstrate worker distribution; they do not demonstrate two distinct model versions.
 
