@@ -34,7 +34,7 @@ The latest evidence was executed October 14 and uploaded October 15; upload time
 - The latest version-dispatch script uses an unserved synthetic revision for rejection. It does not prove two real revisions were executed in that run.
 - A stopped worker plus database outage took 32.013 seconds: 30 seconds worker timeout plus one failed completion write. This does not measure failure of the initial tracking write followed by a long worker operation.
 - Open-gate lock burst: maximum observed request time 4.058 seconds, with one tracking failure per request. This is an observed run, not a universal latency guarantee.
-- Docker: deferred/unverified. No Docker pass is claimed.
+- Docker: **WORK IN PROGRESS**, deferred/unverified. The worker Dockerfile exists; image build/run validation and the full multi-service setup are incomplete. No Docker pass is claimed.
 
 ## Architecture and operating limits
 
