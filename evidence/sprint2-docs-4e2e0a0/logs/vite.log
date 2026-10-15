@@ -1,0 +1,29 @@
+BLOCK frontend start 2026-10-15T15:56:26Z
+npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+npm warn deprecated whatwg-encoding@2.0.0: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+npm warn deprecated domexception@4.0.0: Use your platform's native DOMException instead
+npm warn deprecated tsconfck@3.1.6: unmaintained
+npm warn deprecated recharts@2.15.4: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 536 packages, and audited 537 packages in 7s
+
+119 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+NPM_CI_RC=0
+
+> dev
+> vite dev
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+Port 8080 is in use, trying another one...
+
+  VITE v8.1.5  ready in 1380 ms
+
+  ➜  Local:   http://localhost:8081/
+  ➜  Network: http://172.30.0.2:8081/
+  ➜  press h + enter to show help
+3:58:16 PM [vite] (ssr) connected.
+VITE_RC=143

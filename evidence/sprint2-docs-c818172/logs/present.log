@@ -1,0 +1,95 @@
+VERSIONED_ONE
+HTTP 200 wall 0.059
+{
+  "status": "success",
+  "requestId": "d222dc6b-0776-4ae9-90bd-3ac680deb0d2",
+  "capability": "TEXT",
+  "worker": "worker-a",
+  "workerEndpoint": "localhost:8001",
+  "model": "distilbert-base-uncased-finetuned-sst-2-english",
+  "version": "714eb0fa89d2f80546fda750413ed43d93601a13",
+  "task": "sentiment-analysis",
+  "prediction": {
+    "label": "POSITIVE",
+    "score": 0.9998793601989746
+  },
+  "workerInferenceMs": 11.91,
+  "totalLatencyMs": 37,
+  "modelId": "sentiment-distilbert",
+  "modelVersion": "v1",
+  "routing": {
+    "strategy": "VERSION_AWARE",
+    "target": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+    "poolSize": 2,
+    "eligibleCount": 2,
+    "candidates": [
+      {
+        "endpoint": "localhost:8001",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13"
+      },
+      {
+        "endpoint": "localhost:8002",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13"
+      }
+    ],
+    "chosen": "localhost:8001",
+    "reason": "model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+  }
+}
+GET 200
+{
+  "requestId": "d222dc6b-0776-4ae9-90bd-3ac680deb0d2",
+  "status": "SUCCEEDED",
+  "capability": "TEXT",
+  "requestedModel": "sentiment-distilbert",
+  "requestedVersion": "v1",
+  "inputChars": 24,
+  "resolvedVersion": "v1",
+  "artifact": "distilbert-base-uncased-finetuned-sst-2-english",
+  "artifactRevision": "714eb0fa89d2f80546fda750413ed43d93601a13",
+  "workerEndpoint": "localhost:8001",
+  "workerId": "worker-a",
+  "httpStatus": 200,
+  "errorCode": null,
+  "totalMs": 38,
+  "receivedAt": "2026-10-15T15:28:22.746913Z",
+  "dispatchedAt": "2026-10-15T15:28:22.767785Z",
+  "completedAt": "2026-10-15T15:28:22.783927Z",
+  "routing": {
+    "strategy": "VERSION_AWARE",
+    "target": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13",
+    "poolSize": 2,
+    "eligibleCount": 2,
+    "candidates": [
+      {
+        "endpoint": "localhost:8001",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13"
+      },
+      {
+        "endpoint": "localhost:8002",
+        "eligible": true,
+        "note": "ELIGIBLE",
+        "served": "distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13"
+      }
+    ],
+    "chosen": "localhost:8001",
+    "reason": "model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+  }
+}
+ROUTING_EQUAL True
+CHOSEN localhost:8001 ENDPOINT localhost:8001 WORKER worker-a
+STATUS_ROW SUCCEEDED HTTP_STATUS 200
+SIX
+0 HTTP 200 wall 0.023 id cd725018-30c7-4c7a-9167-98c4dddc5bb9 worker worker-b endpoint localhost:8002 chosen localhost:8002 label POSITIVE
+1 HTTP 200 wall 0.018 id 681ce797-4435-4bae-8bf3-03717060c0f8 worker worker-a endpoint localhost:8001 chosen localhost:8001 label POSITIVE
+2 HTTP 200 wall 0.021 id b5a7c9f3-6716-488f-b27d-b1697817104f worker worker-b endpoint localhost:8002 chosen localhost:8002 label POSITIVE
+3 HTTP 200 wall 0.016 id 226128e9-140e-41f6-b16d-542c0b95e37e worker worker-a endpoint localhost:8001 chosen localhost:8001 label POSITIVE
+4 HTTP 200 wall 0.018 id 150e4089-c734-479f-898a-f4abce86ad60 worker worker-b endpoint localhost:8002 chosen localhost:8002 label POSITIVE
+5 HTTP 200 wall 0.015 id dcabd1e2-e4d4-4476-9116-9ae130001bfb worker worker-a endpoint localhost:8001 chosen localhost:8001 label POSITIVE
+DONE

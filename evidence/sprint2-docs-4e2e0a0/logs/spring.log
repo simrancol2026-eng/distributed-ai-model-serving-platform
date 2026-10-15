@@ -1,0 +1,87 @@
+BLOCK backend start 2026-10-15T15:56:21Z
+DB env set privately: name=docs_4e2e user=docs_4e2e url host localhost db docs_4e2e (password not printed)
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T15:56:25.211Z  INFO 122762 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 122762 (/workspace/backend/spring-boot/target/classes started by ubuntu in /workspace/backend/spring-boot)
+2026-10-15T15:56:25.213Z  INFO 122762 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T15:56:26.053Z  INFO 122762 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-15T15:56:26.066Z  INFO 122762 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T15:56:26.066Z  INFO 122762 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T15:56:26.118Z  INFO 122762 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 868 ms
+2026-10-15T15:56:26.415Z  INFO 122762 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 2 worker(s), round-robin order [localhost:8001, localhost:8002]
+2026-10-15T15:56:26.565Z  INFO 122762 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T15:56:26.806Z  INFO 122762 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@380ce5a3
+2026-10-15T15:56:26.807Z  INFO 122762 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T15:56:26.829Z  INFO 122762 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/docs_4e2e (PostgreSQL 16.15)
+2026-10-15T15:56:26.874Z  INFO 122762 --- [spring-boot] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-15T15:56:26.876Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.014s)
+2026-10-15T15:56:26.889Z  INFO 122762 --- [spring-boot] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-15T15:56:26.935Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-15T15:56:26.940Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - registry"
+2026-10-15T15:56:26.967Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - inference requests"
+2026-10-15T15:56:26.982Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - routing decision"
+2026-10-15T15:56:26.992Z  INFO 122762 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 3 migrations to schema "public", now at version v3 (execution time 00:00.021s)
+2026-10-15T15:56:27.236Z  INFO 122762 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-15T15:56:27.239Z  INFO 122762 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 2.394 seconds (process running for 2.715)
+2026-10-15T15:56:27.242Z  INFO 122762 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T15:58:15.344Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T15:58:15.345Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T15:58:15.350Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+2026-10-15T15:58:16.161Z  INFO 122762 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=cfae8d2c-284b-40df-b230-799bdfc63b6c routedTo=localhost:8001 worker=worker-a model=- version=- label=NEGATIVE totalMs=598
+2026-10-15T15:58:16.162Z  INFO 122762 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=cfae8d2c-284b-40df-b230-799bdfc63b6c strategy=ROUND_ROBIN_ALL target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER, localhost:8002:ANY_WORKER] chosen=localhost:8001 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T15:58:16.191Z  INFO 122762 --- [spring-boot] [nio-8080-exec-5] c.d.s.registry.RegistryController        : registry model created id=sentiment-distilbert
+2026-10-15T15:58:16.205Z  INFO 122762 --- [spring-boot] [nio-8080-exec-6] c.d.s.registry.RegistryController        : registry version created model=sentiment-distilbert version=v1 revision=714eb0fa89d2f80546fda750413ed43d93601a13
+2026-10-15T15:58:16.277Z  INFO 122762 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=5bb3a507-d6fb-4edc-a4c3-623368174526 routedTo=localhost:8001 worker=worker-a model=sentiment-distilbert version=v1 label=POSITIVE totalMs=42
+2026-10-15T15:58:16.277Z  INFO 122762 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=5bb3a507-d6fb-4edc-a4c3-623368174526 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.361Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=181ff817-2ce4-40f7-899e-0f7a3072df87 routedTo=localhost:8002 worker=worker-b model=sentiment-distilbert version=v1 label=POSITIVE totalMs=46
+2026-10-15T15:58:16.361Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=181ff817-2ce4-40f7-899e-0f7a3072df87 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.393Z  INFO 122762 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=aff65a24-6ca3-4fc2-9d06-5881f466b079 routedTo=localhost:8001 worker=worker-a model=sentiment-distilbert version=v1 label=POSITIVE totalMs=22
+2026-10-15T15:58:16.393Z  INFO 122762 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=aff65a24-6ca3-4fc2-9d06-5881f466b079 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.422Z  INFO 122762 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=55997f84-c586-4054-a451-5ea169346ba8 routedTo=localhost:8002 worker=worker-b model=sentiment-distilbert version=v1 label=POSITIVE totalMs=19
+2026-10-15T15:58:16.423Z  INFO 122762 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=55997f84-c586-4054-a451-5ea169346ba8 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.448Z  INFO 122762 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=3d8d864c-87be-46e2-bdea-9d15872f440f routedTo=localhost:8001 worker=worker-a model=sentiment-distilbert version=v1 label=POSITIVE totalMs=15
+2026-10-15T15:58:16.448Z  INFO 122762 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=3d8d864c-87be-46e2-bdea-9d15872f440f strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.474Z  INFO 122762 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : inference ok requestId=741278f5-5a2f-4151-99bb-2219c05cdc48 routedTo=localhost:8002 worker=worker-b model=sentiment-distilbert version=v1 label=POSITIVE totalMs=17
+2026-10-15T15:58:16.474Z  INFO 122762 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=741278f5-5a2f-4151-99bb-2219c05cdc48 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:58:16.498Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=69dfdebf-3b97-4309-9d50-8ae566d8cd97 routedTo=localhost:8001 worker=worker-a model=sentiment-distilbert version=v1 label=POSITIVE totalMs=16
+2026-10-15T15:58:16.499Z  INFO 122762 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=69dfdebf-3b97-4309-9d50-8ae566d8cd97 strategy=VERSION_AWARE target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE, localhost:8002:ELIGIBLE] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T15:59:24.202Z  INFO 122762 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T15:59:24.206Z  INFO 122762 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T15:59:24.210Z  INFO 122762 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T15:59:24.225Z  INFO 122762 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+MVNW_RC=143
