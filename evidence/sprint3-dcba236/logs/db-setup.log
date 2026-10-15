@@ -1,0 +1,9 @@
+role s3_dcba236: creating
+database s3_dcba236: creating (owner s3_dcba236)
+Done. Start the backend with:
+  PLATFORM_DB_URL=jdbc:postgresql://localhost:5432/s3_dcba236 PLATFORM_DB_USER=s3_dcba236
+ public_tables 
+---------------
+             0
+(1 row)
+

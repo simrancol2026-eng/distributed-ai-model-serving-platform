@@ -1,0 +1,3 @@
+FAIL http://localhost:8001 /health reports model and revision
+      None <urlopen error [Errno 111] Connection refused>
+VD_RC=1

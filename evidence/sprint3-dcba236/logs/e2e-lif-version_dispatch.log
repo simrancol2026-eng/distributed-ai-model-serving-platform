@@ -1,0 +1,23 @@
+PASS http://localhost:8011 /health reports model and revision
+PASS http://localhost:8012 /health reports model and revision
+PASS all workers run distilbert-base-uncased-finetuned-sst-2-english at 714eb0fa89d2f80546fda750413ed43d93601a13
+registering vd-check-20261015213430-2caa: v1=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 (real), v2=@f9697b2436738d752fae9015af7a7ea4b49dc17c (synthetic, no worker)
+PASS register model
+PASS register v1
+PASS register v2 (synthetic revision)
+PASS v1 request 1: 200 worker=worker-a
+PASS v1 request 2: 200 worker=worker-b
+PASS v1 request 3: 200 worker=worker-a
+PASS v1 request 4: 200 worker=worker-b
+PASS alternation ['worker-a', 'worker-b', 'worker-a', 'worker-b']
+PASS each worker's own counter rose by 2: [15, 14] -> [17, 16]
+PASS latest (= v2, no worker) -> 422 NO_ELIGIBLE_WORKER (422)
+PASS no worker ran for the unservable version (no substitution)
+PASS {"input": "x", "model": "vd-check-20261015213430-2caa", "version": "v9"} -> 404 VERSION_NOT_FOUND (404)
+PASS {"input": "x", "model": "vd-check-20261015213430-2caa-missing"} -> 404 MODEL_NOT_FOUND (404)
+PASS {"input": "x", "version": "v1"} -> 400 INVALID_REQUEST (400)
+PASS {"capability": "IMAGE", "input": "x", "model": "vd-check-20261015213430-2caa", "version": "v1"} -> 422 CAPABILITY_MISMATCH (422)
+PASS request without model still 200 (200)
+
+19/19 checks passed (test model vd-check-20261015213430-2caa left in registry)
+VD_RC=0

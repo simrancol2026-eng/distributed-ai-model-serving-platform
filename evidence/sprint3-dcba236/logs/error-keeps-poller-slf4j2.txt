@@ -1,0 +1,12 @@
+command=java -cp <target/classes>:<harness/classes>:slf4j-api-2.0.18.jar com.dhir.spring_boot.inference.ErrorKeepsScheduledTask
+label=compiled-class harness, not a live DistilBERT worker
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+ERROR_CALLS=6
+ERROR_LIVE=false
+ERROR_FAILURES=0
+RUNTIME_CALLS=6
+RUNTIME_FAILURES=2
+RUNTIME_LIVE=false
+HARNESS_RC=0
