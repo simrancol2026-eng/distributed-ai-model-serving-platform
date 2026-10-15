@@ -128,6 +128,7 @@ public class InferenceController {
                 return rejected(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
                         + ". Available: " + workers.capability() + ".", requestId);
             }
+            if (workers.healthAware()) return healthyCall(request.input(), null, trace, started);
             try (WorkerPool.Reservation reservation = workers.reserve()) {
                 WorkerClient worker = reservation.worker();
                 List<RoutingDecision.Candidate> all = new ArrayList<>();
@@ -179,6 +180,7 @@ public class InferenceController {
                     + " (model '" + modelId + "').", requestId);
         }
         String target = v.artifact() + "@" + v.artifactRevision();
+        if (workers.healthAware()) return healthyCall(request.input(), new Target(modelId, v), trace, started);
         List<WorkerPool.Assessment> assessed = workers.assess(v.artifact(), v.artifactRevision());
         List<WorkerClient> eligible = new ArrayList<>();
         List<RoutingDecision.Candidate> candidates = new ArrayList<>();
@@ -208,6 +210,19 @@ public class InferenceController {
         }
     }
 
+    private Routed healthyCall(String input, Target target, RequestTracker.Trace trace, long started) {
+        var selected = workers.reserveHealthy(target == null ? null : target.version().artifact(),
+                target == null ? null : target.version().artifactRevision());
+        if (selected.error() != null) {
+            int status = selected.error().equals("NO_ELIGIBLE_WORKER") ? 422 : 503;
+            return new Routed(error(status, selected.error(),
+                    "No eligible worker has usable current health for this request.", trace.requestId()), selected.decision());
+        }
+        try (var reservation = selected.reservation()) {
+            return new Routed(call(reservation.worker(), input, target, trace, started, selected.decision()), selected.decision());
+        }
+    }
+
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
     private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
             long started, RoutingDecision decision) {
@@ -218,16 +233,20 @@ public class InferenceController {
                 target == null ? null : target.version().artifactRevision(),
                 decision.toJson(MAX_DECISION_JSON));
         try {
+            long predictStarted = System.nanoTime();
             WorkerPrediction p = worker.predict(input);
+            long predictNanos = System.nanoTime() - predictStarted;
             if (target != null && !(target.version().artifact().equals(p.model())
                     && target.version().artifactRevision().equals(p.version()))) {
                 worker.forgetServedModel();
+                workers.predictionMismatch(worker);
                 log.warn("inference failed requestId={} routedTo={} reason=WORKER_MODEL_MISMATCH expected={}@{} got={}@{}",
                         requestId, worker.endpoint(), target.version().artifact(),
                         target.version().artifactRevision(), p.model(), p.version());
                 return error(502, "WORKER_MODEL_MISMATCH", "The model worker at " + worker.endpoint()
                         + " answered with a different model or revision than requested.", requestId);
             }
+            workers.predictionSucceeded(worker, predictNanos);
             long totalMs = (System.nanoTime() - started) / 1_000_000;
             log.info("inference ok requestId={} routedTo={} worker={} model={} version={} label={} totalMs={}",
                     requestId, worker.endpoint(), p.worker(), target == null ? "-" : target.modelId(),
@@ -238,11 +257,14 @@ public class InferenceController {
                     target == null ? null : target.modelId(), target == null ? null : target.version().version(),
                     decision));
         } catch (WorkerUnavailableException e) {
+            workers.predictionFailed(worker, true, false);
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_UNAVAILABLE {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(503, "WORKER_UNAVAILABLE", "The model worker at " + worker.endpoint()
                     + " is not reachable. Please try again shortly.", requestId);
         } catch (WorkerErrorException e) {
+            workers.predictionFailed(worker, false, e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
+                    && response.getStatusCode().is5xxServerError());
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_ERROR {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(502, "WORKER_ERROR", "The model worker at " + worker.endpoint() + " returned an error.",
