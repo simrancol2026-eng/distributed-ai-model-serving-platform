@@ -14,13 +14,17 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: Oct 15, 2026. Routing decisions merged as `1c1d932eba0dd75a8920186d4571cce0eeaba470`; tested code `2f731ba2991cbcfbb68191e0c620f3b89da1b238`.
+Last updated: Oct 15, 2026. Sprint 3 routing policies merged: least-in-flight as `a54aba5` (tested `b75e0ad`) and health/latency as `4a2c343` (tested `ed28851`); routing docs merged as `39e59e7`. Sprint 2 routing decisions: merge `1c1d932eba0dd75a8920186d4571cce0eeaba470`, tested `2f731ba2991cbcfbb68191e0c620f3b89da1b238`.
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
 - **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is merged as `87eaf0f`, and detailed routing decisions are merged as `1c1d932`. Both received independent Grok testing and Codex review of source and supplied runtime evidence. See [Sprint 2 closeout](docs/SPRINT2_CLOSEOUT.md) and [demo runbook](docs/DEMO.md).
+- **Sprint 3 – Intelligent routing (in progress)**: two opt-in routing policies, selected at startup with `PLATFORM_ROUTING_POLICY`; round-robin stays the default. `LEAST_IN_FLIGHT` (merge `a54aba5`, tested `b75e0ad`) and `HEALTH_LATENCY` (merge `4a2c343`, tested `ed28851`). Both received independent Grok testing on real PostgreSQL and real DistilBERT workers, and Claude/Codex source review. Evidence and limits: [Sprint 3 routing](docs/SPRINT3_ROUTING.md).
+  - *What was tested:* each slice on its own tested head. The merges that followed changed documentation only, which was checked by diff. The merged `main` has not had its own full end-to-end rerun.
+  - *Where it is visible:* the new `policy`, `inFlight` and `health` fields appear in the API response, `GET /api/requests/{id}` and the routing log line. **The frontend does not display them yet** (API-only for now).
+  - *What is not claimed:* the RR/LIF/HEALTH_LATENCY comparisons are single runs that show behaviour. There is no repeated performance evaluation and no general speed-up claim; that belongs to Sprint 6.
 
-Neither sprint is signed off.
+No sprint is signed off yet.
 
 **Docker — WORK IN PROGRESS:** the worker Dockerfile exists; image build/run verification and the full multi-service container setup remain incomplete. The Sprint 2 demo uses native processes.
 
@@ -44,13 +48,13 @@ Presentation: [full speaking script, STAR explanation and simple example](docs/S
 | Two workers + round-robin | **MERGED (Sprint 2, Grok PASS on `0a056a9`)** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes; the real two-worker check is `scripts/round_robin_e2e_test.py`. |
 | Version-aware dispatch | **MERGED (Sprint 2, Grok PASS on `4351f23`)** | Optional `model`/`version` on `/api/inference`, resolved in the registry and routed only to workers that report that exact revision. Grok reported 22/22 checks, Maven 55/55, `version_dispatch_e2e_test.py` 19/19, and real two-revision routing (see "Version-aware dispatch"). |
 | Request lifecycle tracking | **MERGED (Sprint 2, Grok PASS on `e70b733`, merge `87eaf0f`)** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Grok reported 29/29 runnable checks on `e70b733` (Maven 74/74, real pgjdbc lock-hold cancel at ~2.06 s, outage and recovery); Docker was not available on the test VM. |
-| Routing decisions | **MERGED (Sprint 2, tested `2f731ba`, merge `1c1d932`)** | Codex reviewed Grok's supplied native PostgreSQL/real-worker evidence: routing response/log/database consistency, V2→V3 preservation, tracking regressions, Maven 86/86 (H2/fakes), frontend 12/12 and real UI DOM checks. Docker remains deferred/unverified; screenshot visual review and the retrospective are pending. |
-| Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
+| Routing decisions | **MERGED (Sprint 2, tested `2f731ba`, merge `1c1d932`)** | Codex reviewed Grok's supplied native PostgreSQL/real-worker evidence: routing response/log/database consistency, V2→V3 preservation, tracking regressions, Maven 86/86 (H2/fakes), frontend 12/12 and real UI DOM checks. Docker remains deferred/unverified. The Sprint 2 retrospective package (slides and PDF) has been produced from user-supplied local demo screenshots, whose checkout SHA is unknown; that is a delivered package, not formal sprint sign-off. |
+| Routing policies (Sprint 3) | **MERGED, opt-in (`ROUND_ROBIN` default)** | `LEAST_IN_FLIGHT`: fewest requests in progress from this backend, ties rotated (merge `a54aba5`, tested `b75e0ad`). `HEALTH_LATENCY`: skips workers whose background `/health` checks fail and picks the lowest `(inFlight + 1) × estimated latency` (merge `4a2c343`, tested `ed28851`). Both: per backend instance only, no retry/failover, exact model version only. Single-run measurements and known limits are in [docs/SPRINT3_ROUTING.md](docs/SPRINT3_ROUTING.md). The UI does not show the new fields yet. |
 | Redis, Kafka | PLANNED | |
-| Health monitoring, failure recovery | PLANNED | |
+| Failure recovery (retry/failover), monitoring dashboard | PLANNED | Sprints 4–5. Background worker health checks exist only inside the `HEALTH_LATENCY` routing policy; there is no retry, failover or monitoring UI. The frontend "Failure Recovery" and "Intelligent Routing" pages are static target-architecture illustrations (labelled "Not connected"), not implemented behaviour. |
 | Docker | **WORK IN PROGRESS / UNVERIFIED** | Worker Dockerfile exists; image build/run validation and the full multi-service setup remain incomplete. Native processes are used for the demo. |
 | Kubernetes, autoscaling | PLANNED | Not implemented. |
-| Load testing and evaluation | PLANNED | |
+| Load testing and evaluation | PLANNED | Sprint 6. Sprint 3 has single-run behavioural comparisons only (see Sprint 3 routing doc). |
 
 PLANNED items are not implemented. Docker work has started but remains unverified.
 
