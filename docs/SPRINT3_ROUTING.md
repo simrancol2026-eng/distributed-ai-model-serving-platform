@@ -17,7 +17,7 @@ An **optional** routing policy called *least-in-flight* (LIF). When the backend 
   - no `model` in the request: any configured worker;
   - `model`/`version` given: only workers whose `/health` reports exactly the resolved artifact and revision.
   LIF never widens that list, and it never substitutes another model version.
-- **Error behaviour does not change**: 400/404/422/503/502 work exactly as before. There is still **no automatic retry or failover**. A chosen worker that is down still returns 503.
+- **Error behaviour does not change**: 400/404/422/503/502 work exactly as before. There is still **no automatic retry or failover**. A chosen worker that is down still returns 503. A worker that fails quickly often has zero in-flight requests and can attract more concurrent LIF traffic than round-robin, increasing the failure share. Health-aware routing is required to address this; Grok must measure the stopped-worker case.
 
 ### What it is not
 
@@ -74,7 +74,7 @@ Decision additions:
 | `candidates[].inFlight` | that worker's in-flight count read inside the selection lock, **before** this request's own reservation |
 | `reason` | names the policy, e.g. `least-in-flight over 2 eligible (tie broken by rotation)` |
 
-The decision is built from the same snapshot that made the choice. There are no extra identity probes, and no counter is advanced twice just to produce a log line.
+For selected workers, the decision is built from the same snapshot that made the choice. If no worker is eligible, counts are a diagnostic snapshot taken after eligibility checks; no selection or reservation occurred. There are no extra identity probes, and no counter is advanced twice just to produce a log line.
 
 ---
 
@@ -98,7 +98,7 @@ Unit and H2 tests are reported separately from real-worker, native-PostgreSQL ru
 
 ## 6. Demo outline (to finalize after the build passes)
 
-1. Start the normal stack (see `docs/DEMO.md` on PR #5), with `platform.routing.policy` left at the default, and show that the routing panel and `GET /api/requests/{id}` report `policy = ROUND_ROBIN`.
+1. Start the normal stack (see `docs/DEMO.md` on PR #5), with `platform.routing.policy` left at the default, and show that the inference API response and `GET /api/requests/{id}` report `policy = ROUND_ROBIN`.
 2. Restart the backend only with `PLATFORM_ROUTING_POLICY=LEAST_IN_FLIGHT`. Send a few sequential requests and show that they still alternate, explaining the tie rotation.
 3. Show a stored decision with its per-candidate `inFlight` values.
 4. Present Grok's measured concurrent comparison from check (e) as recorded evidence, not as a live benchmark, and only if it exists.
@@ -110,5 +110,3 @@ Unit and H2 tests are reported separately from real-worker, native-PostgreSQL ru
 
 - Should the frontend show `policy` and `inFlight`? It is small, but it touches `frontend/` (read `frontend/AGENTS.md` first) and adds tests. Proposed: yes, in the same slice only if it stays small, otherwise as a follow-up.
 - Should there be a read-only endpoint for current in-flight counts (useful for the demo and Sprint 5 monitoring)? Proposed: not in this slice.
-
-
