@@ -440,3 +440,30 @@ Sprint 2 · Claude
 - **Not evaluated is not ineligible:** requests rejected before routing (400/404/422/503 registry) are `NOT_ROUTED` with no candidates, rather than listing every worker as ineligible.
 - **Storage reuses tracking (D-041/D-042):** the decision rides in the existing `dispatched` and `completed` updates, so it adds no extra statement and keeps the same timeouts, pause and per-request suppression. It is hand-written JSON (fixed fields, escaped strings) capped at 8000 characters; if a very large pool would exceed that, the candidates are dropped and `candidatesOmitted` gives their count, so the stored text is always valid JSON.
 - **No user content:** the decision contains endpoints, model identities and codes only, never the input text (D-043).
+
+## Sprint 3 — intelligent routing
+
+### D-045 — Routing policy is opt-in, chosen once at startup; round-robin stays the default
+Sprint 3 · Codex (implementation) · Claude (review)
+
+- **Rule:** `platform.routing.policy` (env `PLATFORM_ROUTING_POLICY`) takes `ROUND_ROBIN` (default), `LEAST_IN_FLIGHT` or `HEALTH_LATENCY`. Values are case-sensitive. Any other value stops startup.
+- **Why:** round-robin is the baseline every comparison is measured against, so it must stay unchanged and be the default. A per-request override would let a client influence routing and make the logs harder to compare, so there is none.
+- **Preserved by every policy:** exact model/version eligibility (D-038/D-039), best-effort tracking (D-042), and no retry or failover. `ROUND_ROBIN` and `LEAST_IN_FLIGHT` keep the existing error contract unchanged. `HEALTH_LATENCY` adds its own outcomes, including `503 NO_HEALTHY_WORKER` and a conservative 422 rule (see D-047).
+
+### D-046 — Least-in-flight: atomic select-and-reserve, release always, rotating ties
+Sprint 3 · Codex · Claude
+
+- **Rule:** reading the in-flight counts, choosing the lowest and reserving its slot happen in one short `synchronized` section with no network or database work. The reservation is released by try-with-resources on every outcome, and releasing twice has no effect.
+- **Ties rotate** from the round-robin position, so sequential traffic (always 0 vs 0) still alternates instead of always picking the first worker.
+- **Decision record:** `strategy` keeps its Sprint 2 meaning (eligibility mode). New fields: `policy`, and per-candidate `inFlight` read *before* this request's own reservation. Counts are kept under every policy so baselines log comparable numbers.
+- **Known caveat:** a worker that fails fast never looks busy, so least-in-flight can send it *more* overlapping traffic than round-robin. Measured in Sprint 3 (single run), and the reason for D-047.
+
+### D-047 — Health/latency: background health, conservative errors, soft cooldown
+Sprint 3 · Codex · Claude · Grok (testing)
+
+- **Health off the request path:** a background poller probes each worker's `/health` (2 s fixed delay, at most 4 probe threads). Requests only read the latest observation. Liveness, capability and identity come from the same reply.
+- **Hysteresis:** live = last success at most 10 s old (the default freshness: 2 × (interval + probe timeout) + 2 s) and not 2 consecutive failures. One success readmits. 10 s is sized to allow two timed-out probes on the normal schedule, but it is not a guarantee: if polling is delayed (for example, all probe threads busy), the last success can expire and exclude a worker before it has failed twice. Never observed = not live. Any throwable from a probe counts as a failed probe and never stops polling. (A 5 s window was found by review and by Grok's FAIL on `8a27cea` to exclude a worker after one slow probe; it was fixed in `ed28851`.)
+- **Choice:** lowest `(inFlight + 1) × estimated latency`. The estimate is an EWMA (α = 0.2) of successful `/predict` durations only. A missing or stale (>30 s old) sample is replaced by an optimistic estimate: the minimum fresh estimate among live, matching workers, or 100 ms when none exists. This lets the worker compete but does not guarantee it a request. The next successful call after a stale sample resets the estimate to that call's duration.
+- **Errors:** 422 `NO_ELIGIBLE_WORKER` only when every observation is a fresh success and none matches. Otherwise 503 `NO_HEALTHY_WORKER`, because the request may be valid and absence cannot be proven.
+- **Cooldown (5 s):** after a transport failure or 2 consecutive 5xx; never after a 4xx. It is soft: if every live eligible worker is cooling down, the one that recovers first is used. A model mismatch clears that worker's health identity until its next successful probe.
+- **Limits stated, not hidden:** a worker that suddenly turns slow keeps receiving traffic until calls complete; a dead worker still causes the failures that happen before detection (no retry); everything is per backend instance.
