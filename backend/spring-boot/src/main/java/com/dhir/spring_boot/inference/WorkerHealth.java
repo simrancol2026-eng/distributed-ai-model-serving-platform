@@ -34,7 +34,8 @@ final class WorkerHealth {
             synchronized (this) { startedGeneration = generation; }
             Probe result;
             try { result = probe.get(); }
-            catch (RuntimeException e) { result = null; }
+            // Any throwable from the probe is a failed observation; it must never escape and cancel polling.
+            catch (Throwable e) { result = null; }
             long now = ticker.getAsLong();
             synchronized (this) {
                 // A contradictory inference response invalidates a probe already in progress.
