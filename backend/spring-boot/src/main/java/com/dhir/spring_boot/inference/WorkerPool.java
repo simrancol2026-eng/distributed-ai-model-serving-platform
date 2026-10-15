@@ -160,7 +160,7 @@ public class WorkerPool {
     }
 
     /** The worker that should serve the next request (round-robin). Thread-safe. */
-    public WorkerClient next() {
+    WorkerClient next() {
         int index = (int) Math.floorMod(position.getAndIncrement(), (long) workers.size());
         return workers.get(index);
     }
@@ -193,7 +193,7 @@ public class WorkerPool {
     }
 
     /** Round-robin among the given eligible workers, fair per (artifact, revision). Thread-safe. */
-    public WorkerClient next(List<WorkerClient> eligible, String artifact, String revision) {
+    WorkerClient next(List<WorkerClient> eligible, String artifact, String revision) {
         AtomicLong pos = versionPositions.computeIfAbsent(artifact + "@" + revision, k -> new AtomicLong());
         int index = (int) Math.floorMod(pos.getAndIncrement(), (long) eligible.size());
         return eligible.get(index);
@@ -217,4 +217,3 @@ public class WorkerPool {
         return workers.stream().map(WorkerClient::endpoint).toList();
     }
 }
-
