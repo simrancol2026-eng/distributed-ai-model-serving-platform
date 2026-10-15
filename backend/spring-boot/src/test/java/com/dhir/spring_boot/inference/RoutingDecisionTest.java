@@ -24,11 +24,11 @@ class RoutingDecisionTest {
 
     @Test
     void jsonHasEveryFieldInAFixedOrder() {
-        assertEquals("{\"strategy\":\"VERSION_AWARE\",\"target\":\"art@r1\",\"poolSize\":3,\"eligibleCount\":1,"
+        assertEquals("{\"strategy\":\"VERSION_AWARE\",\"policy\":\"ROUND_ROBIN\",\"target\":\"art@r1\",\"poolSize\":3,\"eligibleCount\":1,"
                 + "\"candidates\":["
-                + "{\"endpoint\":\"127.0.0.1:8001\",\"eligible\":true,\"note\":\"ELIGIBLE\",\"served\":\"art@r1\"},"
-                + "{\"endpoint\":\"127.0.0.1:8002\",\"eligible\":false,\"note\":\"SERVES_OTHER\",\"served\":\"art@r2\"},"
-                + "{\"endpoint\":\"127.0.0.1:8003\",\"eligible\":false,\"note\":\"IDENTITY_UNKNOWN\",\"served\":null}],"
+                + "{\"endpoint\":\"127.0.0.1:8001\",\"eligible\":true,\"note\":\"ELIGIBLE\",\"served\":\"art@r1\",\"inFlight\":null},"
+                + "{\"endpoint\":\"127.0.0.1:8002\",\"eligible\":false,\"note\":\"SERVES_OTHER\",\"served\":\"art@r2\",\"inFlight\":null},"
+                + "{\"endpoint\":\"127.0.0.1:8003\",\"eligible\":false,\"note\":\"IDENTITY_UNKNOWN\",\"served\":null,\"inFlight\":null}],"
                 + "\"chosen\":\"127.0.0.1:8001\",\"reason\":\"round-robin over 1 eligible of 3 worker(s)\"}",
                 sample().toJson(8000));
     }
@@ -60,7 +60,7 @@ class RoutingDecisionTest {
     @Test
     void notRoutedHasNoCandidatesAndNoChoice() {
         String json = RoutingDecision.notRouted(2, "INVALID_REQUEST").toJson(8000);
-        assertEquals("{\"strategy\":\"NOT_ROUTED\",\"target\":null,\"poolSize\":2,\"eligibleCount\":0,"
+        assertEquals("{\"strategy\":\"NOT_ROUTED\",\"policy\":\"ROUND_ROBIN\",\"target\":null,\"poolSize\":2,\"eligibleCount\":0,"
                 + "\"candidates\":[],\"chosen\":null,\"reason\":\"INVALID_REQUEST\"}", json);
     }
 
@@ -78,9 +78,10 @@ class RoutingDecisionTest {
     @Test
     void logLineNamesEachCandidateAndWhyItWasSkipped() {
         String line = sample().toLogString();
-        assertEquals("strategy=VERSION_AWARE target=art@r1 eligible=1/3 candidates=[127.0.0.1:8001:ELIGIBLE, "
-                + "127.0.0.1:8002:SERVES_OTHER(art@r2), 127.0.0.1:8003:IDENTITY_UNKNOWN] chosen=127.0.0.1:8001 "
+        assertEquals("strategy=VERSION_AWARE policy=ROUND_ROBIN target=art@r1 eligible=1/3 candidates=[127.0.0.1:8001:ELIGIBLE{inFlight=null}, "
+                + "127.0.0.1:8002:SERVES_OTHER(art@r2){inFlight=null}, 127.0.0.1:8003:IDENTITY_UNKNOWN{inFlight=null}] chosen=127.0.0.1:8001 "
                 + "reason=\"round-robin over 1 eligible of 3 worker(s)\"", line);
         assertFalse(line.contains("input"));
     }
 }
+
