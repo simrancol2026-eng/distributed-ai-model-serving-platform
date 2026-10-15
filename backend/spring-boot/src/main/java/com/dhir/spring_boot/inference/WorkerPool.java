@@ -46,6 +46,17 @@ public class WorkerPool {
     private HealthRouting healthRouting;
     private HealthPoller healthPoller;
 
+    static final long HEALTH_POLL_INTERVAL_MS = 2000;
+
+    /**
+     * How long a successful health observation stays usable. The poller waits a fixed delay after each probe
+     * ends and a probe may take up to probeTimeoutMs, so two consecutive failed probes can span
+     * 2 * (interval + timeout). A shorter window would let ONE slow probe expire the last success.
+     */
+    static long healthFreshnessNanos(long intervalMs, long probeTimeoutMs) {
+        return (2 * (intervalMs + probeTimeoutMs) + 2000) * 1_000_000L;
+    }
+
     public boolean healthAware() { return policy == Policy.HEALTH_LATENCY; }
     @jakarta.annotation.PreDestroy
     public void close() { if (healthPoller != null) healthPoller.close(); }
@@ -174,10 +185,11 @@ public class WorkerPool {
         if (healthAware()) {
             var observations = new java.util.LinkedHashMap<WorkerClient, WorkerHealth>();
             for (WorkerClient worker : workers) {
-                observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime, 5_000_000_000L));
+                observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime,
+                        healthFreshnessNanos(HEALTH_POLL_INTERVAL_MS, probeTimeoutMs)));
             }
             healthRouting = new HealthRouting(workers, observations, System::nanoTime);
-            healthPoller = new HealthPoller(List.copyOf(observations.values()), 2000);
+            healthPoller = new HealthPoller(List.copyOf(observations.values()), HEALTH_POLL_INTERVAL_MS);
         }
         log.info("worker pool: {} worker(s), policy={} order {}", workers.size(), policy, endpoints());
     }
