@@ -44,10 +44,10 @@ Frontend terminal:
 cd frontend
 npm ci
 $env:VITE_API_BASE_URL = 'http://localhost:8080'
-npm run dev
+npm run dev -- --port 5173 --strictPort
 ```
 
-Open http://localhost:5173. The backend health endpoint is process liveness, not worker readiness. Check each worker separately:
+Open http://localhost:5173. The explicit port matches the backend’s default CORS origins; `--strictPort` stops startup if 5173 is occupied instead of silently selecting another port. The backend health endpoint is process liveness, not worker readiness. Check each worker separately:
 
 ```powershell
 Invoke-RestMethod http://localhost:8080/api/health
@@ -91,7 +91,7 @@ Frontend:
 ```bash
 cd frontend
 npm ci
-VITE_API_BASE_URL=http://localhost:8080 npm run dev
+VITE_API_BASE_URL=http://localhost:8080 npm run dev -- --port 5173 --strictPort
 ```
 
 Checks and seed from repository root:
@@ -122,7 +122,7 @@ For the optional automated checks below, use python3 instead of python in bash. 
 4. **Traceability.** Fetch the request by ID. Compare the response worker/decision with the persisted record and the backend's single routing decision log line.
 5. **Two workers.** Run the sequence below while other clients are idle. Show alternating endpoints and matching chosen endpoints. The starting worker depends on previous requests; do not require A to start.
 6. **Version selection and rejection.** Send a request explicitly naming the seeded v1. If demonstrating an unserved revision, use the existing version-dispatch test below against the dedicated demo database; it creates a synthetic version and proves rejection. Clearly state that the synthetic revision was never loaded or executed.
-7. **Close with evidence and gaps.** Show the tested commit and the evidence index. Tracking is best effort; eligible means matching identity, not live health. Docker remains unverified. Request Dhir's review before Sprint 3.
+7. **Close with evidence and gaps.** Show the tested commit and the evidence index. Tracking is best effort; eligible means matching identity, not live health. Docker remains unverified. Sprint 3 is authorized and tracked separately; this demo does not imply sprint closeout.
 
 PowerShell, real versioned inference and persisted trace:
 
