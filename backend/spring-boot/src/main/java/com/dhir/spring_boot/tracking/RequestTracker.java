@@ -33,9 +33,12 @@ import org.springframework.stereotype.Component;
  * After a failed write, tracking PAUSES (platform.tracking.pause-after-failure-ms, default 10 s; see
  * TrackingGate): new writes are skipped; after the pause exactly one write at a time probes the database.
  *
- * Per request (Trace): once one of a request's writes has failed or been skipped, its remaining writes
- * are skipped too. So tracking can delay a single request at most ONCE, by at most one bounded write
- * (connection wait + statement timeout). Worker time is not tracking overhead and is not counted.
+ * Per request (Trace): once one of a request's writes has failed or been skipped, no further tracking
+ * attempts are made for that request. Each attempt is bounded (connection wait + statement timeout);
+ * that is a per-attempt budget, not a per-request total. Worker time is not tracking overhead.
+ *
+ * Routing decisions (Sprint 2 #5, D-044): the dispatched and completed steps also store the request's
+ * RoutingDecision as JSON text in routing_decision; it rides in the same best-effort UPDATE.
  *
  * Each step only moves a row forward (the WHERE clause checks the current status), so a late or
  * repeated write can never move a finished request back to an earlier state. Because writes are
@@ -106,28 +109,35 @@ public class RequestTracker {
      * resolvedVersion / artifact / revision are null for requests that named no model.
      */
     public void dispatched(Trace trace, String workerEndpoint, String resolvedVersion, String artifact,
-            String artifactRevision) {
+            String artifactRevision, String routingJson) {
         String requestId = trace.requestId;
         write("dispatched", trace, () -> jdbc.sql("""
                 UPDATE inference_requests
                 SET status = 'DISPATCHED', dispatched_at = CURRENT_TIMESTAMP, worker_endpoint = :endpoint,
-                    resolved_version = :resolved, artifact = :artifact, artifact_revision = :revision
+                    resolved_version = :resolved, artifact = :artifact, artifact_revision = :revision,
+                    routing_decision = :routing
                 WHERE request_id = :id AND status = 'RECEIVED'""")
                 .param("id", requestId)
                 .param("endpoint", cut(workerEndpoint, 255))
                 .param("resolved", cut(resolvedVersion, 64))
                 .param("artifact", cut(artifact, 200))
                 .param("revision", cut(artifactRevision, 64))
+                .param("routing", routingJson)
                 .update());
     }
 
-    /** Step 3: the response was decided. errorCode == null means success (SUCCEEDED), else FAILED. */
-    public void completed(Trace trace, int httpStatus, String errorCode, String workerId, long totalMs) {
+    /**
+     * Step 3: the response was decided. errorCode == null means success (SUCCEEDED), else FAILED.
+     * routingJson is the final routing decision (also covers requests rejected before dispatch).
+     */
+    public void completed(Trace trace, int httpStatus, String errorCode, String workerId, long totalMs,
+            String routingJson) {
         String requestId = trace.requestId;
         write("completed", trace, () -> jdbc.sql("""
                 UPDATE inference_requests
                 SET status = :status, completed_at = CURRENT_TIMESTAMP, http_status = :http,
-                    error_code = :error, worker_id = :workerId, total_ms = :totalMs
+                    error_code = :error, worker_id = :workerId, total_ms = :totalMs,
+                    routing_decision = :routing
                 WHERE request_id = :id AND status IN ('RECEIVED', 'DISPATCHED')""")
                 .param("id", requestId)
                 .param("status", errorCode == null ? "SUCCEEDED" : "FAILED")
@@ -135,6 +145,7 @@ public class RequestTracker {
                 .param("error", cut(errorCode, 40))
                 .param("workerId", cut(workerId, 100))
                 .param("totalMs", totalMs)
+                .param("routing", routingJson)
                 .update());
     }
 
@@ -190,7 +201,7 @@ public class RequestTracker {
                 rs.getString("artifact"), rs.getString("artifact_revision"), rs.getString("worker_endpoint"),
                 rs.getString("worker_id"), rs.getObject("http_status", Integer.class), rs.getString("error_code"),
                 rs.getObject("total_ms", Long.class), instant(rs, "received_at"), instant(rs, "dispatched_at"),
-                instant(rs, "completed_at"));
+                instant(rs, "completed_at"), rs.getString("routing_decision"));
     }
 
     private static String instant(ResultSet rs, String column) throws SQLException {

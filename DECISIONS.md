@@ -430,3 +430,13 @@ Sprint 2 · Claude
 
 - **Rule:** only `inputChars` (the length) is stored. The text a user submits could be personal. Storing it is not needed to trace routing or failures, and it would make the tracking table a copy of user content.
 - **Other fields:** they are capped to their column sizes before writing, so an oversized client value cannot make the tracking insert fail.
+
+### D-044 — Routing decisions are recorded from the router's own data
+Sprint 2 · Claude
+
+- **Rule:** every inference request gets one `RoutingDecision` (strategy, target, every configured worker with eligibility and a note, chosen endpoint, reason). It is logged as one line, stored as JSON text in `inference_requests.routing_decision` (Flyway `V3`), and returned in the success response and in `GET /api/requests/{id}`.
+- **Same snapshot:** for versioned requests each worker's identity is read once (`WorkerPool.assess`), and that same list both filters the eligible workers and is recorded. The round-robin counter moves once per request. So the record cannot disagree with what the router actually did.
+- **Eligibility is identity, not health:** `ELIGIBLE` means the worker's `/health` reported the target artifact and revision. It does not claim the worker is up now, and there is still no failover (a chosen worker that is down gives 503, recorded with its decision).
+- **Not evaluated is not ineligible:** requests rejected before routing (400/404/422/503 registry) are `NOT_ROUTED` with no candidates, rather than listing every worker as ineligible.
+- **Storage reuses tracking (D-041/D-042):** the decision rides in the existing `dispatched` and `completed` updates, so it adds no extra statement and keeps the same timeouts, pause and per-request suppression. It is hand-written JSON (fixed fields, escaped strings) capped at 8000 characters; if a very large pool would exceed that, the candidates are dropped and `candidatesOmitted` gives their count, so the stored text is always valid JSON.
+- **No user content:** the decision contains endpoints, model identities and codes only, never the input text (D-043).

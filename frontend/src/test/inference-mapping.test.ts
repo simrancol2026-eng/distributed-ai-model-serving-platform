@@ -27,6 +27,32 @@ describe("toRoutingResult", () => {
     expect(r.latency).toBe(42);
   });
 
+  it("carries the backend routing decision summary", () => {
+    const r = toRoutingResult(200, {
+      ...success,
+      routing: {
+        strategy: "VERSION_AWARE",
+        target: "art@714eb0fa",
+        poolSize: 3,
+        eligibleCount: 1,
+        candidates: [],
+        chosen: "127.0.0.1:8001",
+        reason: "model 'sent' version 'v1': round-robin over 1 eligible of 3 worker(s)",
+      },
+    });
+    expect(r.routing).toEqual({
+      strategy: "VERSION_AWARE",
+      eligibleCount: 1,
+      poolSize: 3,
+      chosen: "127.0.0.1:8001",
+      reason: "model 'sent' version 'v1': round-robin over 1 eligible of 3 worker(s)",
+    });
+  });
+
+  it("has no routing summary when the backend sends none", () => {
+    expect(toRoutingResult(200, success).routing).toBeNull();
+  });
+
   it("shows the model name without a version when the worker reports none", () => {
     expect(toRoutingResult(200, { ...success, version: null }).model).toBe(success.model);
   });

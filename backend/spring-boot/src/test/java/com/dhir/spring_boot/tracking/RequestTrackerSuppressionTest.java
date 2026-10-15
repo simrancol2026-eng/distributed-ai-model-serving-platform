@@ -41,8 +41,8 @@ class RequestTrackerSuppressionTest {
         RequestTracker tracker = new RequestTracker(failingDataSource(), 2, 0);
         RequestTracker.Trace trace = tracker.received("11111111-1111-1111-1111-111111111111", "TEXT", null, null, 5);
         assertTrue(trace.suppressed());
-        tracker.dispatched(trace, "127.0.0.1:8001", null, null, null);
-        tracker.completed(trace, 200, null, "worker-a", 12);
+        tracker.dispatched(trace, "127.0.0.1:8001", null, null, null, null);
+        tracker.completed(trace, 200, null, "worker-a", 12, null);
         assertEquals(1, connectionAttempts.get(), "only the first write tried the database");
     }
 
@@ -50,15 +50,15 @@ class RequestTrackerSuppressionTest {
     void aSlowWorkerOutlastingThePauseDoesNotCauseASecondDelayForTheSameRequest() throws Exception {
         RequestTracker tracker = new RequestTracker(failingDataSource(), 2, 5); // 5 ms pause
         RequestTracker.Trace trace = tracker.received("22222222-2222-2222-2222-222222222222", null, null, null, 1);
-        tracker.dispatched(trace, "127.0.0.1:8001", null, null, null);
+        tracker.dispatched(trace, "127.0.0.1:8001", null, null, null, null);
         Thread.sleep(50); // "worker time", much longer than the pause
-        tracker.completed(trace, 200, null, "worker-a", 60);
+        tracker.completed(trace, 200, null, "worker-a", 60, null);
         assertEquals(1, connectionAttempts.get(), "completion after the pause was not a second attempt");
 
         // A NEW request after the pause may probe (that is the gate's job), and fails once itself.
         RequestTracker.Trace next = tracker.received("33333333-3333-3333-3333-333333333333", null, null, null, 1);
         assertEquals(2, connectionAttempts.get());
-        tracker.completed(next, 200, null, "worker-a", 1);
+        tracker.completed(next, 200, null, "worker-a", 1, null);
         assertEquals(2, connectionAttempts.get());
     }
 }

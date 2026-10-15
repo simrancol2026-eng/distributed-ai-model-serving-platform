@@ -45,7 +45,8 @@ public final class InferenceDtos {
             double workerInferenceMs,
             long totalLatencyMs,
             String modelId,       // registry model id, only when the request named a model (else null)
-            String modelVersion) { // registry version label that was resolved and served (else null)
+            String modelVersion,  // registry version label that was resolved and served (else null)
+            RoutingDecision routing) { // why this worker was chosen (Sprint 2 #5, D-044)
     }
 
     /** Uniform error body: status is always "error"; error is a stable machine-readable code. */

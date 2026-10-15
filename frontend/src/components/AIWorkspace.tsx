@@ -21,6 +21,7 @@ import { NexusLogo } from "./NexusLogo";
 import { capabilities } from "@/data/platform";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useBackendHealth } from "@/hooks/use-backend-health";
+import { routingBadgeLabel } from "@/services/platform";
 import type { Capability } from "@/types/platform";
 import { StatusBadge } from "./StatusBadge";
 export function AIWorkspace() {
@@ -136,12 +137,22 @@ export function AIWorkspace() {
                   <div className="response-routing-title">
                     <Network size={14} />
                     Routing details
-                    <StatusBadge />
+                    <StatusBadge
+                      label={routingBadgeLabel(current.result, pending)}
+                      online={Boolean(current.result.routing) && !pending}
+                    />
                   </div>
                   <dl>
                     {[
                       ["Model", current.result.model],
                       ["Worker", current.result.worker],
+                      [
+                        "Eligible",
+                        current.result.routing && !pending
+                          ? `${current.result.routing.eligibleCount} of ${current.result.routing.poolSize}`
+                          : null,
+                      ],
+                      ["Routing", pending ? null : (current.result.routing?.reason ?? null)],
                       [
                         "Latency",
                         current.result.latency === null ? null : `${current.result.latency} ms`,

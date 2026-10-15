@@ -99,10 +99,26 @@ public class WorkerPool {
      * Workers with an unknown identity are excluded (fail closed).
      */
     public List<WorkerClient> eligible(String artifact, String revision) {
+        return assess(artifact, revision).stream().filter(Assessment::eligible).map(Assessment::worker).toList();
+    }
+
+    /** One worker as seen by version-aware routing: what its /health says it serves, and whether that matches. */
+    public record Assessment(WorkerClient worker, WorkerClient.ServedModel served, boolean eligible) {
+    }
+
+    /**
+     * Every configured worker, in configured order, checked against (artifact, revision).
+     * Each worker's identity is read ONCE here, so the routing decision log describes exactly the
+     * identities the eligibility filter used. served == null means the identity is unknown (fail closed).
+     */
+    public List<Assessment> assess(String artifact, String revision) {
         WorkerClient.ServedModel wanted = new WorkerClient.ServedModel(artifact, revision);
-        return workers.stream()
-                .filter(w -> w.servedModel(identityMaxAgeMs).map(wanted::equals).orElse(false))
-                .toList();
+        List<Assessment> result = new ArrayList<>();
+        for (WorkerClient w : workers) {
+            WorkerClient.ServedModel served = w.servedModel(identityMaxAgeMs).orElse(null);
+            result.add(new Assessment(w, served, wanted.equals(served)));
+        }
+        return result;
     }
 
     /** Round-robin among the given eligible workers, fair per (artifact, revision). Thread-safe. */
@@ -110,6 +126,11 @@ public class WorkerPool {
         AtomicLong pos = versionPositions.computeIfAbsent(artifact + "@" + revision, k -> new AtomicLong());
         int index = (int) Math.floorMod(pos.getAndIncrement(), (long) eligible.size());
         return eligible.get(index);
+    }
+
+    /** All configured workers, in round-robin order. */
+    public List<WorkerClient> all() {
+        return workers;
     }
 
     public String capability() {

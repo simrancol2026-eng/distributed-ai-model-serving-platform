@@ -66,6 +66,14 @@ export type InferenceSuccess = {
   prediction: { label: string; score: number };
   workerInferenceMs: number;
   totalLatencyMs: number;
+  /** Routing decision (Sprint 2 #5); older backends do not send it. */
+  routing?: {
+    strategy: string;
+    eligibleCount: number;
+    poolSize: number;
+    chosen: string | null;
+    reason: string;
+  } | null;
 };
 /** Error body of POST /api/inference (see backend InferenceDtos.ErrorResponse). */
 export type InferenceError = { status: "error"; error: string; message: string; requestId: string };
@@ -76,6 +84,17 @@ const errorMessages: Record<string, string> = {
   INVALID_REQUEST: "The request was not valid.",
   WORKER_ERROR: "The model worker returned an error.",
 };
+
+/** Label for the "Routing details" badge. Backend reachability is not worker availability. */
+export function routingBadgeLabel(result: RoutingResult, pending: boolean): string {
+  if (pending) return "Previous request";
+  if (result.routing) return "Backend decision";
+  if (result.origin === "local") return "Not sent";
+  if (result.origin === "backend") {
+    return result.status === "completed" ? "Decision unavailable" : "Backend error response";
+  }
+  return "Not connected";
+}
 
 /** Converts a backend response (HTTP status + parsed JSON) into what the workspace UI displays. */
 export function toRoutingResult(httpStatus: number, body: unknown): RoutingResult {
@@ -91,6 +110,16 @@ export function toRoutingResult(httpStatus: number, body: unknown): RoutingResul
       model: b.version ? `${b.model} @ ${b.version.slice(0, 8)}` : (b.model ?? null),
       worker: b.worker ?? null,
       latency: typeof b.totalLatencyMs === "number" ? b.totalLatencyMs : null,
+      origin: "backend",
+      routing: b.routing
+        ? {
+            strategy: b.routing.strategy,
+            eligibleCount: b.routing.eligibleCount,
+            poolSize: b.routing.poolSize,
+            chosen: b.routing.chosen ?? null,
+            reason: b.routing.reason,
+          }
+        : null,
     };
   }
   const code = b?.error ?? `HTTP_${httpStatus}`;
@@ -98,6 +127,7 @@ export function toRoutingResult(httpStatus: number, body: unknown): RoutingResul
   return {
     ...disconnectedResult,
     status: "failed",
+    origin: "backend",
     answer: `Request failed (${code}): ${detail}`,
   };
 }
@@ -156,6 +186,7 @@ export const platformService = {
       return {
         ...disconnectedResult,
         status: "failed",
+        origin: "local",
         answer: "File attachments are not supported yet — only text requests can be served.",
       };
     }
