@@ -26,7 +26,19 @@ public record RoutingDecision(
         int eligibleCount,
         List<Candidate> candidates,
         String chosen,
-        String reason) {
+        String reason,
+        String policy) {
+
+    public RoutingDecision(String strategy, String target, int poolSize, int eligibleCount,
+            List<Candidate> candidates, String chosen, String reason) {
+        this(strategy, target, poolSize, eligibleCount, candidates, chosen, reason, "ROUND_ROBIN");
+    }
+
+    public RoutingDecision withSelection(String policy, java.util.Map<String, Integer> counts) {
+        return new RoutingDecision(strategy, target, poolSize, eligibleCount,
+                candidates.stream().map(c -> new Candidate(c.endpoint(), c.eligible(), c.note(), c.served(),
+                        counts.get(c.endpoint()))).toList(), chosen, reason, policy);
+    }
 
     public static final String ROUND_ROBIN_ALL = "ROUND_ROBIN_ALL";
     public static final String VERSION_AWARE = "VERSION_AWARE";
@@ -50,7 +62,10 @@ public record RoutingDecision(
      * One configured worker as the router saw it.
      * served = artifact@revision from the worker's /health (null if unknown or not checked).
      */
-    public record Candidate(String endpoint, boolean eligible, String note, String served) {
+    public record Candidate(String endpoint, boolean eligible, String note, String served, Integer inFlight) {
+        public Candidate(String endpoint, boolean eligible, String note, String served) {
+            this(endpoint, eligible, note, served, null);
+        }
     }
 
     public RoutingDecision {
@@ -70,6 +85,7 @@ public record RoutingDecision(
     public String toLogString() {
         StringBuilder sb = new StringBuilder();
         sb.append("strategy=").append(oneLine(strategy))
+                .append(" policy=").append(oneLine(policy))
                 .append(" target=").append(target == null ? "-" : oneLine(target))
                 .append(" eligible=").append(eligibleCount).append('/').append(poolSize)
                 .append(" candidates=[");
@@ -82,6 +98,7 @@ public record RoutingDecision(
             if (c.served() != null && !c.eligible()) {
                 sb.append('(').append(oneLine(c.served())).append(')');
             }
+            sb.append("{inFlight=").append(c.inFlight()).append('}');
         }
         sb.append("] chosen=").append(chosen == null ? "-" : oneLine(chosen))
                 .append(" reason=\"").append(oneLine(reason)).append('"');
@@ -124,6 +141,7 @@ public record RoutingDecision(
     private String json(boolean withCandidates) {
         StringBuilder sb = new StringBuilder("{");
         field(sb, "strategy", strategy).append(',');
+        field(sb, "policy", policy).append(',');
         field(sb, "target", target).append(',');
         sb.append("\"poolSize\":").append(poolSize).append(',');
         sb.append("\"eligibleCount\":").append(eligibleCount).append(',');
@@ -138,7 +156,8 @@ public record RoutingDecision(
                 field(sb, "endpoint", c.endpoint()).append(',');
                 sb.append("\"eligible\":").append(c.eligible()).append(',');
                 field(sb, "note", c.note()).append(',');
-                field(sb, "served", c.served());
+                field(sb, "served", c.served()).append(',');
+                sb.append("\"inFlight\":").append(c.inFlight());
                 sb.append('}');
             }
             sb.append("],");

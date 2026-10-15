@@ -123,21 +123,23 @@ public class InferenceController {
             return rejected(400, "INVALID_REQUEST", "Field 'version' requires field 'model'.", requestId);
         }
         if (modelId == null) {
-            // Unchanged behaviour: any worker, round-robin over all of them.
+            // Any configured worker; the configured policy chooses within this set.
             if (!capability.equals("AUTO") && !capability.equals(workers.capability())) {
                 return rejected(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
                         + ". Available: " + workers.capability() + ".", requestId);
             }
-            WorkerClient worker = workers.next();
-            List<RoutingDecision.Candidate> all = new ArrayList<>();
-            for (WorkerClient w : workers.all()) {
-                // Identity is not checked here: any worker can serve a request that names no model.
-                all.add(new RoutingDecision.Candidate(w.endpoint(), true, RoutingDecision.ANY_WORKER, null));
+            try (WorkerPool.Reservation reservation = workers.reserve()) {
+                WorkerClient worker = reservation.worker();
+                List<RoutingDecision.Candidate> all = new ArrayList<>();
+                for (WorkerClient w : workers.all()) {
+                    // Identity is not checked here: any worker can serve a request that names no model.
+                    all.add(new RoutingDecision.Candidate(w.endpoint(), true, RoutingDecision.ANY_WORKER, null));
+                }
+                RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
+                        all.size(), all, worker.endpoint(),
+                        "no model requested: " + workers.policyDescription() + " over all " + all.size() + " worker(s)").withSelection(workers.policy(), reservation.before());
+                return new Routed(call(worker, request.input(), null, trace, started, decision), decision);
             }
-            RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
-                    all.size(), all, worker.endpoint(),
-                    "no model requested: round-robin over all " + all.size() + " worker(s)");
-            return new Routed(call(worker, request.input(), null, trace, started, decision), decision);
         }
 
         // ---- version-aware dispatch ----
@@ -191,16 +193,19 @@ public class InferenceController {
         }
         if (eligible.isEmpty()) {
             RoutingDecision none = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(), 0,
-                    candidates, null, "NO_ELIGIBLE_WORKER: no worker reports " + target);
+                    candidates, null, "NO_ELIGIBLE_WORKER: no worker reports " + target)
+                    .withSelection(workers.policy(), workers.counts());
             return new Routed(error(422, "NO_ELIGIBLE_WORKER", "No worker currently serves model '" + modelId
                     + "' version '" + v.version() + "' (" + v.artifact() + " at revision " + v.artifactRevision()
                     + ").", requestId), none);
         }
-        WorkerClient worker = workers.next(eligible, v.artifact(), v.artifactRevision());
-        RoutingDecision decision = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(),
-                eligible.size(), candidates, worker.endpoint(), "model '" + modelId + "' version '" + v.version()
-                        + "': round-robin over " + eligible.size() + " eligible of " + workers.size() + " worker(s)");
-        return new Routed(call(worker, request.input(), new Target(modelId, v), trace, started, decision), decision);
+        try (WorkerPool.Reservation reservation = workers.reserve(eligible, v.artifact(), v.artifactRevision())) {
+            WorkerClient worker = reservation.worker();
+            RoutingDecision decision = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(),
+                    eligible.size(), candidates, worker.endpoint(), "model '" + modelId + "' version '" + v.version()
+                            + "': " + workers.policyDescription() + " over " + eligible.size() + " eligible of " + workers.size() + " worker(s)").withSelection(workers.policy(), reservation.before());
+            return new Routed(call(worker, request.input(), new Target(modelId, v), trace, started, decision), decision);
+        }
     }
 
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
@@ -247,7 +252,7 @@ public class InferenceController {
 
     /** An error returned before any worker was considered. */
     private Routed rejected(int status, String code, String message, String requestId) {
-        return new Routed(error(status, code, message, requestId), RoutingDecision.notRouted(workers.size(), code));
+        return new Routed(error(status, code, message, requestId), RoutingDecision.notRouted(workers.size(), code).withSelection(workers.policy(), java.util.Map.of()));
     }
 
     private static ResponseEntity<?> error(int status, String code, String message, String requestId) {
