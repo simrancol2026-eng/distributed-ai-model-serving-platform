@@ -76,7 +76,7 @@ Registering a model records its metadata. It does not automatically download or 
 “I will now send a real inference request from the frontend. React sends it to Spring Boot, and Spring forwards it to a Python worker that has loaded the model.”
 
 **Say after a successful response:**
-“The result on screen shows the prediction and confidence returned by the model. It also identifies the worker and gives us a request ID. The latency shown is the measurement for this request.”
+“The result on screen shows the prediction and confidence returned by the model. It also identifies the worker. The API response includes a request ID, although the current workspace does not display that ID. The latency shown is the measurement for this request.”
 
 **Point out:** actual label, score and worker. Do not preannounce a confidence score or latency. Confidence is not a measured accuracy score.
 
@@ -108,7 +108,7 @@ The optional rejection demonstration uses a deliberately unserved synthetic revi
 
 ### 7. Trace the request and explain the decision — 90 seconds
 
-**Show:** GET /api/requests/{requestId} for the successful request and its backend log line.
+**Show:** obtain the UI request ID from its POST response in browser developer tools (Network), then GET /api/requests/{requestId} and its backend log line. Alternatively, run the terminal request in DEMO.md and trace that separate request; do not imply it is the UI request.
 
 **Say:**
 “This request ID connects the prediction to its stored record. The lifecycle records receipt, dispatch and completion. For this successful request, the final status should be SUCCEEDED.
