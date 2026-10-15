@@ -107,13 +107,13 @@ class RoutingDecisionApiTest {
         HttpResponse<String> r = post("{\"input\":\"good\",\"model\":\"sent\",\"version\":\"v1\"}");
         assertEquals(200, r.statusCode(), r.body());
         String id = requestId(r.body());
-        String a = "{\"endpoint\":\"" + endpoint(A) + "\",\"eligible\":true,\"note\":\"ELIGIBLE\",\"served\":\"art@" + REV_1 + "\"}";
-        String b = "{\"endpoint\":\"" + endpoint(B) + "\",\"eligible\":false,\"note\":\"SERVES_OTHER\",\"served\":\"art@" + REV_2 + "\"}";
-        String d = "{\"endpoint\":\"" + D_URL.replaceFirst("^http://", "") + "\",\"eligible\":false,\"note\":\"IDENTITY_UNKNOWN\",\"served\":null}";
+        String a = "{\"endpoint\":\"" + endpoint(A) + "\",\"eligible\":true,\"note\":\"ELIGIBLE\",\"served\":\"art@" + REV_1 + "\",\"inFlight\":0}";
+        String b = "{\"endpoint\":\"" + endpoint(B) + "\",\"eligible\":false,\"note\":\"SERVES_OTHER\",\"served\":\"art@" + REV_2 + "\",\"inFlight\":0}";
+        String d = "{\"endpoint\":\"" + D_URL.replaceFirst("^http://", "") + "\",\"eligible\":false,\"note\":\"IDENTITY_UNKNOWN\",\"served\":null,\"inFlight\":0}";
         String expectedCandidates = "\"candidates\":[" + a + "," + b + "," + d + "]";
 
         String json = storedJson(id);
-        assertTrue(json.startsWith("{\"strategy\":\"VERSION_AWARE\",\"target\":\"art@" + REV_1
+        assertTrue(json.startsWith("{\"strategy\":\"VERSION_AWARE\",\"policy\":\"ROUND_ROBIN\",\"target\":\"art@" + REV_1
                 + "\",\"poolSize\":3,\"eligibleCount\":1,"), json);
         assertTrue(json.contains(expectedCandidates), json);
         assertTrue(json.contains("\"chosen\":\"" + endpoint(A) + "\""), json);
@@ -132,7 +132,7 @@ class RoutingDecisionApiTest {
             HttpResponse<String> r = post("{\"input\":\"good\"}");
             String id = requestId(r.body());
             String json = storedJson(id);
-            assertTrue(json.startsWith("{\"strategy\":\"ROUND_ROBIN_ALL\",\"target\":null,\"poolSize\":3,\"eligibleCount\":3,"),
+            assertTrue(json.startsWith("{\"strategy\":\"ROUND_ROBIN_ALL\",\"policy\":\"ROUND_ROBIN\",\"target\":null,\"poolSize\":3,\"eligibleCount\":3,"),
                     json);
             String endpoint = jdbc.sql("SELECT worker_endpoint FROM inference_requests WHERE request_id = :id")
                     .param("id", id).query(String.class).single();
@@ -154,7 +154,7 @@ class RoutingDecisionApiTest {
     void rejectedRequestIsStoredAsNotRouted() throws Exception {
         HttpResponse<String> r = post("{\"input\":\"  \"}");
         assertEquals(400, r.statusCode(), r.body());
-        assertEquals("{\"strategy\":\"NOT_ROUTED\",\"target\":null,\"poolSize\":3,\"eligibleCount\":0,"
+        assertEquals("{\"strategy\":\"NOT_ROUTED\",\"policy\":\"ROUND_ROBIN\",\"target\":null,\"poolSize\":3,\"eligibleCount\":0,"
                 + "\"candidates\":[],\"chosen\":null,\"reason\":\"INVALID_REQUEST\"}", storedJson(requestId(r.body())));
     }
 
@@ -163,7 +163,7 @@ class RoutingDecisionApiTest {
         HttpResponse<String> r = post("{\"input\":\"good\",\"model\":\"sent\",\"version\":\"v3\"}");
         assertEquals(422, r.statusCode(), r.body());
         String json = storedJson(requestId(r.body()));
-        assertTrue(json.startsWith("{\"strategy\":\"VERSION_AWARE\",\"target\":\"art@" + REV_3
+        assertTrue(json.startsWith("{\"strategy\":\"VERSION_AWARE\",\"policy\":\"ROUND_ROBIN\",\"target\":\"art@" + REV_3
                 + "\",\"poolSize\":3,\"eligibleCount\":0,"), json);
         assertTrue(json.contains("\"note\":\"SERVES_OTHER\",\"served\":\"art@" + REV_1 + "\""), json);
         assertTrue(json.contains("\"note\":\"IDENTITY_UNKNOWN\""), json);
