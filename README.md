@@ -22,6 +22,10 @@ Last updated: Oct 15, 2026. Routing decisions merged as `1c1d932eba0dd75a8920186
 
 Neither sprint is signed off.
 
+**Docker — WORK IN PROGRESS:** the worker Dockerfile exists; image build/run verification and the full multi-service container setup remain incomplete. The Sprint 2 demo uses native processes.
+
+Presentation: [full speaking script, STAR explanation and simple example](docs/SPRINT2_PRESENTATION.md).
+
 | Component | Status | Evidence / notes |
 |---|---|---|
 | Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
