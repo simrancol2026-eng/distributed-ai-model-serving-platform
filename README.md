@@ -28,7 +28,7 @@ Presentation: [full speaking script, STAR explanation and simple example](docs/S
 
 | Component | Status | Evidence / notes |
 |---|---|---|
-| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
+| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS permits the configured React dev origins (by default http://localhost:5173 and http://127.0.0.1:5173). The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
 | React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Workers and Monitoring pages still show "Not connected" because their APIs come in later sprints. Evidence for the inference UI: 6 tests passed, plus build and typecheck, and Grok reported (round 2, `8bfc496`) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. **Models page (Sprint 2 registry, Grok PASS on `f581a15`):** reads `GET /api/models`, shows "No models registered yet" when the registry is empty, and when the registry is unavailable it shows the static catalog labelled "Example only". Grok saw all three states in headless Chrome. An open detail dialog kept its own label when refreshing in either direction. |
 | Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model (run by Claude). Real DistilBERT inference was **reported by Grok** on `65d404b` (round 1) and `8bfc496` (round 2): `REAL_MODEL=1 pytest` 10 passed, and the worker and Spring return the same `POSITIVE 0.99988`. Logs are attached in the team Slack thread. Claude's sandbox cannot download the model. The worker Docker image is **not verified** (Sprint 1 item, open). |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
@@ -109,7 +109,7 @@ export PLATFORM_DB_PASSWORD='the-same-password'   # PowerShell: $env:PLATFORM_DB
 | `PLATFORM_BACKEND_PORT` | `8080` |
 | `PLATFORM_WORKER_URL` | `http://localhost:8001` |
 
-At startup the backend logs which database it is using, without the URL or credentials. For example: `registry datasource: product=PostgreSQL version=16.x activeProfiles=[default]`.
+The application's datasource summary omits the URL and credentials, but Flyway startup logs can include the JDBC database URL. Keep credentials out of the URL and redact host/database details before sharing logs. For example: `registry datasource: product=PostgreSQL version=16.x activeProfiles=[default]`.
 
 Check it:
 
@@ -167,7 +167,7 @@ PLATFORM_WORKER_URLS=http://localhost:8001,http://localhost:8002 ./mvnw spring-b
 At startup the backend logs `worker pool: 2 worker(s), round-robin order [localhost:8001, localhost:8002]`.
 
 How it behaves:
-- **Order:** each valid request goes to the next worker in the list: A, B, A, B. The counter is thread-safe, so concurrent requests are also split evenly. Requests rejected with 400 or 422 do not take a turn.
+- **Order:** each valid request goes to the next worker in the list: A, B, A, B. The counter is thread-safe, so concurrent requests are also split evenly. Requests rejected before routing with 400, 404 or 422 do not take a turn.
 - **Response:** shows both which process answered (`worker`, the worker's own `WORKER_ID`) and where the backend sent the request (`workerEndpoint`, host:port only).
 - **No failover:** if the chosen worker is down or times out (2 s to connect, 30 s to answer), that request fails with `503 WORKER_UNAVAILABLE`. The message names the endpoint that was tried. The next request goes to the next worker. Failover is not implemented.
 - **Configuration checks:** the backend refuses to start if the list is empty, has an empty entry, contains an invalid URL, contains a user name or password, or lists the same worker twice. Two different host names for the same machine (`localhost` and `127.0.0.1`) cannot be detected.
@@ -313,7 +313,12 @@ Success (`200`):
   "workerEndpoint": "localhost:8001",
   "model": "distilbert-base-uncased-finetuned-sst-2-english", "version": "<hf revision or null>",
   "task": "sentiment-analysis", "prediction": { "label": "POSITIVE", "score": 0.9998 },
-  "workerInferenceMs": 14.2, "totalLatencyMs": 31 }
+  "workerInferenceMs": 14.2, "totalLatencyMs": 31,
+  "modelId": null, "modelVersion": null,
+  "routing": { "strategy": "ROUND_ROBIN_ALL", "target": null,
+    "poolSize": 1, "eligibleCount": 1,
+    "candidates": [{ "endpoint": "localhost:8001", "eligible": true, "note": "ANY_WORKER", "served": null }],
+    "chosen": "localhost:8001", "reason": "round-robin over 1 eligible" } }
 ```
 The values above are illustrative of the shape only. They are not measured results.
 
