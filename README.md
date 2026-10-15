@@ -14,17 +14,21 @@ React frontend  →  Spring Boot control plane  →  routing engine  →  Python
 
 ## Current status
 
-Last updated: on branch `sprint2-request-lifecycle` (request lifecycle tracking, not yet independently tested), Oct 13, 2026.
+Last updated: Oct 15, 2026. Routing decisions merged as `1c1d932eba0dd75a8920186d4571cce0eeaba470`; tested code `2f731ba2991cbcfbb68191e0c620f3b89da1b238`.
 
 **Sprint mapping (Trello):**
 - **Sprint 1 – Foundation**: model selection, Python worker, common contract, worker health, Docker image, local inference. **Open**: the Docker image has not been verified.
-- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is **implemented on branch `sprint2-request-lifecycle` and not yet tested independently** (see "Request lifecycle tracking" below). Detailed routing decision logs are not started.
+- **Sprint 2 – Serving**: Spring Boot serving layer, request tracking, registry/versions, multiple workers. The end-to-end path React → Spring Boot → worker (called "Phase 1" in older notes and DECISIONS.md) is built and reported passing. Merged into `main` after an independent Grok PASS and owner approval: the model registry with versions (`3ace7ad`, tested `f581a15`), two workers with round-robin routing (`6ebec8f`, tested `0a056a9`) and version-aware dispatch (`856caaa`, tested `4351f23`). Persistent request lifecycle tracking is merged as `87eaf0f`, and detailed routing decisions are merged as `1c1d932`. Both received independent Grok testing and Codex review of source and supplied runtime evidence. See [Sprint 2 closeout](docs/SPRINT2_CLOSEOUT.md) and [demo runbook](docs/DEMO.md).
 
 Neither sprint is signed off.
 
+**Docker — WORK IN PROGRESS:** the worker Dockerfile exists; image build/run verification and the full multi-service container setup remain incomplete. The Sprint 2 demo uses native processes.
+
+Presentation: [full speaking script, STAR explanation and simple example](docs/SPRINT2_PRESENTATION.md).
+
 | Component | Status | Evidence / notes |
 |---|---|---|
-| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS allows only the React dev origin. The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
+| Spring Boot backend | **IMPLEMENTED (Phase 1)** | `GET /api/health` is plain-text liveness (`text/plain`, `Backend is healthy`). `POST /api/inference` is the unified inference API, forwarding to one worker. CORS permits the configured React dev origins (by default http://localhost:5173 and http://127.0.0.1:5173). The worker URL is validated at startup. Grok reported (TEST REPORT round 2, `8bfc496`, Java 21) that `./mvnw -B test` passed 18/18: ApplicationTests 1, InferenceApiTest 9, WorkerDownTest 1, WorkerUrlValidatorTest 7. A blank or invalid `PLATFORM_WORKER_URL` stops startup with exit 1. On `65d404b` (round 1), 11/11 passed via `bash ./mvnw`, because the wrapper was not yet executable. Claude's own sandbox cannot run Maven. |
 | React frontend | **IMPLEMENTED (Phase 1)** | The workspace sends text requests to `/api/inference` and shows the real label, confidence, model, worker and latency, or a clear error. The header shows live backend status. The Workers and Monitoring pages still show "Not connected" because their APIs come in later sprints. Evidence for the inference UI: 6 tests passed, plus build and typecheck, and Grok reported (round 2, `8bfc496`) 0 hydration errors over 3 page loads, a real prediction shown in the UI, and a clear error when the worker is down. **Models page (Sprint 2 registry, Grok PASS on `f581a15`):** reads `GET /api/models`, shows "No models registered yet" when the registry is empty, and when the registry is unavailable it shows the static catalog labelled "Example only". Grok saw all three states in headless Chrome. An open detail dialog kept its own label when refreshing in either direction. |
 | Python worker `model-a` | **IMPLEMENTED (single model)** | FastAPI + Hugging Face DistilBERT **text sentiment** model. Endpoints: `GET /health` and `POST /predict` with JSON `{"text": ...}`. Returns label, score, model, revision and inference time. Contract tests pass with a stub model (run by Claude). Real DistilBERT inference was **reported by Grok** on `65d404b` (round 1) and `8bfc496` (round 2): `REAL_MODEL=1 pytest` 10 passed, and the worker and Spring return the same `POSITIVE 0.99988`. Logs are attached in the team Slack thread. Claude's sandbox cannot download the model. The worker Docker image is **not verified** (Sprint 1 item, open). |
 | AlexNet / ResNet50 / CNN | **NOT IN REPO** | No code, weights, dataset or evaluation scripts committed yet. No accuracy numbers exist. |
@@ -40,14 +44,15 @@ Neither sprint is signed off.
 | Two workers + round-robin | **MERGED (Sprint 2, Grok PASS on `0a056a9`)** | `PLATFORM_WORKER_URLS` lists the workers, and the backend sends successive valid requests to them in turn (A, B, A, B). There is no failover. Backend tests use fake worker processes; the real two-worker check is `scripts/round_robin_e2e_test.py`. |
 | Version-aware dispatch | **MERGED (Sprint 2, Grok PASS on `4351f23`)** | Optional `model`/`version` on `/api/inference`, resolved in the registry and routed only to workers that report that exact revision. Grok reported 22/22 checks, Maven 55/55, `version_dispatch_e2e_test.py` 19/19, and real two-revision routing (see "Version-aware dispatch"). |
 | Request lifecycle tracking | **MERGED (Sprint 2, Grok PASS on `e70b733`, merge `87eaf0f`)** | Every `/api/inference` request is stored in PostgreSQL (`V2__inference_requests.sql`) as RECEIVED → DISPATCHED → SUCCEEDED/FAILED, readable at `/api/requests`. Grok reported 29/29 runnable checks on `e70b733` (Maven 74/74, real pgjdbc lock-hold cancel at ~2.06 s, outage and recovery); Docker was not available on the test VM. |
-| Routing decisions | **IMPLEMENTED ON BRANCH, NOT YET TESTED** | Every request gets a routing decision (strategy, every worker with why it was or was not eligible, the chosen worker, a reason). It is logged as one line, stored with the tracked request (`V3__routing_decision.sql`) and returned in the response; the UI shows it. Claude checked V1→V3 on PostgreSQL 16 with `psql` and the decision formatting with a standalone Java harness; Maven, the Spring app and `scripts/routing_decision_e2e_test.py` on the real stack have not been run by Claude. |
+| Routing decisions | **MERGED (Sprint 2, tested `2f731ba`, merge `1c1d932`)** | Codex reviewed Grok's supplied native PostgreSQL/real-worker evidence: routing response/log/database consistency, V2→V3 preservation, tracking regressions, Maven 86/86 (H2/fakes), frontend 12/12 and real UI DOM checks. Docker remains deferred/unverified; screenshot visual review and the retrospective are pending. |
 | Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
-| Docker (multi-service), Kubernetes, autoscaling | PLANNED | `model-a` has a single Dockerfile (build not yet verified). |
+| Docker | **WORK IN PROGRESS / UNVERIFIED** | Worker Dockerfile exists; image build/run validation and the full multi-service setup remain incomplete. Native processes are used for the demo. |
+| Kubernetes, autoscaling | PLANNED | Not implemented. |
 | Load testing and evaluation | PLANNED | |
 
-Nothing marked PLANNED exists yet.
+PLANNED items are not implemented. Docker work has started but remains unverified.
 
 ---
 
@@ -105,7 +110,7 @@ export PLATFORM_DB_PASSWORD='the-same-password'   # PowerShell: $env:PLATFORM_DB
 | `PLATFORM_BACKEND_PORT` | `8080` |
 | `PLATFORM_WORKER_URL` | `http://localhost:8001` |
 
-At startup the backend logs which database it is using, without the URL or credentials. For example: `registry datasource: product=PostgreSQL version=16.x activeProfiles=[default]`.
+The application's datasource summary omits the URL and credentials, but Flyway startup logs can include the JDBC database URL. Keep credentials out of the URL and redact host/database details before sharing logs. For example: `registry datasource: product=PostgreSQL version=16.x activeProfiles=[default]`.
 
 Check it:
 
@@ -163,7 +168,7 @@ PLATFORM_WORKER_URLS=http://localhost:8001,http://localhost:8002 ./mvnw spring-b
 At startup the backend logs `worker pool: 2 worker(s), round-robin order [localhost:8001, localhost:8002]`.
 
 How it behaves:
-- **Order:** each valid request goes to the next worker in the list: A, B, A, B. The counter is thread-safe, so concurrent requests are also split evenly. Requests rejected with 400 or 422 do not take a turn.
+- **Order:** each valid request goes to the next worker in the list: A, B, A, B. The counter is thread-safe, so concurrent requests are also split evenly. Requests rejected before routing with 400, 404 or 422 do not take a turn.
 - **Response:** shows both which process answered (`worker`, the worker's own `WORKER_ID`) and where the backend sent the request (`workerEndpoint`, host:port only).
 - **No failover:** if the chosen worker is down or times out (2 s to connect, 30 s to answer), that request fails with `503 WORKER_UNAVAILABLE`. The message names the endpoint that was tried. The next request goes to the next worker. Failover is not implemented.
 - **Configuration checks:** the backend refuses to start if the list is empty, has an empty entry, contains an invalid URL, contains a user name or password, or lists the same worker twice. Two different host names for the same machine (`localhost` and `127.0.0.1`) cannot be detected.
@@ -281,7 +286,7 @@ A body that is not valid JSON is rejected by Spring before the controller runs, 
 cd frontend
 npm ci
 cp .env.example .env.local      # sets VITE_API_BASE_URL=http://localhost:8080 (Windows: copy)
-npm run dev
+npm run dev -- --port 5173 --strictPort
 ```
 
 Other commands:
@@ -309,7 +314,12 @@ Success (`200`):
   "workerEndpoint": "localhost:8001",
   "model": "distilbert-base-uncased-finetuned-sst-2-english", "version": "<hf revision or null>",
   "task": "sentiment-analysis", "prediction": { "label": "POSITIVE", "score": 0.9998 },
-  "workerInferenceMs": 14.2, "totalLatencyMs": 31 }
+  "workerInferenceMs": 14.2, "totalLatencyMs": 31,
+  "modelId": null, "modelVersion": null,
+  "routing": { "strategy": "ROUND_ROBIN_ALL", "target": null,
+    "poolSize": 1, "eligibleCount": 1,
+    "candidates": [{ "endpoint": "localhost:8001", "eligible": true, "note": "ANY_WORKER", "served": null }],
+    "chosen": "localhost:8001", "reason": "round-robin over 1 eligible" } }
 ```
 The values above are illustrative of the shape only. They are not measured results.
 
