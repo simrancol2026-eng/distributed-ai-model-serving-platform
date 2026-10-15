@@ -214,9 +214,13 @@ public class InferenceController {
         var selected = workers.reserveHealthy(target == null ? null : target.version().artifact(),
                 target == null ? null : target.version().artifactRevision());
         if (selected.error() != null) {
-            int status = selected.error().equals("NO_ELIGIBLE_WORKER") ? 422 : 503;
-            return new Routed(error(status, selected.error(),
-                    "No eligible worker has usable current health for this request.", trace.requestId()), selected.decision());
+            boolean unservable = selected.error().equals("NO_ELIGIBLE_WORKER");
+            String message = unservable
+                    ? "No worker serves the requested capability or model version: every worker's current health"
+                            + " reports something else."
+                    : "No live worker can serve this request right now: worker health is failing or not yet observed.";
+            return new Routed(error(unservable ? 422 : 503, selected.error(), message, trace.requestId()),
+                    selected.decision());
         }
         try (var reservation = selected.reservation()) {
             return new Routed(call(reservation.worker(), input, target, trace, started, selected.decision()), selected.decision());
