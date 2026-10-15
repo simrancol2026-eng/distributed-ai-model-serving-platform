@@ -31,6 +31,13 @@ public class WorkerClient {
     private volatile ServedModel served;
     private volatile long servedAtNanos;
 
+    /** Injectable HTTP transports for deterministic tests without opening sockets. */
+    WorkerClient(String workerUrl, RestClient restClient, RestClient probeClient) {
+        this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
+        this.restClient = java.util.Objects.requireNonNull(restClient);
+        this.probeClient = java.util.Objects.requireNonNull(probeClient);
+    }
+
     /**
      * @param workerUrl already validated by {@link WorkerUrlValidator}
      */
@@ -62,6 +69,19 @@ public class WorkerClient {
     /** host:port of this worker, safe to log and return (no path, no credentials). */
     public String endpoint() {
         return endpoint;
+    }
+
+    /** Uncached liveness and identity from one response, for background health routing. */
+    WorkerHealth.Probe probeHealth() {
+        Map<?, ?> health = probeClient.get().uri("/health").retrieve().body(Map.class);
+        if (health == null) return new WorkerHealth.Probe(false, null, null);
+        String capability = health.get("capability") instanceof String c ? c : null;
+        ServedModel identity = null;
+        if (health.get("model") instanceof String m && !m.isBlank()
+                && health.get("revision") instanceof String r && !r.isBlank()) {
+            identity = new ServedModel(m, r);
+        }
+        return new WorkerHealth.Probe("healthy".equals(health.get("status")), capability, identity);
     }
 
     /**
