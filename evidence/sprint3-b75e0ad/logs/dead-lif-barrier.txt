@@ -1,0 +1,25 @@
+mode=barrier n=20 stagger=0.0 wall=0.913
+i http error chosen if8001 if8002 totalMs wall_s
+0 200 None localhost:8001 4 4 170 0.907
+1 200 None localhost:8001 8 8 170 0.909
+2 503 WORKER_UNAVAILABLE localhost:8002 1 0 65 0.792
+3 200 None localhost:8001 7 7 170 0.906
+4 503 WORKER_UNAVAILABLE localhost:8002 2 1 63 0.805
+5 503 WORKER_UNAVAILABLE localhost:8002 7 6 67 0.808
+6 503 WORKER_UNAVAILABLE localhost:8002 6 5 64 0.759
+7 503 WORKER_UNAVAILABLE localhost:8002 8 7 68 0.781
+8 200 None localhost:8001 5 5 168 0.891
+9 503 WORKER_UNAVAILABLE localhost:8002 4 3 62 0.801
+10 503 WORKER_UNAVAILABLE localhost:8002 9 8 65 0.807
+11 200 None localhost:8001 3 3 168 0.892
+12 503 WORKER_UNAVAILABLE localhost:8002 5 4 66 0.758
+13 503 WORKER_UNAVAILABLE localhost:8002 3 2 62 0.790
+14 200 None localhost:8001 2 2 169 0.899
+15 200 None localhost:8001 6 6 168 0.905
+16 200 None localhost:8001 0 0 169 0.862
+17 200 None localhost:8001 1 1 169 0.872
+18 503 WORKER_UNAVAILABLE localhost:8002 10 9 63 0.791
+19 200 None localhost:8001 9 9 169 0.910
+COUNTS
+(200, 'localhost:8001') 10
+(503, 'localhost:8002') 10

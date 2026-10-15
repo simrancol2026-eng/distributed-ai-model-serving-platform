@@ -1,0 +1,202 @@
+== seq-unversioned-0 ==
+http=200 wall_s=0.193 requestId=5f3263d4-d9fa-419a-8071-661217cfcfb6
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8001
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 87 worker worker-a dispatchedAt 2026-10-15T19:08:37.311591Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== seq-unversioned-1 ==
+http=200 wall_s=0.024 requestId=c57d9e1e-29d1-4175-801f-c9b4b8eef558
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8002
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 20 worker worker-b dispatchedAt 2026-10-15T19:08:37.416779Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== seq-unversioned-2 ==
+http=200 wall_s=0.018 requestId=d1aae2ef-d748-4794-8839-06e4b49cd160
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8001
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 14 worker worker-a dispatchedAt 2026-10-15T19:08:37.442614Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== seq-unversioned-3 ==
+http=200 wall_s=0.016 requestId=531aa733-3967-4188-b431-ae0161ac4ac1
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8002
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 12 worker worker-b dispatchedAt 2026-10-15T19:08:37.463164Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== seq-unversioned-4 ==
+http=200 wall_s=0.017 requestId=2583fd9c-6dbb-431b-979b-c2f26c80f247
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8001
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 14 worker worker-a dispatchedAt 2026-10-15T19:08:37.481735Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== seq-unversioned-5 ==
+http=200 wall_s=0.015 requestId=7d8070e0-159a-4def-ab81-57f0ea414218
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8002
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 11 worker worker-b dispatchedAt 2026-10-15T19:08:37.501119Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+UNVERSIONED_ENDPOINTS ['localhost:8001', 'localhost:8002', 'localhost:8001', 'localhost:8002', 'localhost:8001', 'localhost:8002']
+== seq-versioned-0 ==
+http=200 wall_s=0.032 requestId=faf5d991-ace2-4239-902d-ccf9edb93e1b
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8001
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 28 worker worker-a dispatchedAt 2026-10-15T19:08:37.533834Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+== seq-versioned-1 ==
+http=200 wall_s=0.017 requestId=06bc3c9f-8fe3-43da-8901-cc9f5b6c8f50
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8002
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 14 worker worker-b dispatchedAt 2026-10-15T19:08:37.553965Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+== seq-versioned-2 ==
+http=200 wall_s=0.020 requestId=f60a253d-c9c8-4f2d-8ddf-45460805d608
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8001
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 16 worker worker-a dispatchedAt 2026-10-15T19:08:37.573727Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+== seq-versioned-3 ==
+http=200 wall_s=0.017 requestId=1ee8bc2f-2562-4a92-87de-ed1701ea0b8f
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8002
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 14 worker worker-b dispatchedAt 2026-10-15T19:08:37.595266Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+== seq-versioned-4 ==
+http=200 wall_s=0.016 requestId=f30640ff-b2ba-40e5-b506-be72a41c46fd
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8001
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 11 worker worker-a dispatchedAt 2026-10-15T19:08:37.614528Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8001 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+== seq-versioned-5 ==
+http=200 wall_s=0.016 requestId=a8741d82-d102-4722-90e8-6ff6f57fca3c
+strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen localhost:8002
+reason model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)
+ cand localhost:8001 ELIGIBLE eligible True inFlight 0
+ cand localhost:8002 ELIGIBLE eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 12 worker worker-b dispatchedAt 2026-10-15T19:08:37.632621Z
+stored==response True
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}, localhost:8002:ELIGIBLE{inFlight=0}] chosen=localhost:8002 reason="model 'sentiment-distilbert' version 'v1': least-in-flight over 2 eligible of 2 worker(s)"
+
+VERSIONED_ENDPOINTS ['localhost:8001', 'localhost:8002', 'localhost:8001', 'localhost:8002', 'localhost:8001', 'localhost:8002']
+== blank-400 ==
+http=400 wall_s=0.004 requestId=30b18d15-2697-4d77-a6d4-645f05b93524
+error INVALID_REQUEST message Field 'input' is required and must not be blank.
+GET 200 status FAILED httpStatus 400 totalMs 0 worker None dispatchedAt None
+stored.strategy NOT_ROUTED policy LEAST_IN_FLIGHT chosen None reason INVALID_REQUEST
+log_lines 1
+strategy=NOT_ROUTED policy=LEAST_IN_FLIGHT target=- eligible=0/2 candidates=[] chosen=- reason="INVALID_REQUEST"
+
+== probe-after-400 ==
+http=200 wall_s=0.015 requestId=29df55ce-5b47-4d1f-a4f0-cd55d2232dbd
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8001
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 10 worker worker-a dispatchedAt 2026-10-15T19:08:37.655179Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== unknown-model-404 ==
+http=404 wall_s=0.005 requestId=01a9be81-2ace-41be-9f8a-7a83dc2b8e11
+error MODEL_NOT_FOUND message No registered model 'no-such-model'.
+GET 200 status FAILED httpStatus 404 totalMs 1 worker None dispatchedAt None
+stored.strategy NOT_ROUTED policy LEAST_IN_FLIGHT chosen None reason MODEL_NOT_FOUND
+log_lines 1
+strategy=NOT_ROUTED policy=LEAST_IN_FLIGHT target=- eligible=0/2 candidates=[] chosen=- reason="MODEL_NOT_FOUND"
+
+== probe-after-404 ==
+http=200 wall_s=0.019 requestId=cc01ce49-d077-4c72-80a5-c2ad9d727441
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8002
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 16 worker worker-b dispatchedAt 2026-10-15T19:08:37.682754Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== image-422 ==
+http=422 wall_s=0.004 requestId=e8f75a0c-3de1-4ff4-aee6-38d3c31df4a7
+error CAPABILITY_MISMATCH message Model 'sentiment-distilbert' has capability TEXT, not IMAGE.
+GET 200 status FAILED httpStatus 422 totalMs 1 worker None dispatchedAt None
+stored.strategy NOT_ROUTED policy LEAST_IN_FLIGHT chosen None reason CAPABILITY_MISMATCH
+log_lines 1
+strategy=NOT_ROUTED policy=LEAST_IN_FLIGHT target=- eligible=0/2 candidates=[] chosen=- reason="CAPABILITY_MISMATCH"
+
+== probe-after-422 ==
+http=200 wall_s=0.018 requestId=d72038b5-93cf-4782-ad2e-fc770145ccde
+strategy ROUND_ROBIN_ALL policy LEAST_IN_FLIGHT chosen localhost:8001
+reason no model requested: least-in-flight over all 2 worker(s)
+ cand localhost:8001 ANY_WORKER eligible True inFlight 0
+ cand localhost:8002 ANY_WORKER eligible True inFlight 0
+GET 200 status SUCCEEDED httpStatus 200 totalMs 15 worker worker-a dispatchedAt 2026-10-15T19:08:37.710535Z
+stored==response True
+log_lines 1
+strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+
+== unserved-v2 ==
+http=422 wall_s=0.004 requestId=093a2fbf-13ff-4580-bb44-20cfef238eeb
+error NO_ELIGIBLE_WORKER message No worker currently serves model 'vd-check-20261015190758-611a' version 'v2' (distilbert-base-uncased-finetuned-sst-2-english at revision 06edb04685a5aeecb3d3a4
+GET 200 status FAILED httpStatus 422 totalMs 1 worker None dispatchedAt None
+stored.strategy VERSION_AWARE policy LEAST_IN_FLIGHT chosen None reason NO_ELIGIBLE_WORKER: no worker reports distilbert-base-uncased-finetuned-sst-2-english@06edb04685a5aeecb3d3a4329af55a3e9b4b31f1
+ stored.cand localhost:8001 SERVES_OTHER inFlight 0
+ stored.cand localhost:8002 SERVES_OTHER inFlight 0
+log_lines 1
+strategy=VERSION_AWARE policy=LEAST_IN_FLIGHT target=distilbert-base-uncased-finetuned-sst-2-english@06edb04685a5aeecb3d3a4329af55a3e9b4b31f1 eligible=0/2 candidates=[localhost:8001:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}, localhost:8002:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}] chosen=- reason="NO_ELIGIBLE_WORKER: no worker reports distilbert-base-uncased-finetuned-sst-2-english@06edb04685a5aeecb3d3a4329af55a3e9b4b31f1"
+
+LIF_RC=0

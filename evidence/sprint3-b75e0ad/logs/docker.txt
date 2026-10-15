@@ -1,0 +1,3 @@
+docker --version
+docker: command not found
+The shell exit status of that command was 127. Docker is not installed.

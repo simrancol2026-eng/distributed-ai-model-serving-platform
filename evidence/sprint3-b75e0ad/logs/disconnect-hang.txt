@@ -1,0 +1,4 @@
+ALIGN 200 0.04 localhost:8001 [('localhost:8001', 0), ('localhost:8002', 0)] d741943c-9b6c-4c8a-922e-d50f311377cf
+CURL_RC 28 elapsed 0.406 curl: (28) Operation timed out after 400 milliseconds with 0 bytes received
+EARLY 1.632 localhost:8001 [('localhost:8001', 0), ('localhost:8002', 1)] wall 0.025 91f3f0e9-f0c0-4567-bae9-e1054431770c
+LATE 62.012 503 WORKER_UNAVAILABLE None [] wall 30.012 303d53c9-4fac-4c16-81b9-a58fc4ed81d4

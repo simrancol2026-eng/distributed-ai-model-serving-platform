@@ -1,0 +1,110 @@
+NEXUS AI
+INTELLIGENCE, ORCHESTRATED
+New request
+⌘ N
+
+WORKSPACE
+
+Workspace
+History
+1
+Saved
+
+CAPABILITIES
+
+Text
+Code
+Image
+Document
+
+PLATFORM
+
+Models
+Workers
+Routing
+Monitoring
+Failure recovery
+Settings
+Appearance
+Dark
+Personal workspace
+Local session
+NEXUS
+AI
+WORKSPACE
+MODELS
+WORKERS
+ROUTING
+MONITORING
+Backend connected
+YOU
+
+You 07:14 PM
+
+This movie is wonderful.
+
+NEXUS AI AUTO ROUTER
+
+POSITIVE (confidence 100.0%) — sentiment-analysis
+
+Routing details
+Backend decision
+Model
+distilbert-base-uncased-finetuned-sst-2-english @ 714eb0fa
+Worker
+worker-a
+Eligible
+2 of 2
+Routing
+no model requested: least-in-flight over all 2 worker(s)
+Latency
+63 ms
+Status
+completed
+Attach
+Auto routing
+TEXT
+CODE
+IMAGE
+DOCUMENT
+⌘ ↵
+AUTO ROUTING
+Let NEXUS select an appropriate available worker.
+Backend connected
+Backend reachable
+
+ORCHESTRATION SERVICE (WORKER ELIGIBILITY IS SHOWN PER REQUEST BELOW)
+
+Online
+CAPABILITY DETECTION
+AUTO
+
+Automatic detection
+
+Confidence
+—
+ROUTING FACTORS
+01
+Capability Match
+—
+02
+Worker Health
+—
+03
+Current Workload
+—
+04
+Latency
+—
+05
+Resource Availability
+—
+06
+Reliability
+—
+Eligible workers
+2 of 2
+Selected worker
+worker-a
+Backend connected
+ROUTING PIPELINE

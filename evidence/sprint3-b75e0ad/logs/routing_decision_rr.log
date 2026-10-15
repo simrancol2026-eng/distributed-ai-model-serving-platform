@@ -1,0 +1,41 @@
+PASS no-model request 0 -> 200 (200)
+PASS [f272f084] strategy ROUND_ROBIN_ALL
+PASS [f272f084] all 2 workers ANY_WORKER
+PASS [f272f084] chosen == workerEndpoint
+PASS [f272f084] stored routing == response routing
+PASS no-model request 1 -> 200 (200)
+PASS [b26c8aa6] strategy ROUND_ROBIN_ALL
+PASS [b26c8aa6] all 2 workers ANY_WORKER
+PASS [b26c8aa6] chosen == workerEndpoint
+PASS [b26c8aa6] stored routing == response routing
+PASS no-model request 2 -> 200 (200)
+PASS [b653e68d] strategy ROUND_ROBIN_ALL
+PASS [b653e68d] all 2 workers ANY_WORKER
+PASS [b653e68d] chosen == workerEndpoint
+PASS [b653e68d] stored routing == response routing
+PASS no-model request 3 -> 200 (200)
+PASS [d6b52855] strategy ROUND_ROBIN_ALL
+PASS [d6b52855] all 2 workers ANY_WORKER
+PASS [d6b52855] chosen == workerEndpoint
+PASS [d6b52855] stored routing == response routing
+PASS round-robin rotates: ['localhost:8001', 'localhost:8002', 'localhost:8001', 'localhost:8002']
+PASS blank input -> 400 (400)
+PASS stored NOT_ROUTED/INVALID_REQUEST: {'strategy': 'NOT_ROUTED', 'policy': 'ROUND_ROBIN', 'target': None, 'poolSize': 2, 'eligibleCount': 0, 'candidates': [], 'chosen': None, 'reason': 'INVALID_REQUEST'}
+PASS unknown model -> 404 (404)
+PASS stored NOT_ROUTED/MODEL_NOT_FOUND: {'strategy': 'NOT_ROUTED', 'policy': 'ROUND_ROBIN', 'target': None, 'poolSize': 2, 'eligibleCount': 0, 'candidates': [], 'chosen': None, 'reason': 'MODEL_NOT_FOUND'}
+PASS model sentiment-distilbert -> 200 (200) {'status': 'success', 'requestId': '6f0cf2b6-142e-4724-af67-d84f302f4420', 'capability': 'TEXT', 'worker': 'worker-a', 'workerEndpoint': 'localhost:8001', 'model': 'distilbert-base-uncased-finetuned-sst-2-english', 'version': '714eb0fa89d2f80546fda750413ed43d93601a13', 'task': 'sentiment-analysis', 'prediction': {'label': 'NEGATIVE', 'score': 0.9906458854675293}, 'workerInferenceMs': 6.9, 'totalLatencyMs': 12, 'modelId': 'sentiment-distilbert', 'modelVersion': 'v1', 'routing': {'strategy': 'VERSION_AWARE', 'target': 'distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13', 'poolSize': 2, 'eligibleCount': 2, 'candidates': [{'endpoint': 'localhost:8001', 'eligible': True, 'note': 'ELIGIBLE', 'served': 'distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13', 'inFlight': 0}, {'endpoint': 'localhost:8002', 'eligible': True, 'note': 'ELIGIBLE', 'served': 'distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13', 'inFlight': 0}], 'chosen': 'localhost:8001', 'reason': "model 'sentiment-distilbert' version 'v1': round-robin over 2 eligible of 2 worker(s)", 'policy': 'ROUND_ROBIN'}}
+PASS strategy VERSION_AWARE
+PASS eligibleCount 2 == ELIGIBLE candidates
+PASS chosen localhost:8001 is ELIGIBLE
+PASS every ELIGIBLE candidate serves the target
+PASS stored routing == response routing
+PASS [f272f084] one log line, chosen=localhost:8001
+PASS [b26c8aa6] one log line, chosen=localhost:8002
+PASS [b653e68d] one log line, chosen=localhost:8001
+PASS [d6b52855] one log line, chosen=localhost:8002
+PASS [79b225f4] one log line, chosen=-
+PASS [2e74734a] one log line, chosen=-
+PASS [6f0cf2b6] one log line, chosen=localhost:8001
+
+38/38 checks passed
+RD_RC=0

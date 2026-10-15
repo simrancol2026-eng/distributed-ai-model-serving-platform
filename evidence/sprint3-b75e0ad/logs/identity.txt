@@ -1,0 +1,11 @@
+VERSIONED 200 None VERSION_AWARE LEAST_IN_FLIGHT localhost:8001 2 3
+  localhost:8001 ELIGIBLE True 0
+  localhost:8002 ELIGIBLE True 0
+  localhost:8003 IDENTITY_UNKNOWN False 0
+id edb073b9-1733-4976-af51-70b13ee7eade
+stored_eq True
+UNSERVED 422 NO_ELIGIBLE_WORKER 7663beae-81dc-4990-8cf5-fd3b69b7cd7d
+stored VERSION_AWARE LEAST_IN_FLIGHT None 0
+  localhost:8001 SERVES_OTHER False 0
+  localhost:8002 SERVES_OTHER False 0
+  localhost:8003 IDENTITY_UNKNOWN False 0

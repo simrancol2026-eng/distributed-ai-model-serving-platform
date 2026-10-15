@@ -1,0 +1,4 @@
+Worker worker-b serves distilbert-base-uncased-finetuned-sst-2-english at revision 714eb0fa89d2f80546fda750413ed43d93601a13
+created model sentiment-distilbert
+created version sentiment-distilbert/v1 -> distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13
+SEED_RC=0
