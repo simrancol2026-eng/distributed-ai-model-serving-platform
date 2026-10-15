@@ -24,6 +24,31 @@ class WorkerHealthTest {
         assertEquals("rev", captured.identity().revision());
     }
 
+    @Test void oneSlowProbeDoesNotExpireTheLastSuccess() {
+        // Real timing: success ends at 0, the next probe starts 2 s later and times out after 2 s (t=4 s),
+        // and the one after that only starts at t=6 s. The worker must still be live in between.
+        var now = new AtomicLong();
+        var fail = new AtomicBoolean();
+        var h = new WorkerHealth(() -> { if (fail.get()) throw new IllegalStateException(); return good(); },
+                now::get, WorkerPool.healthFreshnessNanos(2000, 2000));
+        h.pollOnce();
+        fail.set(true);
+        now.set(4_000_000_000L);
+        h.pollOnce();
+        now.set(5_100_000_000L);
+        assertTrue(h.snapshot().live());
+        now.set(8_000_000_000L);
+        h.pollOnce();
+        assertFalse(h.snapshot().live());
+    }
+
+    @Test void errorFromProbeCountsAsFailedProbe() {
+        var h = new WorkerHealth(() -> { throw new AssertionError("probe blew up"); }, () -> 0, 100);
+        assertDoesNotThrow(h::pollOnce);
+        assertFalse(h.snapshot().latestProbeSucceeded());
+        assertEquals(1, h.snapshot().failures());
+    }
+
     @Test void twoFailuresExcludeAndOneSuccessReadmits() {
         var fail = new AtomicBoolean();
         var h = new WorkerHealth(() -> { if (fail.get()) throw new IllegalStateException(); return good(); },
