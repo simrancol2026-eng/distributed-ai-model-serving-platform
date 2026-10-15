@@ -1,0 +1,27 @@
+PASS worker http://localhost:8011 /health is 200
+PASS worker http://localhost:8012 /health is 200
+PASS two different worker ids: ['worker-a', 'worker-b']
+PASS two different processes (pid): [169929, 169930]
+PASS request 1/8 -> 200
+PASS request 1: worker worker-a answered from localhost:8011 (POSITIVE 0.9997)
+PASS request 2/8 -> 200
+PASS request 2: worker worker-b answered from localhost:8012 (POSITIVE 0.9998)
+PASS request 3/8 -> 200
+PASS request 3: worker worker-a answered from localhost:8011 (POSITIVE 0.9998)
+PASS request 4/8 -> 200
+PASS request 4: worker worker-b answered from localhost:8012 (POSITIVE 0.9998)
+PASS request 5/8 -> 200
+PASS request 5: worker worker-a answered from localhost:8011 (POSITIVE 0.9998)
+PASS request 6/8 -> 200
+PASS request 6: worker worker-b answered from localhost:8012 (POSITIVE 0.9998)
+PASS request 7/8 -> 200
+PASS request 7: worker worker-a answered from localhost:8011 (POSITIVE 0.9998)
+PASS request 8/8 -> 200
+PASS request 8: worker worker-b answered from localhost:8012 (POSITIVE 0.9997)
+order: ['worker-a', 'worker-b', 'worker-a', 'worker-b', 'worker-a', 'worker-b', 'worker-a', 'worker-b']
+PASS strict alternation A, B, A, B, ...
+PASS worker-a served 4 of 8 (expected 4, from its own counter)
+PASS worker-b served 4 of 8 (expected 4, from its own counter)
+
+23/23 checks passed
+RR_RC=0

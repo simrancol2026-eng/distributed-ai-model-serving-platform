@@ -1,0 +1,164 @@
+diff --git a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/HealthPoller.java b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/HealthPoller.java
+index d09f1c9..6c15952 100644
+--- a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/HealthPoller.java
++++ b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/HealthPoller.java
+@@ -5,8 +5,12 @@ import java.util.concurrent.Executors;
+ import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.TimeUnit;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ /** Bounded background probing. Owner must close on shutdown; no request calls pollOnce. */
+ final class HealthPoller implements AutoCloseable {
++    private static final Logger log = LoggerFactory.getLogger(HealthPoller.class);
+     private final ScheduledExecutorService executor;
+ 
+     HealthPoller(List<WorkerHealth> observations, long intervalMs) {
+@@ -19,7 +23,16 @@ final class HealthPoller implements AutoCloseable {
+             return thread;
+         });
+         for (WorkerHealth observation : observations) {
+-            executor.scheduleWithFixedDelay(observation::pollOnce, 0, intervalMs, TimeUnit.MILLISECONDS);
++            executor.scheduleWithFixedDelay(() -> pollSafely(observation), 0, intervalMs, TimeUnit.MILLISECONDS);
++        }
++    }
++
++    /** A task that throws is never run again by scheduleWithFixedDelay, so nothing may escape. */
++    private static void pollSafely(WorkerHealth observation) {
++        try {
++            observation.pollOnce();
++        } catch (Throwable t) {
++            log.warn("worker health poll failed; will retry on the next interval", t);
+         }
+     }
+ 
+diff --git a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/InferenceController.java b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/InferenceController.java
+index 7ce961e..31b1eed 100644
+--- a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/InferenceController.java
++++ b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/InferenceController.java
+@@ -214,9 +214,13 @@ public class InferenceController {
+         var selected = workers.reserveHealthy(target == null ? null : target.version().artifact(),
+                 target == null ? null : target.version().artifactRevision());
+         if (selected.error() != null) {
+-            int status = selected.error().equals("NO_ELIGIBLE_WORKER") ? 422 : 503;
+-            return new Routed(error(status, selected.error(),
+-                    "No eligible worker has usable current health for this request.", trace.requestId()), selected.decision());
++            boolean unservable = selected.error().equals("NO_ELIGIBLE_WORKER");
++            String message = unservable
++                    ? "No worker serves the requested capability or model version: every worker's current health"
++                            + " reports something else."
++                    : "No live worker can serve this request right now: worker health is failing or not yet observed.";
++            return new Routed(error(unservable ? 422 : 503, selected.error(), message, trace.requestId()),
++                    selected.decision());
+         }
+         try (var reservation = selected.reservation()) {
+             return new Routed(call(reservation.worker(), input, target, trace, started, selected.decision()), selected.decision());
+diff --git a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerHealth.java b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerHealth.java
+index bb12e00..580f955 100644
+--- a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerHealth.java
++++ b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerHealth.java
+@@ -34,7 +34,8 @@ final class WorkerHealth {
+             synchronized (this) { startedGeneration = generation; }
+             Probe result;
+             try { result = probe.get(); }
+-            catch (RuntimeException e) { result = null; }
++            // Any throwable from the probe is a failed observation; it must never escape and cancel polling.
++            catch (Throwable e) { result = null; }
+             long now = ticker.getAsLong();
+             synchronized (this) {
+                 // A contradictory inference response invalidates a probe already in progress.
+diff --git a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerPool.java b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerPool.java
+index 85de701..7a81ce0 100644
+--- a/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerPool.java
++++ b/backend/spring-boot/src/main/java/com/dhir/spring_boot/inference/WorkerPool.java
+@@ -46,6 +46,17 @@ public class WorkerPool {
+     private HealthRouting healthRouting;
+     private HealthPoller healthPoller;
+ 
++    static final long HEALTH_POLL_INTERVAL_MS = 2000;
++
++    /**
++     * How long a successful health observation stays usable. The poller waits a fixed delay after each probe
++     * ends and a probe may take up to probeTimeoutMs, so two consecutive failed probes can span
++     * 2 * (interval + timeout). A shorter window would let ONE slow probe expire the last success.
++     */
++    static long healthFreshnessNanos(long intervalMs, long probeTimeoutMs) {
++        return (2 * (intervalMs + probeTimeoutMs) + 2000) * 1_000_000L;
++    }
++
+     public boolean healthAware() { return policy == Policy.HEALTH_LATENCY; }
+     @jakarta.annotation.PreDestroy
+     public void close() { if (healthPoller != null) healthPoller.close(); }
+@@ -174,10 +185,11 @@ public class WorkerPool {
+         if (healthAware()) {
+             var observations = new java.util.LinkedHashMap<WorkerClient, WorkerHealth>();
+             for (WorkerClient worker : workers) {
+-                observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime, 5_000_000_000L));
++                observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime,
++                        healthFreshnessNanos(HEALTH_POLL_INTERVAL_MS, probeTimeoutMs)));
+             }
+             healthRouting = new HealthRouting(workers, observations, System::nanoTime);
+-            healthPoller = new HealthPoller(List.copyOf(observations.values()), 2000);
++            healthPoller = new HealthPoller(List.copyOf(observations.values()), HEALTH_POLL_INTERVAL_MS);
+         }
+         log.info("worker pool: {} worker(s), policy={} order {}", workers.size(), policy, endpoints());
+     }
+diff --git a/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/HealthPollerTest.java b/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/HealthPollerTest.java
+index 785d6b1..ee7f9e8 100644
+--- a/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/HealthPollerTest.java
++++ b/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/HealthPollerTest.java
+@@ -7,6 +7,17 @@ import java.util.concurrent.atomic.*;
+ import org.junit.jupiter.api.Test;
+ 
+ class HealthPollerTest {
++    @Test void pollingContinuesAfterAProbeThrowsAnError() throws Exception {
++        var calls = new CountDownLatch(3);
++        var observation = new WorkerHealth(() -> {
++            calls.countDown();
++            throw new AssertionError("probe blew up");
++        }, System::nanoTime, 5_000_000_000L);
++        try (var poller = new HealthPoller(List.of(observation), 10)) {
++            assertTrue(calls.await(3, TimeUnit.SECONDS), "polling stopped after the first Error");
++        }
++    }
++
+     @Test void boundedParallelismAndShutdownInterruptsActiveProbes() throws Exception {
+         var started = new CountDownLatch(4);
+         var interrupted = new CountDownLatch(4);
+diff --git a/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/WorkerHealthTest.java b/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/WorkerHealthTest.java
+index 6149921..40b2be6 100644
+--- a/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/WorkerHealthTest.java
++++ b/backend/spring-boot/src/test/java/com/dhir/spring_boot/inference/WorkerHealthTest.java
+@@ -24,6 +24,31 @@ class WorkerHealthTest {
+         assertEquals("rev", captured.identity().revision());
+     }
+ 
++    @Test void oneSlowProbeDoesNotExpireTheLastSuccess() {
++        // Real timing: success ends at 0, the next probe starts 2 s later and times out after 2 s (t=4 s),
++        // and the one after that only starts at t=6 s. The worker must still be live in between.
++        var now = new AtomicLong();
++        var fail = new AtomicBoolean();
++        var h = new WorkerHealth(() -> { if (fail.get()) throw new IllegalStateException(); return good(); },
++                now::get, WorkerPool.healthFreshnessNanos(2000, 2000));
++        h.pollOnce();
++        fail.set(true);
++        now.set(4_000_000_000L);
++        h.pollOnce();
++        now.set(5_100_000_000L);
++        assertTrue(h.snapshot().live());
++        now.set(8_000_000_000L);
++        h.pollOnce();
++        assertFalse(h.snapshot().live());
++    }
++
++    @Test void errorFromProbeCountsAsFailedProbe() {
++        var h = new WorkerHealth(() -> { throw new AssertionError("probe blew up"); }, () -> 0, 100);
++        assertDoesNotThrow(h::pollOnce);
++        assertFalse(h.snapshot().latestProbeSucceeded());
++        assertEquals(1, h.snapshot().failures());
++    }
++
+     @Test void twoFailuresExcludeAndOneSuccessReadmits() {
+         var fail = new AtomicBoolean();
+         var h = new WorkerHealth(() -> { if (fail.get()) throw new IllegalStateException(); return good(); },

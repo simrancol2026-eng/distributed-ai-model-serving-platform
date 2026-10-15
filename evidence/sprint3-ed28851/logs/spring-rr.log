@@ -1,0 +1,110 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T21:53:59.747Z  INFO 171821 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 171821 (/tmp/s3-ed28851/backend/spring-boot/target/classes started by ubuntu in /tmp/s3-ed28851/backend/spring-boot)
+2026-10-15T21:53:59.749Z  INFO 171821 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T21:54:00.285Z  INFO 171821 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-15T21:54:00.294Z  INFO 171821 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T21:54:00.294Z  INFO 171821 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T21:54:00.328Z  INFO 171821 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 547 ms
+2026-10-15T21:54:00.446Z  INFO 171821 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 2 worker(s), policy=ROUND_ROBIN order [localhost:8011, localhost:8012]
+2026-10-15T21:54:00.560Z  INFO 171821 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T21:54:00.709Z  INFO 171821 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5d124d29
+2026-10-15T21:54:00.710Z  INFO 171821 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T21:54:00.724Z  INFO 171821 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/s3_ed28851 (PostgreSQL 16.15)
+2026-10-15T21:54:00.754Z  INFO 171821 --- [spring-boot] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-15T21:54:00.756Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.009s)
+2026-10-15T21:54:00.765Z  INFO 171821 --- [spring-boot] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-15T21:54:00.815Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-15T21:54:00.821Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - registry"
+2026-10-15T21:54:00.845Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - inference requests"
+2026-10-15T21:54:00.859Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - routing decision"
+2026-10-15T21:54:00.866Z  INFO 171821 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 3 migrations to schema "public", now at version v3 (execution time 00:00.020s)
+2026-10-15T21:54:01.077Z  INFO 171821 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-15T21:54:01.080Z  INFO 171821 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 1.552 seconds (process running for 1.771)
+2026-10-15T21:54:01.082Z  INFO 171821 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T21:54:05.501Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T21:54:05.501Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T21:54:05.502Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-15T21:54:05.644Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=5ec638f4-7321-4f58-8e5b-1abc18cf7a61 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=113
+2026-10-15T21:54:05.646Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=5ec638f4-7321-4f58-8e5b-1abc18cf7a61 strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.694Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=6ed73595-799a-4fa4-aac8-754226f7b8cc routedTo=localhost:8012 worker=worker-b model=- version=- label=POSITIVE totalMs=29
+2026-10-15T21:54:05.694Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=6ed73595-799a-4fa4-aac8-754226f7b8cc strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.722Z  INFO 171821 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=60a069c4-64fd-4f9b-9d6c-006a6545e9e0 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=23
+2026-10-15T21:54:05.722Z  INFO 171821 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=60a069c4-64fd-4f9b-9d6c-006a6545e9e0 strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.748Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference ok requestId=f7ec927b-5dd4-485b-8f52-fae8d244f40f routedTo=localhost:8012 worker=worker-b model=- version=- label=POSITIVE totalMs=20
+2026-10-15T21:54:05.748Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=f7ec927b-5dd4-485b-8f52-fae8d244f40f strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.765Z  INFO 171821 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=3e52c1c0-758b-4fe8-b583-b6e9edd792da routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=13
+2026-10-15T21:54:05.765Z  INFO 171821 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=3e52c1c0-758b-4fe8-b583-b6e9edd792da strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.781Z  INFO 171821 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference ok requestId=dcb56365-353f-42b2-befa-93821731149d routedTo=localhost:8012 worker=worker-b model=- version=- label=POSITIVE totalMs=12
+2026-10-15T21:54:05.782Z  INFO 171821 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=dcb56365-353f-42b2-befa-93821731149d strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.800Z  INFO 171821 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=63187553-cac0-40ed-ae45-f9907c1a37d3 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=14
+2026-10-15T21:54:05.800Z  INFO 171821 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=63187553-cac0-40ed-ae45-f9907c1a37d3 strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.824Z  INFO 171821 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference ok requestId=b9bc9604-38ab-40d5-9f8e-4f2ba9a55d2e routedTo=localhost:8012 worker=worker-b model=- version=- label=POSITIVE totalMs=18
+2026-10-15T21:54:05.824Z  INFO 171821 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=b9bc9604-38ab-40d5-9f8e-4f2ba9a55d2e strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:05.904Z  INFO 171821 --- [spring-boot] [nio-8080-exec-9] c.d.s.registry.RegistryController        : registry model created id=vd-check-20261015215405-fb8c
+2026-10-15T21:54:05.912Z  INFO 171821 --- [spring-boot] [io-8080-exec-10] c.d.s.registry.RegistryController        : registry version created model=vd-check-20261015215405-fb8c version=v1 revision=714eb0fa89d2f80546fda750413ed43d93601a13
+2026-10-15T21:54:05.916Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] c.d.s.registry.RegistryController        : registry version created model=vd-check-20261015215405-fb8c version=v2 revision=d2a3d320f84693af9ede0f82dd6b6733284c6be1
+2026-10-15T21:54:05.945Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=6d403287-859c-484f-95e4-8ac82c12f61c routedTo=localhost:8011 worker=worker-a model=vd-check-20261015215405-fb8c version=v1 label=POSITIVE totalMs=24
+2026-10-15T21:54:05.945Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=6d403287-859c-484f-95e4-8ac82c12f61c strategy=VERSION_AWARE policy=ROUND_ROBIN target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8011:ELIGIBLE{inFlight=0}, localhost:8012:ELIGIBLE{inFlight=0}] chosen=localhost:8011 reason="model 'vd-check-20261015215405-fb8c' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T21:54:05.962Z  INFO 171821 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=01f23e40-3e78-4ab8-bf0f-df604e187bba routedTo=localhost:8012 worker=worker-b model=vd-check-20261015215405-fb8c version=v1 label=POSITIVE totalMs=14
+2026-10-15T21:54:05.963Z  INFO 171821 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=01f23e40-3e78-4ab8-bf0f-df604e187bba strategy=VERSION_AWARE policy=ROUND_ROBIN target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8011:ELIGIBLE{inFlight=0}, localhost:8012:ELIGIBLE{inFlight=0}] chosen=localhost:8012 reason="model 'vd-check-20261015215405-fb8c' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T21:54:05.978Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference ok requestId=eeeed9d1-d02c-46bc-9b07-3864b42d807d routedTo=localhost:8011 worker=worker-a model=vd-check-20261015215405-fb8c version=v1 label=POSITIVE totalMs=11
+2026-10-15T21:54:05.978Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=eeeed9d1-d02c-46bc-9b07-3864b42d807d strategy=VERSION_AWARE policy=ROUND_ROBIN target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8011:ELIGIBLE{inFlight=0}, localhost:8012:ELIGIBLE{inFlight=0}] chosen=localhost:8011 reason="model 'vd-check-20261015215405-fb8c' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T21:54:05.994Z  INFO 171821 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=e0bf81f0-1608-494b-9a51-4fb6c1c52867 routedTo=localhost:8012 worker=worker-b model=vd-check-20261015215405-fb8c version=v1 label=POSITIVE totalMs=13
+2026-10-15T21:54:05.994Z  INFO 171821 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=e0bf81f0-1608-494b-9a51-4fb6c1c52867 strategy=VERSION_AWARE policy=ROUND_ROBIN target=distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13 eligible=2/2 candidates=[localhost:8011:ELIGIBLE{inFlight=0}, localhost:8012:ELIGIBLE{inFlight=0}] chosen=localhost:8012 reason="model 'vd-check-20261015215405-fb8c' version 'v1': round-robin over 2 eligible of 2 worker(s)"
+2026-10-15T21:54:06.003Z  INFO 171821 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=df128524-c204-42fb-bd77-1cac48774778 strategy=VERSION_AWARE policy=ROUND_ROBIN target=distilbert-base-uncased-finetuned-sst-2-english@d2a3d320f84693af9ede0f82dd6b6733284c6be1 eligible=0/2 candidates=[localhost:8011:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}, localhost:8012:SERVES_OTHER(distilbert-base-uncased-finetuned-sst-2-english@714eb0fa89d2f80546fda750413ed43d93601a13){inFlight=0}] chosen=- reason="NO_ELIGIBLE_WORKER: no worker reports distilbert-base-uncased-finetuned-sst-2-english@d2a3d320f84693af9ede0f82dd6b6733284c6be1"
+2026-10-15T21:54:06.010Z  INFO 171821 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=2521ff60-9ede-4dc3-ae4a-e77a7278754e strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="VERSION_NOT_FOUND"
+2026-10-15T21:54:06.014Z  INFO 171821 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=005b357b-cba4-430f-89f7-24bf635e44c6 strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="MODEL_NOT_FOUND"
+2026-10-15T21:54:06.017Z  INFO 171821 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=0dd3accb-1ebc-4ef1-a5da-dc9483bde553 strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="INVALID_REQUEST"
+2026-10-15T21:54:06.021Z  INFO 171821 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=240a6bb3-0b1d-4059-a7e8-943837a0cb7f strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="CAPABILITY_MISMATCH"
+2026-10-15T21:54:06.033Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=63648649-3f52-4d66-aa5e-c8baee8ec860 routedTo=localhost:8011 worker=worker-a model=- version=- label=NEGATIVE totalMs=10
+2026-10-15T21:54:06.034Z  INFO 171821 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=63648649-3f52-4d66-aa5e-c8baee8ec860 strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:06.114Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=a5a09865-36a8-4442-8032-cd9cfee1f87f routedTo=localhost:8012 worker=worker-b model=- version=- label=NEGATIVE totalMs=14
+2026-10-15T21:54:06.115Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=a5a09865-36a8-4442-8032-cd9cfee1f87f strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:06.134Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference ok requestId=9797b259-c2b2-48ec-98ba-41617333c80b routedTo=localhost:8011 worker=worker-a model=- version=- label=NEGATIVE totalMs=11
+2026-10-15T21:54:06.134Z  INFO 171821 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=9797b259-c2b2-48ec-98ba-41617333c80b strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:06.152Z  INFO 171821 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference ok requestId=3a1b82a4-ed45-48a8-af73-0fde14ac06ec routedTo=localhost:8012 worker=worker-b model=- version=- label=NEGATIVE totalMs=11
+2026-10-15T21:54:06.152Z  INFO 171821 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=3a1b82a4-ed45-48a8-af73-0fde14ac06ec strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8012 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:06.166Z  INFO 171821 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference ok requestId=53804410-5e56-4c7c-bd9e-703b8987808f routedTo=localhost:8011 worker=worker-a model=- version=- label=NEGATIVE totalMs=9
+2026-10-15T21:54:06.166Z  INFO 171821 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=53804410-5e56-4c7c-bd9e-703b8987808f strategy=ROUND_ROBIN_ALL policy=ROUND_ROBIN target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8012:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: round-robin over all 2 worker(s)"
+2026-10-15T21:54:06.173Z  INFO 171821 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=a53f2f64-2035-44f5-9726-2e3141efde5a strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="INVALID_REQUEST"
+2026-10-15T21:54:06.179Z  INFO 171821 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=25021798-4173-43ef-a122-0f4291358b8e strategy=NOT_ROUTED policy=ROUND_ROBIN target=- eligible=0/2 candidates=[] chosen=- reason="MODEL_NOT_FOUND"
+2026-10-15T21:54:15.624Z  INFO 171821 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T21:54:15.626Z  INFO 171821 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T21:54:15.629Z  INFO 171821 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T21:54:15.636Z  INFO 171821 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

@@ -1,0 +1,38 @@
+RESTART_B 2026-10-15T21:56:46Z
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 6831.33it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:     Started server process [174776]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8012 (Press CTRL+C to quit)
+INFO:     127.0.0.1:38038 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42836 - "POST /predict HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [174776]
+RESTART_B 2026-10-15T21:57:02Z
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 7891.45it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:     Started server process [175388]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8012 (Press CTRL+C to quit)
+INFO:     127.0.0.1:36936 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36940 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36940 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36940 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36940 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36940 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [175388]
+RESTART_B 2026-10-15T21:57:18Z
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 9754.85it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:     Started server process [176017]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8012 (Press CTRL+C to quit)
+INFO:     127.0.0.1:34054 - "GET /health HTTP/1.1" 200 OK

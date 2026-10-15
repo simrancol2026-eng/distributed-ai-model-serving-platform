@@ -1,0 +1,363 @@
+{"event": "start", "t": 1792101275.1267781}
+{"event": "listen", "port": 8001, "upstream": ["127.0.0.1", 8011], "t": 1792101275.1271274}
+{"event": "listen", "port": 8002, "upstream": ["127.0.0.1", 8012], "t": 1792101275.1273396}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101275.416081}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.004, "artificial": false, "t": 1792101275.4198408}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101275.4207795}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101275.422468}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101277.9913454}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101277.9915807}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.006, "artificial": false, "t": 1792101277.9933636}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.006, "artificial": false, "t": 1792101277.9935675}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101280.0253966}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101280.0257268}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101280.027339}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101280.02737}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101282.030301}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101282.030517}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101282.0315874}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101282.0320504}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101284.0351498}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101284.0352206}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101284.0367267}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101284.0368469}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101286.040013}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101286.0401406}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101286.0422733}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101286.0423079}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101287.879054}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.025, "artificial": false, "t": 1792101287.8974364}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101288.0450504}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101288.0454583}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101288.0465326}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101288.0468743}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101290.0496294}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "hold", "artificial": true, "t": 1792101290.0498867}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101290.0516822}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101292.0552337}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101292.056914}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101293.1585088}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.021, "artificial": false, "t": 1792101293.1771867}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "hold", "artificial": true, "t": 1792101294.0534678}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101294.0598752}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101294.0617883}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101295.25614}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.016, "artificial": false, "t": 1792101295.2712367}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101295.284683}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.022, "artificial": false, "t": 1792101295.3053632}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101295.5182602}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.017, "artificial": false, "t": 1792101295.534253}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101295.7459838}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.016, "artificial": false, "t": 1792101295.7615314}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101295.9730914}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.015, "artificial": false, "t": 1792101295.9875987}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101296.065278}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101296.0667675}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101296.1975796}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101296.2084935}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101296.2171566}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101296.2253144}
+{"event": "hold_released", "port": 8001, "path": "/health", "held_s": 6.176, "next": "pass", "t": 1792101296.2256074}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "hold", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 6.178, "artificial": true, "t": 1792101296.227215}
+{"event": "hold_released", "port": 8001, "path": "/health", "held_s": 2.209, "next": "pass", "t": 1792101296.262582}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "hold", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 2.212, "artificial": true, "t": 1792101296.2646644}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101296.4881823}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101296.5007155}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101296.7625384}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101296.774182}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101297.0354667}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101297.0473392}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101297.3099627}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101297.3201063}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101297.5823278}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101297.5941641}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101297.8544798}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101297.8637846}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101298.053897}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101298.0552747}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101298.069644}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101298.0713143}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101298.1261137}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101298.1360712}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101298.1445565}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101298.154121}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101298.1616979}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.008, "artificial": false, "t": 1792101298.1696486}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101298.4794788}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101298.488614}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101298.7984734}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101298.806621}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101299.1181445}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101299.1258957}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101299.4361618}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101299.4459128}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101299.7564406}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101299.7651584}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "fail500", "artificial": true, "t": 1792101300.058425}
+{"event": "fail500", "port": 8001, "path": "/health", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101300.0586224}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "t": 1792101300.0732024}
+{"event": "fail500", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "elapsed_s": 0.0, "t": 1792101300.073257}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101300.0767004}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101300.0853875}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101300.3952723}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101300.4050941}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101300.7150633}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101300.724378}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101301.034522}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101301.0442057}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101301.3559027}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101301.3652906}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101301.6760323}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101301.6845007}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101301.9962397}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.01, "artificial": false, "t": 1792101302.0053892}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "fail500", "artificial": true, "t": 1792101302.0631683}
+{"event": "fail500", "port": 8001, "path": "/health", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101302.063264}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "t": 1792101302.0758128}
+{"event": "fail500", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "elapsed_s": 0.0, "t": 1792101302.0758908}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101304.066074}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101304.068328}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "t": 1792101304.078073}
+{"event": "fail500", "port": 8002, "path": "/health", "mode": "fail500", "artificial": true, "elapsed_s": 0.0, "t": 1792101304.078143}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101304.116949}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101304.1285143}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101304.1366239}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101304.146934}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101304.4597654}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.013, "artificial": false, "t": 1792101304.4711978}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101304.7827618}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101304.7921712}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101305.1021328}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101305.1133573}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101305.4257267}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101305.4364161}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101305.74689}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101305.7580078}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101306.0696}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101306.0711563}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.006, "artificial": false, "t": 1792101306.07651}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101306.0812361}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.019, "artificial": false, "t": 1792101306.0880046}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.008, "artificial": false, "t": 1792101306.0883436}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101306.4009385}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.014, "artificial": false, "t": 1792101306.4134896}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101308.0797536}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101308.0824172}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101308.0935874}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101308.095567}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "t": 1792101308.9597535}
+{"event": "fail500", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101308.9598408}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "t": 1792101308.969968}
+{"event": "fail500", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101308.9700298}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "fail500", "artificial": true, "t": 1792101308.9776738}
+{"event": "fail500", "port": 8001, "path": "/predict", "mode": "fail500", "artificial": true, "elapsed_s": 0.0, "t": 1792101308.9777367}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "fail500", "artificial": true, "t": 1792101308.9850447}
+{"event": "fail500", "port": 8001, "path": "/predict", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101308.9851058}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101310.0860484}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101310.0876021}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101310.097578}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101310.0992901}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101312.0909111}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101312.0930293}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101312.1021557}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101312.103453}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101314.0967712}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101314.098751}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101314.1059072}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101314.1074686}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101315.1968312}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.015, "artificial": false, "t": 1792101315.2106326}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101315.2200937}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.011, "artificial": false, "t": 1792101315.230416}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "t": 1792101315.2372606}
+{"event": "fail500", "port": 8002, "path": "/predict", "mode": "fail500", "artificial": true, "elapsed_s": 0.001, "t": 1792101315.2373233}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101315.242931}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101315.2517853}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101315.262447}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101315.2737417}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101315.2809453}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101315.2897067}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "hold", "artificial": true, "t": 1792101315.6999707}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "hold", "artificial": true, "t": 1792101315.7025728}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101316.1021905}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101316.104154}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101316.1101398}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101316.1114187}
+{"event": "hold_released", "port": 8002, "path": "/predict", "held_s": 0.854, "next": "pass", "t": 1792101316.554063}
+{"event": "hold_released", "port": 8001, "path": "/predict", "held_s": 0.853, "next": "pass", "t": 1792101316.5557935}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "hold", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.909, "artificial": true, "t": 1792101316.6086416}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "hold", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.912, "artificial": true, "t": 1792101316.6139479}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101317.659088}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.012, "artificial": false, "t": 1792101317.6700573}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101318.1071148}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101318.1087255}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101318.1135733}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.001, "artificial": false, "t": 1792101318.1148965}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101320.1118636}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101320.1143353}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101320.1168308}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101320.1183882}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101322.1183712}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101322.1200323}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101322.120263}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101322.1215525}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101324.12401}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101324.1242898}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101324.1263547}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101324.126487}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.1841278}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.014, "artificial": false, "t": 1792101324.1972528}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2059367}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.009, "artificial": false, "t": 1792101324.2135022}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2209675}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.227331}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2341597}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.2405126}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2467165}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.253213}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.258285}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.264599}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2716563}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.2780414}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.2834594}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.007, "artificial": false, "t": 1792101324.2898512}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.5015063}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.5128617}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.5139048}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.5145087}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.515222}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.515841}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101324.516279}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "delay:2.0", "artificial": true, "t": 1792101324.5182316}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.018, "artificial": false, "t": 1792101324.5337803}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101326.129301}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101326.1298554}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101326.1314673}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101326.1316712}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.013, "artificial": true, "t": 1792101326.5141006}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.046, "artificial": true, "t": 1792101326.5605319}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.046, "artificial": true, "t": 1792101326.561081}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.049, "artificial": true, "t": 1792101326.5614266}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.048, "artificial": true, "t": 1792101326.5617666}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.048, "artificial": true, "t": 1792101326.561946}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "delay:2.0", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 2.0, "elapsed_s": 2.048, "artificial": true, "t": 1792101326.566154}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101328.134825}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101328.1350105}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101328.1369271}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101328.1374388}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101330.140449}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101330.1407416}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101330.142187}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101330.1423786}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101332.145935}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101332.1468625}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101332.1476395}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101332.1485372}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101334.1510785}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101334.151393}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101334.1532867}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101334.153489}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101336.1564736}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101336.156822}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101336.1584587}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101336.158665}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101338.1624372}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101338.162742}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101338.1644511}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.004, "artificial": false, "t": 1792101338.1664512}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101340.1677184}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101340.1688967}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101340.1694984}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101340.1711316}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101342.1730583}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101342.1733081}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101342.1748917}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101342.1749926}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101344.1787188}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101344.1792068}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101344.1801224}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101344.180912}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101346.1838949}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101346.1842434}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101346.1856863}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101346.1863096}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101348.1889572}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101348.1899822}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101348.1915188}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101348.191657}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101350.1949422}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101350.1952393}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101350.1963923}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101350.196662}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101352.1995451}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101352.1996615}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101352.2014647}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101352.2015996}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101354.2044199}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101354.2046912}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.006, "artificial": false, "t": 1792101354.209846}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.006, "artificial": false, "t": 1792101354.2105396}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101356.2137406}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101356.2138462}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101356.2153287}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101356.2156994}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101358.21951}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101358.2195807}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101358.221156}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101358.221821}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101359.7452345}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.022, "artificial": false, "t": 1792101359.765432}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101359.7846124}
+{"event": "forward", "port": 8002, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.014, "artificial": false, "t": 1792101359.7974234}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101360.224827}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101360.2251716}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101360.2264307}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101360.2266793}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101362.229732}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101362.2299879}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101362.2314432}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101362.2320373}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101364.2354627}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101364.235483}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101364.2373624}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101364.237707}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101366.2406945}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101366.24159}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101366.2435772}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101366.2437863}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101368.2476048}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101368.2478886}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101368.2500675}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101368.2502851}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101370.253962}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101370.254375}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101370.255961}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101370.2562554}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101372.2587447}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101372.2589996}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101372.26047}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101372.2609696}
+{"event": "arrived", "port": 8002, "path": "/predict", "mode": "refuse", "artificial": true, "t": 1792101372.7612727}
+{"event": "refuse", "port": 8002, "path": "/predict", "mode": "refuse", "artificial": true, "t": 1792101372.7613215}
+{"event": "arrived", "port": 8001, "path": "/predict", "mode": "pass", "artificial": false, "t": 1792101372.7752721}
+{"event": "forward", "port": 8001, "path": "/predict", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.02, "artificial": false, "t": 1792101372.7948372}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101374.263887}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101374.2640593}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101374.2661734}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101374.2661963}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101376.2732556}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101376.2735097}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101376.2751274}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101376.2753131}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101378.278312}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101378.2785847}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101378.279795}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101378.2806418}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101380.2826738}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101380.2831957}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101380.2849174}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.002, "artificial": false, "t": 1792101380.2852936}
+{"event": "arrived", "port": 8002, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101382.288187}
+{"event": "arrived", "port": 8001, "path": "/health", "mode": "pass", "artificial": false, "t": 1792101382.2887268}
+{"event": "forward", "port": 8001, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101382.2903366}
+{"event": "forward", "port": 8002, "path": "/health", "mode": "pass", "status": "HTTP/1.1 200 OK", "mismatch": false, "delay_s": 0, "elapsed_s": 0.003, "artificial": false, "t": 1792101382.2908592}

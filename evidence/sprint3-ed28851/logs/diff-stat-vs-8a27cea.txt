@@ -1,0 +1,7 @@
+ .../dhir/spring_boot/inference/HealthPoller.java   | 15 ++++++++++++-
+ .../spring_boot/inference/InferenceController.java | 10 ++++++---
+ .../dhir/spring_boot/inference/WorkerHealth.java   |  3 ++-
+ .../com/dhir/spring_boot/inference/WorkerPool.java | 16 ++++++++++++--
+ .../spring_boot/inference/HealthPollerTest.java    | 11 ++++++++++
+ .../spring_boot/inference/WorkerHealthTest.java    | 25 ++++++++++++++++++++++
+ 6 files changed, 73 insertions(+), 7 deletions(-)

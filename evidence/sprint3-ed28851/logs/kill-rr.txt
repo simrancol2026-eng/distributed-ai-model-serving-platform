@@ -1,0 +1,37 @@
+label=real SIGTERM of worker-b pid 169930
+KILL_AT 0.505
+N 30 GAP 0.2
+ROW {"i": 0, "t": 0.0, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.182, "id": "86df2be7-7044-44cc-b05c-bf6615d45c37"}
+ROW {"i": 1, "t": 0.201, "http": 200, "error": null, "endpoint": "localhost:8012", "worker": "worker-b", "elapsed": 0.024, "id": "cf2b65ca-7e03-4d5d-8a5a-3155088f9f4e"}
+ROW {"i": 2, "t": 0.402, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "a8d5050f-4ade-492d-93bf-0fcd49f42c91"}
+ROW {"i": 3, "t": 0.602, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.009, "id": "f00ff144-6572-490e-8335-6eadb69fb8c7"}
+ROW {"i": 4, "t": 0.802, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.017, "id": "d9058d55-f706-4e55-9c8f-aa9d2bff3d67"}
+ROW {"i": 5, "t": 1.002, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "1d10bceb-e8aa-4498-b458-35e399dac64e"}
+ROW {"i": 6, "t": 1.202, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.019, "id": "4e64a876-b05a-4c3b-b543-38ae1619e139"}
+ROW {"i": 7, "t": 1.402, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "a0e9ff64-9346-45ca-85d4-1fb4da1bb144"}
+ROW {"i": 8, "t": 1.602, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.019, "id": "bf54aa40-fd1f-4c71-a0d8-d1298d10fcef"}
+ROW {"i": 9, "t": 1.803, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "c5d066b8-0b50-465e-93ed-45ab118dd384"}
+ROW {"i": 10, "t": 2.003, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.024, "id": "97266b54-2a4b-46b5-9c52-5269ea3d5488"}
+ROW {"i": 11, "t": 2.203, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.008, "id": "622b6578-d09d-4fad-807a-4e0cf6cc7933"}
+ROW {"i": 12, "t": 2.403, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.021, "id": "1436e236-6123-48af-a8bb-1626db503c6a"}
+ROW {"i": 13, "t": 2.603, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "b3fe5d6e-3ebe-479d-b5d0-ab05f5c469fa"}
+ROW {"i": 14, "t": 2.803, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "44af7f88-d64b-472c-9cd3-b358a95658e6"}
+ROW {"i": 15, "t": 3.003, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.008, "id": "4da2153a-5f31-4e86-aa09-c0e5ece14ed5"}
+ROW {"i": 16, "t": 3.203, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "6d357587-f3c1-426b-bf11-8d490e19f005"}
+ROW {"i": 17, "t": 3.403, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "d95384f2-36f7-4347-8c74-86aa692489dc"}
+ROW {"i": 18, "t": 3.603, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.019, "id": "f37afdc8-9f58-428a-964d-b0e95ad55464"}
+ROW {"i": 19, "t": 3.803, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "b22a0b8f-abb1-4f53-84d2-783861e52f82"}
+ROW {"i": 20, "t": 4.003, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "3d346a52-5b1c-4d84-b8a7-1b12009b3d8b"}
+ROW {"i": 21, "t": 4.203, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "ef17e464-046f-47b6-b310-01d5b5223b62"}
+ROW {"i": 22, "t": 4.403, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.016, "id": "2c057b62-e717-4261-a635-b08b824960ee"}
+ROW {"i": 23, "t": 4.604, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "f1431852-8de6-441e-a5b3-5edfd103120d"}
+ROW {"i": 24, "t": 4.804, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.019, "id": "e8ee10dd-20f7-4b0a-be0a-b07964e45d6a"}
+ROW {"i": 25, "t": 5.005, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "f88e1461-7bdb-4c18-a260-d9b30f50d45f"}
+ROW {"i": 26, "t": 5.205, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "95e09be7-ff27-45ed-93ed-f93b7fd2b24c"}
+ROW {"i": 27, "t": 5.405, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "29d27763-2cc2-445a-a93f-79714f766e62"}
+ROW {"i": 28, "t": 5.605, "http": 200, "error": null, "endpoint": "localhost:8011", "worker": "worker-a", "elapsed": 0.018, "id": "f1226e51-868e-4f66-8de7-d85160ad3a24"}
+ROW {"i": 29, "t": 5.805, "http": 503, "error": "WORKER_UNAVAILABLE", "endpoint": null, "worker": null, "elapsed": 0.007, "id": "456b0b3e-cc48-4a89-ae5e-24824abdc086"}
+COUNTS
+  http=200 error=None endpoint=localhost:8011 n=15
+  http=200 error=None endpoint=localhost:8012 n=1
+  http=503 error=WORKER_UNAVAILABLE endpoint=None n=14
