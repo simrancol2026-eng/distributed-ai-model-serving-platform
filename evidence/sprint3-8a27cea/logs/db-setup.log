@@ -1,0 +1,9 @@
+role s3_8a27cea: creating
+database s3_8a27cea: creating (owner s3_8a27cea)
+Done. Start the backend with:
+  PLATFORM_DB_URL=jdbc:postgresql://localhost:5432/s3_8a27cea PLATFORM_DB_USER=s3_8a27cea PLATFORM_DB_PASSWORD=... ./mvnw spring-boot:run
+ public_tables 
+---------------
+             0
+(1 row)
+

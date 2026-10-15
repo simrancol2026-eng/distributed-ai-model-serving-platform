@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-10-15T20:34:24+0000",
+  "backend": "http://localhost:8080",
+  "worker": "http://localhost:8001",
+  "results": [
+    {
+      "test": "A  Backend health (plain-text liveness)",
+      "result": "PASS",
+      "evidence": "HTTP 200 body='Backend is healthy' content-type='text/plain' (requested Accept: application/json)"
+    },
+    {
+      "test": "B  Worker health",
+      "result": "PASS",
+      "evidence": "HTTP 200 body={\"status\":\"healthy\",\"worker\":\"model-a\",\"model\":\"distilbert-base-uncased-finetuned-sst-2-english\",\"revision\":\"714eb0fa89d2f80546fda750413ed43d93601a13\",\"capability\":\"TEXT\",\"task\":\"sentiment-analysis\",\"transformers\":\"5.17.0\",\"predictionsServed\":0,\"pid\":157833}"
+    },
+    {
+      "test": "C  Direct worker inference (real model)",
+      "result": "PASS",
+      "evidence": "positive text -> POSITIVE 0.9998832941055298; negative text -> NEGATIVE 0.9994720816612244; model=distilbert-base-uncased-finetuned-sst-2-english"
+    },
+    {
+      "test": "D  Inference through Spring Boot",
+      "result": "PASS",
+      "evidence": "HTTP 200 label=POSITIVE score=0.9998832941055298 worker=model-a workerMs=16.68 totalMs=86"
+    },
+    {
+      "test": "D2 Validation (blank->400, IMAGE->422)",
+      "result": "PASS",
+      "evidence": "blank=400 image=422"
+    },
+    {
+      "test": "D3 CORS allows http://localhost:5173",
+      "result": "PASS",
+      "evidence": "Allow-Origin=http://localhost:5173"
+    },
+    {
+      "test": "F1 Worker stopped -> controlled error, backend still up",
+      "result": "PASS",
+      "evidence": "inference HTTP 503 body={\"status\":\"error\",\"error\":\"WORKER_UNAVAILABLE\",\"message\":\"The model worker at localhost:8001 is not reachable. Please try again shortly.\",\"requestId\":\"837fede8-1034-40d2-86c9-7bd2a3dac038\"}; backend health HTTP 200"
+    },
+    {
+      "test": "F2 Worker restarted -> inference works again",
+      "result": "PASS",
+      "evidence": "HTTP 200; time from restart to first successful inference = 4.1 s (manual restart; automatic recovery is a later phase)"
+    }
+  ]
+}

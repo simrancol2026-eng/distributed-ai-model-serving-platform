@@ -1,0 +1,18 @@
+spring-cmp-ROUND_ROBIN-slow.log ok=10 fail=0
+  ok Counter({'localhost:8001': 5, 'localhost:8002': 5})
+  fail Counter()
+spring-cmp-LEAST_IN_FLIGHT-slow.log ok=10 fail=0
+  ok Counter({'localhost:8001': 5, 'localhost:8002': 5})
+  fail Counter()
+spring-cmp-HEALTH_LATENCY-slow.log ok=10 fail=0
+  ok Counter({'localhost:8001': 5, 'localhost:8002': 5})
+  fail Counter()
+spring-cmp-ROUND_ROBIN-dead.log ok=10 fail=10
+  ok Counter({'localhost:8011': 10})
+  fail Counter({('localhost:8099', 'WORKER_UNAVAILABLE'): 10})
+spring-cmp-LEAST_IN_FLIGHT-dead.log ok=10 fail=10
+  ok Counter({'localhost:8011': 10})
+  fail Counter({('localhost:8099', 'WORKER_UNAVAILABLE'): 10})
+spring-cmp-HEALTH_LATENCY-dead.log ok=20 fail=0
+  ok Counter({'localhost:8011': 20})
+  fail Counter()

@@ -1,0 +1,387 @@
+[
+  {
+    "id": "dc779fbc",
+    "status": "FAILED",
+    "http": 503,
+    "totalMs": 2,
+    "endpoint": null,
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "NO_HEALTHY_WORKER",
+    "chosen": null,
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 4283,
+        "cool": 0,
+        "score": null,
+        "samples": 1
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 4283,
+        "cool": 0,
+        "score": null,
+        "samples": 9
+      }
+    ]
+  },
+  {
+    "id": "119237a0",
+    "status": "FAILED",
+    "http": 502,
+    "totalMs": 46,
+    "endpoint": "localhost:8001",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "VERSION_AWARE",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8001",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 682,
+        "cool": 0,
+        "score": 48.70812836800002,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 4687,
+        "cool": 0,
+        "score": null,
+        "samples": 12
+      }
+    ]
+  },
+  {
+    "id": "f1159a3a",
+    "status": "FAILED",
+    "http": 503,
+    "totalMs": 2,
+    "endpoint": null,
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "NO_HEALTHY_WORKER",
+    "chosen": null,
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": null,
+        "cool": 0,
+        "score": null,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 4929,
+        "cool": 0,
+        "score": null,
+        "samples": 12
+      }
+    ]
+  },
+  {
+    "id": "7a3eca11",
+    "status": "FAILED",
+    "http": 422,
+    "totalMs": 5,
+    "endpoint": null,
+    "policy": "HEALTH_LATENCY",
+    "strategy": "VERSION_AWARE",
+    "reason": "NO_ELIGIBLE_WORKER",
+    "chosen": null,
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "SERVES_OTHER",
+        "eligible": false,
+        "inFlight": 0,
+        "live": true,
+        "age": 1930,
+        "cool": 0,
+        "score": null,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "SERVES_OTHER",
+        "eligible": false,
+        "inFlight": 0,
+        "live": true,
+        "age": 1930,
+        "cool": 0,
+        "score": null,
+        "samples": 12
+      }
+    ]
+  },
+  {
+    "id": "5a67ad4f",
+    "status": "FAILED",
+    "http": 502,
+    "totalMs": 3,
+    "endpoint": "localhost:8002",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8002",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 556,
+        "cool": 0,
+        "score": 48.70812836800002,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 556,
+        "cool": 0,
+        "score": 16.927095479554975,
+        "samples": 18
+      }
+    ]
+  },
+  {
+    "id": "f8016b54",
+    "status": "FAILED",
+    "http": 502,
+    "totalMs": 3,
+    "endpoint": "localhost:8002",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8002",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 563,
+        "cool": 0,
+        "score": 48.70812836800002,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 563,
+        "cool": 0,
+        "score": 16.927095479554975,
+        "samples": 18
+      }
+    ]
+  },
+  {
+    "id": "304cda8d",
+    "status": "FAILED",
+    "http": 502,
+    "totalMs": 3,
+    "endpoint": "localhost:8001",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8001",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 569,
+        "cool": 0,
+        "score": 48.70812836800002,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "COOLDOWN",
+        "eligible": false,
+        "inFlight": 0,
+        "live": true,
+        "age": 569,
+        "cool": 4996,
+        "score": 16.927095479554975,
+        "samples": 18
+      }
+    ]
+  },
+  {
+    "id": "739d5d2a",
+    "status": "FAILED",
+    "http": 502,
+    "totalMs": 2,
+    "endpoint": "localhost:8001",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8001",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 574,
+        "cool": 0,
+        "score": 48.70812836800002,
+        "samples": 4
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "COOLDOWN",
+        "eligible": false,
+        "inFlight": 0,
+        "live": true,
+        "age": 574,
+        "cool": 4991,
+        "score": 16.927095479554975,
+        "samples": 18
+      }
+    ]
+  },
+  {
+    "id": "2cf17e42",
+    "status": "FAILED",
+    "http": 503,
+    "totalMs": 30005,
+    "endpoint": "localhost:8001",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8001",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 718,
+        "cool": 0,
+        "score": 4405.967901070277,
+        "samples": 11
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 28783,
+        "cool": 0,
+        "score": null,
+        "samples": 26
+      }
+    ]
+  },
+  {
+    "id": "6832bc06",
+    "status": "FAILED",
+    "http": 503,
+    "totalMs": 7,
+    "endpoint": "localhost:8001",
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "minimum (inFlight + 1) * estimated successful predict latency",
+    "chosen": "localhost:8001",
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "ELIGIBLE",
+        "eligible": true,
+        "inFlight": 0,
+        "live": true,
+        "age": 1267,
+        "cool": 0,
+        "score": 33.87698963641601,
+        "samples": 7
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": 7281,
+        "cool": 0,
+        "score": null,
+        "samples": 26
+      }
+    ]
+  },
+  {
+    "id": "3caf2ed5",
+    "status": "FAILED",
+    "http": 503,
+    "totalMs": 13,
+    "endpoint": null,
+    "policy": "HEALTH_LATENCY",
+    "strategy": "ROUND_ROBIN_ALL",
+    "reason": "NO_HEALTHY_WORKER",
+    "chosen": null,
+    "cands": [
+      {
+        "endpoint": "localhost:8001",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": null,
+        "cool": 0,
+        "score": null,
+        "samples": 0
+      },
+      {
+        "endpoint": "localhost:8002",
+        "note": "UNHEALTHY",
+        "eligible": false,
+        "inFlight": 0,
+        "live": false,
+        "age": null,
+        "cool": 0,
+        "score": null,
+        "samples": 0
+      }
+    ]
+  }
+]

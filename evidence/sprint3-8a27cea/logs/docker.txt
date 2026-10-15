@@ -1,0 +1,2 @@
+--: line 9: docker: command not found
+DOCKER_RC=127

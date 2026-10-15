@@ -1,0 +1,33 @@
+PASS no-model request 0 -> 200 (200)
+PASS [f5c762fd] strategy ROUND_ROBIN_ALL
+FAIL [f5c762fd] all 2 workers ANY_WORKER
+PASS [f5c762fd] chosen == workerEndpoint
+PASS [f5c762fd] stored routing == response routing
+PASS no-model request 1 -> 200 (200)
+PASS [452375ee] strategy ROUND_ROBIN_ALL
+FAIL [452375ee] all 2 workers ANY_WORKER
+PASS [452375ee] chosen == workerEndpoint
+PASS [452375ee] stored routing == response routing
+PASS no-model request 2 -> 200 (200)
+PASS [d51123b7] strategy ROUND_ROBIN_ALL
+FAIL [d51123b7] all 2 workers ANY_WORKER
+PASS [d51123b7] chosen == workerEndpoint
+PASS [d51123b7] stored routing == response routing
+PASS no-model request 3 -> 200 (200)
+PASS [8c5578de] strategy ROUND_ROBIN_ALL
+FAIL [8c5578de] all 2 workers ANY_WORKER
+PASS [8c5578de] chosen == workerEndpoint
+PASS [8c5578de] stored routing == response routing
+FAIL round-robin rotates: ['localhost:8012', 'localhost:8012', 'localhost:8012', 'localhost:8012']
+PASS blank input -> 400 (400)
+PASS stored NOT_ROUTED/INVALID_REQUEST: {'strategy': 'NOT_ROUTED', 'policy': 'HEALTH_LATENCY', 'target': None, 'poolSize': 2, 'eligibleCount': 0, 'candidates': [], 'chosen': None, 'reason': 'INVALID_REQUEST'}
+PASS unknown model -> 404 (404)
+PASS stored NOT_ROUTED/MODEL_NOT_FOUND: {'strategy': 'NOT_ROUTED', 'policy': 'HEALTH_LATENCY', 'target': None, 'poolSize': 2, 'eligibleCount': 0, 'candidates': [], 'chosen': None, 'reason': 'MODEL_NOT_FOUND'}
+PASS [f5c762fd] one log line, chosen=localhost:8012
+PASS [452375ee] one log line, chosen=localhost:8012
+PASS [d51123b7] one log line, chosen=localhost:8012
+PASS [8c5578de] one log line, chosen=localhost:8012
+PASS [b4d2db01] one log line, chosen=-
+PASS [f1395b12] one log line, chosen=-
+
+26/31 checks passed

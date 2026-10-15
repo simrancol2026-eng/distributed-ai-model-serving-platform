@@ -1,0 +1,114 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T20:33:11.843Z  INFO 157044 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 157044 (/tmp/s3-8a27cea/backend/spring-boot/target/classes started by ubuntu in /tmp/s3-8a27cea/backend/spring-boot)
+2026-10-15T20:33:11.845Z  INFO 157044 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T20:33:12.360Z  INFO 157044 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-15T20:33:12.368Z  INFO 157044 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T20:33:12.368Z  INFO 157044 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T20:33:12.388Z  INFO 157044 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 518 ms
+2026-10-15T20:33:12.509Z  INFO 157044 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 2 worker(s), policy=LEAST_IN_FLIGHT order [localhost:8011, localhost:8099]
+2026-10-15T20:33:12.607Z  INFO 157044 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T20:33:12.752Z  INFO 157044 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5d124d29
+2026-10-15T20:33:12.753Z  INFO 157044 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T20:33:12.766Z  INFO 157044 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/s3_8a27cea (PostgreSQL 16.15)
+2026-10-15T20:33:12.804Z  INFO 157044 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.014s)
+2026-10-15T20:33:12.835Z  INFO 157044 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 3
+2026-10-15T20:33:12.836Z  INFO 157044 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-15T20:33:13.024Z  INFO 157044 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-15T20:33:13.027Z  INFO 157044 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 1.395 seconds (process running for 1.573)
+2026-10-15T20:33:13.028Z  INFO 157044 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T20:33:19.120Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T20:33:19.121Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T20:33:19.122Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-15T20:33:19.202Z  WARN 157044 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference failed requestId=70cb6973-56d0-4b3d-9b78-fe6edd2f2a8f routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.204Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=70cb6973-56d0-4b3d-9b78-fe6edd2f2a8f strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=1}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.235Z  WARN 157044 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference failed requestId=a4cad925-4523-4617-9c76-fe668848b7ca routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.236Z  INFO 157044 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=a4cad925-4523-4617-9c76-fe668848b7ca strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=2}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.252Z  INFO 157044 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=6ba49cce-ca08-468a-bed9-64bbb1ef0431 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=94
+2026-10-15T20:33:19.252Z  INFO 157044 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=88ad08cb-efc7-4f60-9913-3b07d1e6a5d2 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=73
+2026-10-15T20:33:19.252Z  INFO 157044 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=88ad08cb-efc7-4f60-9913-3b07d1e6a5d2 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=1}, localhost:8099:ANY_WORKER{inFlight=1}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.252Z  INFO 157044 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=6ba49cce-ca08-468a-bed9-64bbb1ef0431 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.300Z  INFO 157044 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=6c34b1ec-7add-4909-b84c-443157a2a569 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=19
+2026-10-15T20:33:19.300Z  INFO 157044 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=6c34b1ec-7add-4909-b84c-443157a2a569 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.335Z  WARN 157044 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference failed requestId=617b2f55-1de2-4ed3-8684-4d5a6e83926d routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.335Z  INFO 157044 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=617b2f55-1de2-4ed3-8684-4d5a6e83926d strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.400Z  INFO 157044 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=6a96da02-82f8-4332-87cf-cd7a09572d59 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=17
+2026-10-15T20:33:19.400Z  INFO 157044 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=6a96da02-82f8-4332-87cf-cd7a09572d59 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.435Z  WARN 157044 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference failed requestId=11cc4064-1e47-428a-8737-a76f6f6f75d2 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.436Z  INFO 157044 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=11cc4064-1e47-428a-8737-a76f6f6f75d2 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.499Z  INFO 157044 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : inference ok requestId=84dfad55-f620-4865-99b7-3d99d404619b routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=16
+2026-10-15T20:33:19.499Z  INFO 157044 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=84dfad55-f620-4865-99b7-3d99d404619b strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.538Z  WARN 157044 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : inference failed requestId=4e545271-8cbd-4e48-b6ef-cbf0fe56bd93 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.538Z  INFO 157044 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=4e545271-8cbd-4e48-b6ef-cbf0fe56bd93 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.603Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=521de3d6-18f6-451e-8835-c2add3e0c3eb routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=19
+2026-10-15T20:33:19.604Z  INFO 157044 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=521de3d6-18f6-451e-8835-c2add3e0c3eb strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.638Z  WARN 157044 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference failed requestId=e4a49da9-5103-493b-8e16-c4dd7ebd54a3 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.639Z  INFO 157044 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=e4a49da9-5103-493b-8e16-c4dd7ebd54a3 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.702Z  INFO 157044 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=2ba4785c-7179-415c-91d6-59407c47feab routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=16
+2026-10-15T20:33:19.702Z  INFO 157044 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=2ba4785c-7179-415c-91d6-59407c47feab strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.740Z  WARN 157044 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference failed requestId=73f4796e-29ea-408e-bc6c-03382a32e2d7 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.740Z  INFO 157044 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=73f4796e-29ea-408e-bc6c-03382a32e2d7 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.805Z  INFO 157044 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=0bf17af3-a82e-481d-b2ab-824cb947941e routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=17
+2026-10-15T20:33:19.805Z  INFO 157044 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=0bf17af3-a82e-481d-b2ab-824cb947941e strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.841Z  WARN 157044 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference failed requestId=cec09092-6fa2-4aab-ba9f-026b5146fcd5 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.841Z  INFO 157044 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=cec09092-6fa2-4aab-ba9f-026b5146fcd5 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.906Z  INFO 157044 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=86f781ec-d558-4305-ad8e-1fec6c33c34e routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=18
+2026-10-15T20:33:19.907Z  INFO 157044 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=86f781ec-d558-4305-ad8e-1fec6c33c34e strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:19.942Z  WARN 157044 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference failed requestId=eda2253a-2d29-4f51-ac06-d3a71caa7805 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:19.942Z  INFO 157044 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=eda2253a-2d29-4f51-ac06-d3a71caa7805 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:20.007Z  INFO 157044 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : inference ok requestId=18a1a101-e457-48d3-9ee7-a2adaac0f9e4 routedTo=localhost:8011 worker=worker-a model=- version=- label=POSITIVE totalMs=18
+2026-10-15T20:33:20.008Z  INFO 157044 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=18a1a101-e457-48d3-9ee7-a2adaac0f9e4 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8011 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:20.043Z  WARN 157044 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : inference failed requestId=ba7255f2-a927-4d44-a7f1-21da2f6cf604 routedTo=localhost:8099 reason=WORKER_UNAVAILABLE Worker at localhost:8099 is unavailable: I/O error on POST request for "http://localhost:8099/predict": null
+2026-10-15T20:33:20.043Z  INFO 157044 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=ba7255f2-a927-4d44-a7f1-21da2f6cf604 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8011:ANY_WORKER{inFlight=0}, localhost:8099:ANY_WORKER{inFlight=0}] chosen=localhost:8099 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:33:20.114Z  INFO 157044 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T20:33:20.116Z  INFO 157044 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T20:33:20.118Z  INFO 157044 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T20:33:20.126Z  INFO 157044 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.657 s
+[INFO] Finished at: 2026-10-15T20:33:20Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project spring-boot: Process terminated with exit code: 143 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -1,0 +1,94 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T20:32:37.245Z  INFO 156049 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 156049 (/tmp/s3-8a27cea/backend/spring-boot/target/classes started by ubuntu in /tmp/s3-8a27cea/backend/spring-boot)
+2026-10-15T20:32:37.248Z  INFO 156049 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T20:32:37.839Z  INFO 156049 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-15T20:32:37.854Z  INFO 156049 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T20:32:37.855Z  INFO 156049 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T20:32:37.879Z  INFO 156049 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 597 ms
+2026-10-15T20:32:38.034Z  INFO 156049 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 2 worker(s), policy=LEAST_IN_FLIGHT order [localhost:8001, localhost:8002]
+2026-10-15T20:32:38.180Z  INFO 156049 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T20:32:38.379Z  INFO 156049 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3c88191b
+2026-10-15T20:32:38.381Z  INFO 156049 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T20:32:38.397Z  INFO 156049 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/s3_8a27cea (PostgreSQL 16.15)
+2026-10-15T20:32:38.443Z  INFO 156049 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.017s)
+2026-10-15T20:32:38.480Z  INFO 156049 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 3
+2026-10-15T20:32:38.482Z  INFO 156049 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-15T20:32:38.742Z  INFO 156049 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-15T20:32:38.746Z  INFO 156049 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 1.752 seconds (process running for 1.937)
+2026-10-15T20:32:38.748Z  INFO 156049 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T20:32:43.704Z  INFO 156049 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T20:32:43.705Z  INFO 156049 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T20:32:43.706Z  INFO 156049 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-15T20:32:43.978Z  INFO 156049 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference ok requestId=bdc8e422-2c6a-4133-8e23-ac96ef60c6ec routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=194
+2026-10-15T20:32:43.978Z  INFO 156049 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=ad300289-a4fc-4c50-a313-dbba2c68a9fd routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=195
+2026-10-15T20:32:43.978Z  INFO 156049 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference ok requestId=22be105a-0e58-4de6-b45a-ef65ef47f74d routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=194
+2026-10-15T20:32:43.978Z  INFO 156049 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=c607c3b9-b05e-4c36-a02e-217fd7035a87 routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=195
+2026-10-15T20:32:43.978Z  INFO 156049 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=1fa330ea-56ad-4549-8ce1-201bc4a38fd4 routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=194
+2026-10-15T20:32:43.980Z  INFO 156049 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=1fa330ea-56ad-4549-8ce1-201bc4a38fd4 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=1}, localhost:8002:ANY_WORKER{inFlight=1}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:43.980Z  INFO 156049 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=ad300289-a4fc-4c50-a313-dbba2c68a9fd strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=0}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:43.980Z  INFO 156049 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=bdc8e422-2c6a-4133-8e23-ac96ef60c6ec strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=2}, localhost:8002:ANY_WORKER{inFlight=2}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:43.980Z  INFO 156049 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=c607c3b9-b05e-4c36-a02e-217fd7035a87 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=4}, localhost:8002:ANY_WORKER{inFlight=4}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:43.980Z  INFO 156049 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=22be105a-0e58-4de6-b45a-ef65ef47f74d strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=3}, localhost:8002:ANY_WORKER{inFlight=3}] chosen=localhost:8001 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.912Z  INFO 156049 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : inference ok requestId=63b29165-2cb6-44c6-8eaf-d1b160d6dda5 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2129
+2026-10-15T20:32:45.912Z  INFO 156049 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=63b29165-2cb6-44c6-8eaf-d1b160d6dda5 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=1}, localhost:8002:ANY_WORKER{inFlight=0}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.912Z  INFO 156049 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=934816e1-e3a5-4e37-95ed-3edccead4e51 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2129
+2026-10-15T20:32:45.912Z  INFO 156049 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=934816e1-e3a5-4e37-95ed-3edccead4e51 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=5}, localhost:8002:ANY_WORKER{inFlight=4}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.913Z  INFO 156049 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=d60cdae8-8eb1-42c8-ac42-cd6c5b0bf306 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2130
+2026-10-15T20:32:45.914Z  INFO 156049 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=d60cdae8-8eb1-42c8-ac42-cd6c5b0bf306 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=4}, localhost:8002:ANY_WORKER{inFlight=3}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.914Z  INFO 156049 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference ok requestId=0f60c1e0-21d6-426f-8cbf-b0d4c7fa46aa routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2130
+2026-10-15T20:32:45.914Z  INFO 156049 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=0f60c1e0-21d6-426f-8cbf-b0d4c7fa46aa strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=3}, localhost:8002:ANY_WORKER{inFlight=2}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.914Z  INFO 156049 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : inference ok requestId=51811074-14f0-4daf-9999-a6322e9d4882 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2131
+2026-10-15T20:32:45.915Z  INFO 156049 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=51811074-14f0-4daf-9999-a6322e9d4882 strategy=ROUND_ROBIN_ALL policy=LEAST_IN_FLIGHT target=- eligible=2/2 candidates=[localhost:8001:ANY_WORKER{inFlight=2}, localhost:8002:ANY_WORKER{inFlight=1}] chosen=localhost:8002 reason="no model requested: least-in-flight over all 2 worker(s)"
+2026-10-15T20:32:45.955Z  INFO 156049 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T20:32:45.957Z  INFO 156049 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T20:32:45.960Z  INFO 156049 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T20:32:45.970Z  INFO 156049 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.226 s
+[INFO] Finished at: 2026-10-15T20:32:46Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project spring-boot: Process terminated with exit code: 143 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

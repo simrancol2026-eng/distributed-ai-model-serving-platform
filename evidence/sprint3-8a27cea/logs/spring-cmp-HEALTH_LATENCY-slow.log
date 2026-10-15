@@ -1,0 +1,94 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.dhir:spring-boot >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ spring-boot >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-boot ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-boot ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-boot ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ spring-boot <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ spring-boot ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-15T20:32:48.976Z  INFO 156390 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Starting Application using Java 21.0.12.1 with PID 156390 (/tmp/s3-8a27cea/backend/spring-boot/target/classes started by ubuntu in /tmp/s3-8a27cea/backend/spring-boot)
+2026-10-15T20:32:48.979Z  INFO 156390 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : No active profile set, falling back to 1 default profile: "default"
+2026-10-15T20:32:49.545Z  INFO 156390 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-15T20:32:49.554Z  INFO 156390 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-15T20:32:49.554Z  INFO 156390 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-15T20:32:49.574Z  INFO 156390 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 568 ms
+2026-10-15T20:32:49.694Z  INFO 156390 --- [spring-boot] [           main] c.dhir.spring_boot.inference.WorkerPool  : worker pool: 2 worker(s), policy=HEALTH_LATENCY order [localhost:8001, localhost:8002]
+2026-10-15T20:32:49.820Z  INFO 156390 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-15T20:32:49.980Z  INFO 156390 --- [spring-boot] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@31834a2b
+2026-10-15T20:32:49.981Z  INFO 156390 --- [spring-boot] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-15T20:32:49.995Z  INFO 156390 --- [spring-boot] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/s3_8a27cea (PostgreSQL 16.15)
+2026-10-15T20:32:50.040Z  INFO 156390 --- [spring-boot] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.017s)
+2026-10-15T20:32:50.072Z  INFO 156390 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 3
+2026-10-15T20:32:50.073Z  INFO 156390 --- [spring-boot] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-15T20:32:50.271Z  INFO 156390 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-15T20:32:50.276Z  INFO 156390 --- [spring-boot] [           main] com.dhir.spring_boot.Application         : Started Application in 1.532 seconds (process running for 1.721)
+2026-10-15T20:32:50.278Z  INFO 156390 --- [spring-boot] [           main] c.d.s.registry.DatasourceInfoLogger      : registry datasource: product=PostgreSQL version=16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) activeProfiles=[default]
+2026-10-15T20:32:55.144Z  INFO 156390 --- [spring-boot] [nio-8080-exec-6] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-15T20:32:55.145Z  INFO 156390 --- [spring-boot] [nio-8080-exec-6] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-15T20:32:55.146Z  INFO 156390 --- [spring-boot] [nio-8080-exec-6] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-15T20:32:55.254Z  INFO 156390 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : inference ok requestId=c675c23d-7cd1-40e4-80e6-812201b443bd routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=70
+2026-10-15T20:32:55.254Z  INFO 156390 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : inference ok requestId=cc259c59-4146-4823-a63e-f48e63d83f83 routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=70
+2026-10-15T20:32:55.254Z  INFO 156390 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : inference ok requestId=1b8cd918-633b-41a5-96a5-27c1994b2fae routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=69
+2026-10-15T20:32:55.254Z  INFO 156390 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : inference ok requestId=abb02919-bbb0-4b3f-9171-63782e2c8520 routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=70
+2026-10-15T20:32:55.254Z  INFO 156390 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : inference ok requestId=6fedc89f-5d45-4491-b98e-1397972b2a22 routedTo=localhost:8001 worker=worker-a model=- version=- label=POSITIVE totalMs=71
+2026-10-15T20:32:55.259Z  INFO 156390 --- [spring-boot] [nio-8080-exec-2] c.d.s.inference.InferenceController      : routing decision requestId=1b8cd918-633b-41a5-96a5-27c1994b2fae strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=0}{health=Evidence[live=true, healthAgeMs=1387, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=100.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=0}{health=Evidence[live=true, healthAgeMs=1387, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=100.0, cooldownMs=0]}] chosen=localhost:8001 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:55.259Z  INFO 156390 --- [spring-boot] [io-8080-exec-10] c.d.s.inference.InferenceController      : routing decision requestId=6fedc89f-5d45-4491-b98e-1397972b2a22 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=1}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=200.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=1}{health=Evidence[live=true, healthAgeMs=1388, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=200.0, cooldownMs=0]}] chosen=localhost:8001 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:55.259Z  INFO 156390 --- [spring-boot] [nio-8080-exec-5] c.d.s.inference.InferenceController      : routing decision requestId=abb02919-bbb0-4b3f-9171-63782e2c8520 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=4}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=500.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=4}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=500.0, cooldownMs=0]}] chosen=localhost:8001 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:55.259Z  INFO 156390 --- [spring-boot] [nio-8080-exec-8] c.d.s.inference.InferenceController      : routing decision requestId=cc259c59-4146-4823-a63e-f48e63d83f83 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=2}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=300.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=2}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=300.0, cooldownMs=0]}] chosen=localhost:8001 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:55.259Z  INFO 156390 --- [spring-boot] [nio-8080-exec-9] c.d.s.inference.InferenceController      : routing decision requestId=c675c23d-7cd1-40e4-80e6-812201b443bd strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=3}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=400.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=3}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=400.0, cooldownMs=0]}] chosen=localhost:8001 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.253Z  INFO 156390 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : inference ok requestId=057088f4-a816-4cf6-9415-6c797f25036c routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2070
+2026-10-15T20:32:57.254Z  INFO 156390 --- [spring-boot] [nio-8080-exec-6] c.d.s.inference.InferenceController      : routing decision requestId=057088f4-a816-4cf6-9415-6c797f25036c strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=3}{health=Evidence[live=true, healthAgeMs=1390, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=400.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=2}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=300.0, cooldownMs=0]}] chosen=localhost:8002 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.255Z  INFO 156390 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : inference ok requestId=17a9811b-57a4-4e4e-a174-ac4b2ae7f1c4 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2071
+2026-10-15T20:32:57.255Z  INFO 156390 --- [spring-boot] [nio-8080-exec-4] c.d.s.inference.InferenceController      : routing decision requestId=17a9811b-57a4-4e4e-a174-ac4b2ae7f1c4 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=5}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=600.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=4}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=500.0, cooldownMs=0]}] chosen=localhost:8002 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.255Z  INFO 156390 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : inference ok requestId=934d4318-6cbc-4def-a354-76accb8df751 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2071
+2026-10-15T20:32:57.255Z  INFO 156390 --- [spring-boot] [nio-8080-exec-1] c.d.s.inference.InferenceController      : routing decision requestId=934d4318-6cbc-4def-a354-76accb8df751 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=2}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=300.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=1}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=200.0, cooldownMs=0]}] chosen=localhost:8002 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.258Z  INFO 156390 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : inference ok requestId=82cd9b5c-6212-4274-a592-275955bd6433 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2074
+2026-10-15T20:32:57.258Z  INFO 156390 --- [spring-boot] [nio-8080-exec-3] c.d.s.inference.InferenceController      : routing decision requestId=82cd9b5c-6212-4274-a592-275955bd6433 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=1}{health=Evidence[live=true, healthAgeMs=1389, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=200.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=0}{health=Evidence[live=true, healthAgeMs=1388, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=100.0, cooldownMs=0]}] chosen=localhost:8002 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.261Z  INFO 156390 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : inference ok requestId=5b3f591a-faea-43c8-85ee-bd823a891727 routedTo=localhost:8002 worker=worker-b model=- version=- label=POSITIVE totalMs=2077
+2026-10-15T20:32:57.261Z  INFO 156390 --- [spring-boot] [nio-8080-exec-7] c.d.s.inference.InferenceController      : routing decision requestId=5b3f591a-faea-43c8-85ee-bd823a891727 strategy=ROUND_ROBIN_ALL policy=HEALTH_LATENCY target=- eligible=2/2 candidates=[localhost:8001:ELIGIBLE{inFlight=4}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=500.0, cooldownMs=0]}, localhost:8002:ELIGIBLE{inFlight=3}{health=Evidence[live=true, healthAgeMs=1391, ewmaMs=null, samples=0, sampleAgeMs=null, estimateMs=100.0, score=400.0, cooldownMs=0]}] chosen=localhost:8002 reason="minimum (inFlight + 1) * estimated successful predict latency"
+2026-10-15T20:32:57.299Z  INFO 156390 --- [spring-boot] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-15T20:32:57.301Z  INFO 156390 --- [spring-boot] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-15T20:32:57.304Z  INFO 156390 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-15T20:32:57.313Z  INFO 156390 --- [spring-boot] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.884 s
+[INFO] Finished at: 2026-10-15T20:32:57Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project spring-boot: Process terminated with exit code: 143 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
