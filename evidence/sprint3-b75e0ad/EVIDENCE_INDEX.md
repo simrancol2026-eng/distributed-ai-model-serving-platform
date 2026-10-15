@@ -4,6 +4,7 @@
 - `logs/mvn-test.log` — the clean `./mvnw -B test` run, 92/92.
 - `logs/mvn-test-inherited-env.log` — an earlier run in a shell that already had `PLATFORM_WORKER_URLS` set. Not the acceptance result.
 - `logs/` — Spring, e2e, fail-fast, comparison, dead-worker, disconnect, and registry transcripts.
+- `logs/dead-rr-stagger.txt` is the 40 ms stagger run; its header says stagger=0.04.
 - `screenshots/` — workspace pages and the API JSON desktop shot.
 - `screenshots/ui-inference.txt` — DOM text captured with the inference screenshot.
 
