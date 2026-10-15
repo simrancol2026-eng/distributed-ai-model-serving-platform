@@ -48,10 +48,11 @@ Presentation: [full speaking script, STAR explanation and simple example](docs/S
 | Routing engine (health/latency-aware) | PLANNED | Sprint 3 |
 | Redis, Kafka | PLANNED | |
 | Health monitoring, failure recovery | PLANNED | |
-| Docker (multi-service), Kubernetes, autoscaling | PLANNED | `model-a` has a single Dockerfile (build not yet verified). |
+| Docker | **WORK IN PROGRESS / UNVERIFIED** | Worker Dockerfile exists; image build/run validation and the full multi-service setup remain incomplete. Native processes are used for the demo. |
+| Kubernetes, autoscaling | PLANNED | Not implemented. |
 | Load testing and evaluation | PLANNED | |
 
-Nothing marked PLANNED exists yet.
+PLANNED items are not implemented. Docker work has started but remains unverified.
 
 ---
 
@@ -285,7 +286,7 @@ A body that is not valid JSON is rejected by Spring before the controller runs, 
 cd frontend
 npm ci
 cp .env.example .env.local      # sets VITE_API_BASE_URL=http://localhost:8080 (Windows: copy)
-npm run dev
+npm run dev -- --port 5173 --strictPort
 ```
 
 Other commands:
