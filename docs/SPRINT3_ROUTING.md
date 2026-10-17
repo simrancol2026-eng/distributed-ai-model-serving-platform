@@ -224,7 +224,7 @@ All three were fixed in `ed28851`. Retest on `ed28851` (evidence `9f36761`): **P
 
 ### 7.7 Demo evidence on merged `main` (`39e59e7`)
 
-Immutable evidence: branch `evidence-39e59e7`, commit `22dc2af1ded456d7a4db6ec162236d3957f05d9b`. It sits on `1b99b55` and `39e59e7`, and adds only `evidence/sprint3-main-39e59e7/` (`RUN_RECORD.md`, `EVIDENCE_INDEX.md`, screenshots, `harness/show_policy.py`). Grok made one Spring run per policy against the same two real DistilBERT workers (revision `714eb0fa`) on PostgreSQL 16. Codex and Claude reviewed the screenshots visually.
+Immutable evidence: branch `evidence-39e59e7`, commit `22dc2af1ded456d7a4db6ec162236d3957f05d9b`. It sits on `1b99b55` and `39e59e7`, and adds only `evidence/sprint3-main-39e59e7/` (`RUN_RECORD.md`, `EVIDENCE_INDEX.md`, screenshots, `harness/show_policy.py`, `harness/README.md`). Grok made one Spring run per policy against the same two real DistilBERT workers (revision `714eb0fa`) on PostgreSQL 16. Codex and Claude reviewed the screenshots visually.
 
 | Policy | UI request (Workspace screenshot) | API request (terminal: POST, GET, log line) |
 |---|---|---|
@@ -237,14 +237,14 @@ Read these with the following caveats:
 - **Single requests, not a retest.** The evidence shows the merged runtime working under each policy. It is not a test suite, a repeated measurement or a performance comparison.
 - **UI and terminal show different requests.** `policy`, `inFlight` and `health` appear only in the terminal (API response, `GET /api/requests/{id}`, log line), never in the UI.
 - **The "Routing factors" panel on the Workspace page is static and unwired.** Every value is "—", and it includes "Resource availability" and "Reliability". It is not evidence of resource-aware routing.
-- **`0bfef5d5` was decided by tie rotation, not by speed.** Both latency samples were older than 30 s (`sampleAgeMs` 377125 and 184157), so both estimates fell back to 100 ms (`estimateMs` and `score` 100.0 for both). The worker was chosen by rotation (7.3), not because its EWMA (56 ms against 264 ms) was lower.
+- **`0bfef5d5` was decided by tie rotation, not by speed.** Both latency samples were older than 30 s (`sampleAgeMs` 377125 and 184157), so both estimates fell back to 100 ms (`estimateMs` and `score` 100.0 for both). The worker was chosen by rotation (fallback 7.3, tie rotation §3), not because its EWMA (56 ms against 264 ms) was lower.
 - **The UI latency is not the stored `totalMs`.** The UI showed 229, 301 and 269 ms; the stored values are 230, 302 and 272 ms.
 - **Clean-checkout status was recorded after the run.** `git status --porcelain` was empty, but it was run after the processes stopped, not during each run.
 
 ### 7.8 Carried forward (not closed in Sprint 3)
 
 - **Reproducibility (C8).** The health/latency experiments are kept as reviewable manual source and output under `evidence/sprint3-ed28851/harness/` at commit `9f36761e0534a1fcfcc339f610cf41220ce32fce`. They make no assertions (pass/fail was judged by reading the output), use hard-coded paths and database names, do not include the Spring environment used, and need the full real stack (two workers, PostgreSQL, a delay/fault proxy). Turning them into parameterized, self-checking experiments with a committed, redacted environment template is planned for Sprint 6 (reproducible evaluation). The automated suite is the Maven tests (116, on H2 with fake workers), which are reported separately from the manual real-stack evidence.
-- **No full real-stack rerun of merged `main` (C9).** `main` at `dec1b5b` contains the runtime tested at `ed28851`. Every merge since then changed documentation only, which was checked by diff. Since the merges, the merged runtime has had real-stack single requests (7.7) and the H2/fake Maven suite, but not the full real-stack e2e and fault-injection run.
+- **No full real-stack rerun of merged `main` (C9).** `main` at `dec1b5b` contains the runtime tested at `ed28851`. Subsequent changes were documentation and comment-only configuration lines, which was checked by diff. Since the merges, the merged runtime has had real-stack single requests (7.7) and the H2/fake Maven suite, but not the full real-stack e2e and fault-injection run.
 - **Known limits** (7.5): per-backend counts and health, no retry or failover (Sprint 4), a sudden slowdown is detected slowly, and Docker is still deferred and unverified.
 
 ---
