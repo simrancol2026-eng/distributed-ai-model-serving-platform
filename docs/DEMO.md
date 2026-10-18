@@ -2,6 +2,8 @@
 
 For what to say and show, use the [complete presentation script, STAR explanation and simple example](SPRINT2_PRESENTATION.md).
 
+**Sprint 3 routing policies:** this runbook uses the default policy, `ROUND_ROBIN`. To demonstrate the opt-in policies, restart only the backend with `PLATFORM_ROUTING_POLICY=LEAST_IN_FLIGHT` or `PLATFORM_ROUTING_POLICY=HEALTH_LATENCY` (case-sensitive) and follow [Sprint 3 routing §6 and §7.6](SPRINT3_ROUTING.md#6-demo-outline). The new `policy`, `inFlight` and `health` fields appear only in the API response, `GET /api/requests/{id}` and the routing log line; the UI does not display them. The two-worker alternation check below applies to `ROUND_ROBIN` (and sequential `LEAST_IN_FLIGHT`), not to `HEALTH_LATENCY`.
+
 This is a rehearsal runbook, not a record of a completed demo. Code baseline: merge `1c1d932eba0dd75a8920186d4571cce0eeaba470`, whose tree matches tested `2f731ba2991cbcfbb68191e0c620f3b89da1b238`. Record the actual checkout SHA, time, environment and outputs for each rehearsal.
 
 ## Prepare
