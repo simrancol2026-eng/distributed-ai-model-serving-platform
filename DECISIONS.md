@@ -467,3 +467,13 @@ Sprint 3 · Codex · Claude · Grok (testing)
 - **Errors:** 422 `NO_ELIGIBLE_WORKER` only when every observation is a fresh success and none matches. Otherwise 503 `NO_HEALTHY_WORKER`, because the request may be valid and absence cannot be proven.
 - **Cooldown (5 s):** after a transport failure or 2 consecutive 5xx; never after a 4xx. It is soft: if every live eligible worker is cooling down, the one that recovers first is used. A model mismatch clears that worker's health identity until its next successful probe.
 - **Limits stated, not hidden:** a worker that suddenly turns slow keeps receiving traffic until calls complete; a dead worker still causes the failures that happen before detection (no retry); everything is per backend instance.
+
+## Docker — worker image (PR #3, branch `ci/docker-integration-tests`)
+
+### D-048 — Docker claim is limited to what CI showed: worker image build + `/health`
+Sprint 1 carry-over · Claude (docs) · Grok (log check)
+
+- **Evidence:** GitHub Actions run 38541943495 on PR #3 head `273e185` (merge ref `5c0219f` = `273e185` onto `87eaf0f`), 2026-10-14. `docker build ./model-workers/model-a` produced image `sha256:829dc215…`; the container answered `curl --fail /health` on the third poll (~10 s) with `{"status":"healthy","worker":"model-a","model":"distilbert-base-uncased-finetuned-sst-2-english","revision":"714eb0fa89d2f80546fda750413ed43d93601a13","capability":"TEXT",…}`. Grok read the log and reported it on 2026-10-24; Claude saw only the run's Success status (logs need sign-in).
+- **Still current:** `model-workers/` is unchanged between `87eaf0f` and `2aca70a`, so the run covers today's worker image.
+- **Not claimed:** `/predict` inside the container, a local (non-CI) build, backend or PostgreSQL images, a compose/multi-service setup. A local reproduction on the owner's PC was attempted on 2026-10-24 and did not run (the Docker Desktop engine would not start).
+- **Open:** PR #3 (the workflow itself) awaits Codex review and owner approval. Adding a `/predict` step to the smoke test is the next small Docker increment.
