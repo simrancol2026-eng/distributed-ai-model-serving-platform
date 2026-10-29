@@ -22,7 +22,8 @@ class BudgetedWorkerTransportTest {
         respond(future);
         var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
                 () -> transport.predict("x", new DispatchBudget(30)));
-        assertEquals(FailoverFailure.BUDGET_EXPIRED, FailoverFailure.classify(failure));
+        assertEquals(FailoverFailure.TIMEOUT, FailoverFailure.classify(failure));
+        assertTrue(((BudgetExpiredException)failure).fairAllocation());
         assertTrue(future.isCancelled());
     }
 
@@ -54,7 +55,27 @@ class BudgetedWorkerTransportTest {
         respond(CompletableFuture.failedFuture(new HttpTimeoutException("request timer")));
         var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
                 () -> transport.predict("x",new DispatchBudget(1000)));
+        assertEquals(FailoverFailure.TIMEOUT,FailoverFailure.classify(failure));
+        assertInstanceOf(BudgetExpiredException.class,failure);
+    }
+
+    @Test void tinyRemainderExpiryIsNotAWorkerTimeout() {
+        var clock = new AtomicLong();
+        var budget = new DispatchBudget(1000,clock::get);
+        clock.set(990_000_000L);
+        var pending = new CompletableFuture<HttpResponse<String>>();
+        var transport = new BudgetedWorkerTransport(request -> pending,URI.create("http://localhost:8011/predict"),30000);
+        var failure = assertThrows(BudgetExpiredException.class,()->transport.predict("x",budget));
+        assertFalse(failure.fairAllocation());
         assertEquals(FailoverFailure.BUDGET_EXPIRED,FailoverFailure.classify(failure));
+    }
+
+    @Test void defaultFullBudgetGivesHungWorkerFairChance() {
+        // Complete with the JDK request timer instead of waiting ten seconds in a unit test.
+        respond(CompletableFuture.failedFuture(new HttpTimeoutException("request timer")));
+        var failure = assertThrows(BudgetExpiredException.class,()->transport.predict("x",new DispatchBudget(10000)));
+        assertTrue(failure.fairAllocation());
+        assertEquals(FailoverFailure.TIMEOUT,FailoverFailure.classify(failure));
     }
 
     @Test void interruptedCallerNeverSendsAndRetainsFlag() {

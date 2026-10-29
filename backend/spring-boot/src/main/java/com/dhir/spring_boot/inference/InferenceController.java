@@ -245,6 +245,7 @@ public class InferenceController {
 
     private static final class AttemptState {
         FailoverFailure failure;
+        boolean budgetExpired;
     }
 
     private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
@@ -281,11 +282,15 @@ public class InferenceController {
                     decision));
         } catch (WorkerUnavailableException e) {
             if (state != null) state.failure = FailoverFailure.classify(e);
-            if (!(e instanceof BudgetExpiredException)) workers.predictionFailed(worker, true, false);
+            if (state != null) state.budgetExpired = e instanceof BudgetExpiredException;
+            if (!(e instanceof BudgetExpiredException expired) || expired.fairAllocation()) {
+                workers.predictionFailed(worker, true, false);
+            }
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_UNAVAILABLE {}", requestId,
                     worker.endpoint(), e.getMessage());
-            return error(503, "WORKER_UNAVAILABLE", "The model worker at " + worker.endpoint()
-                    + " is not reachable. Please try again shortly.", requestId);
+            return error(503, e instanceof BudgetExpiredException ? "BUDGET_EXHAUSTED" : "WORKER_UNAVAILABLE",
+                    e instanceof BudgetExpiredException ? "The request dispatch budget was exhausted."
+                            : "The model worker at " + worker.endpoint() + " is not reachable. Please try again shortly.", requestId);
         } catch (WorkerErrorException e) {
             if (state != null) state.failure = FailoverFailure.classify(e);
             workers.predictionFailed(worker, false, e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
@@ -336,7 +341,7 @@ public class InferenceController {
                     finalDecision.chosen(), succeeded ? "SUCCEEDED" : "FAILED", failureClass);
             if (succeeded) { terminal = "SUCCEEDED"; break; }
             if (state.failure == FailoverFailure.INTERRUPTED) { terminal = "INTERRUPTED"; break; }
-            if (state.failure == FailoverFailure.BUDGET_EXPIRED) { terminal = "BUDGET_EXHAUSTED"; break; }
+            if (state.budgetExpired) { terminal = "BUDGET_EXHAUSTED"; break; }
             if (state.failure == null || !state.failure.retryable()) { terminal = "NOT_RETRYABLE"; break; }
         }
         finalDecision = finalDecision.withAttempts(attempts, terminal);

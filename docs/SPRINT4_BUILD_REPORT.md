@@ -94,3 +94,34 @@ requested on the newly published SHA. Diff check passed.
 
 The revised commit still requires Claude's delta review and Grok's delta test
 before merge. No Sprint 4 completion, client-disconnect or Docker claim.
+
+### Fair-allocation refinement
+
+Claude requested changes on the first follow-up (`b959b09`): with the default
+10s budget/30s read timeout, unconditional budget-expiry suppression could hide
+a genuinely hung worker. The final rule gives timeout feedback when an attempt
+received at least half of `min(read timeout, original dispatch allowance)`;
+lesser allocations do not penalize the worker on budget expiry. Both terminate
+BUDGET_EXHAUSTED without retry. Budget errors now have an accurate response
+message. A request-timer connect timeout at actual budget exhaustion follows
+this rule; a shorter configured connect timeout remains CONNECT_TIMEOUT.
+
+Full Windows/H2/fake/loopback suite after the refinement: **158 tests, 33
+classes, zero failures/errors/skips, exit 0**, same explicit agent command.
+Log: `sprint4-fair-allocation-tests.log`. Added deterministic full-default-budget
+classification, tiny-remainder classification, and hung-worker cooldown/next
+RR selection regression coverage. The real loopback stalled-body test now
+verifies a full allocation is TIMEOUT with fairAllocation true. Independent
+review and delayed-worker delta execution remain merge gates on the published
+refinement SHA.
+
+Grok's baseline ZIP F0CD4H71081 has been inspected (SHA256
+0195ff8782f03d1662ea606c9a397c4baf090d1e78a5b2d4bd9a29bfa4c97a68).
+It contains Maven reports, scripts, PostgreSQL rows and worker/backend logs.
+His timing correction separates a 1001ms single-attempt timeout from 10ms/2ms
+second attempts in different requests. The corrected concurrency dataset has
+51 rows for a 50-concurrent workload, so no 51-concurrent claim is made.
+Backend real-worker evidence shows 5ms pre-send failure followed by 13ms
+successful alternate, total20ms; 25ms client wall and score0.99976 remain
+reported summary values because the original final response JSON was
+overwritten. No screenshots or new real-model rerun were supplied.

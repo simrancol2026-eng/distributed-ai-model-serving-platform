@@ -1,6 +1,12 @@
 package com.dhir.spring_boot.inference;
 
-/** The caller's dispatch allowance expired; this is not evidence of an unhealthy worker. */
+/** Budget exhaustion; only a worker given a fair allocation receives timeout feedback. */
 final class BudgetExpiredException extends WorkerClient.WorkerUnavailableException {
-    BudgetExpiredException() { super("Worker dispatch budget exhausted", null); }
+    private final boolean fairAllocation;
+    BudgetExpiredException() { this(false); }
+    BudgetExpiredException(boolean fairAllocation) {
+        super("Worker dispatch budget exhausted", null);
+        this.fairAllocation = fairAllocation;
+    }
+    boolean fairAllocation() { return fairAllocation; }
 }

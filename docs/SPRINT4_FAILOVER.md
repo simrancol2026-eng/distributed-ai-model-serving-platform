@@ -34,9 +34,14 @@ body receipt and is capped by remaining budget and configured read timeout.
 Timeout/interruption cancels the local response future; it cannot prove remote
 execution stopped. There is no exactly-once promise: even HTTP 503 may follow
 remote execution. No retry is performed for ambiguous timeout/reset failures.
-Budget-limited expiry is BUDGET_EXPIRED with terminalReason BUDGET_EXHAUSTED;
-it does not feed worker cooldown. A shorter configured read/connect timeout
-retains TIMEOUT/CONNECT_TIMEOUT and the existing worker-failure feedback.
+On budget expiry, an attempt allocated less than half of
+`min(configured read timeout, original dispatch budget)` is BUDGET_EXPIRED and
+does not feed cooldown. An attempt allocated at least that half had a fair
+chance: expiry is TIMEOUT and feeds the existing cooldown, so a hung worker
+given the full default budget is penalized. Allocation is measured after the
+dispatched tracking call, before request setup/sending. Both budget-expiry
+cases terminate BUDGET_EXHAUSTED and do not retry. A shorter configured
+read/connect timeout retains TIMEOUT/CONNECT_TIMEOUT and failure feedback.
 Before an attempt starts, expiry/interruption returns the corresponding
 BUDGET_EXHAUSTED/INTERRUPTED error code and retains any selection evidence.
 

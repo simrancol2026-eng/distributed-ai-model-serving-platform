@@ -28,7 +28,8 @@ class FailoverHttpTest {
             long started=System.nanoTime();
             var failure=assertThrows(WorkerClient.WorkerUnavailableException.class,()->transport.predict("x",new DispatchBudget(500)));
             long elapsed=TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started);
-            assertEquals(FailoverFailure.BUDGET_EXPIRED,FailoverFailure.classify(failure));
+            assertEquals(FailoverFailure.TIMEOUT,FailoverFailure.classify(failure));
+            assertTrue(((BudgetExpiredException)failure).fairAllocation());
             assertEquals(0,entered.getCount(),"must reach response body");
             assertTrue(elapsed<=750,"500ms budget +250ms scheduling allowance; measured "+elapsed);
         } finally { release.countDown(); server.stop(0); executor.close(); }

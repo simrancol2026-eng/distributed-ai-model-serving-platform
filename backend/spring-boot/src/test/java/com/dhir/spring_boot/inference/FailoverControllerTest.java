@@ -137,6 +137,24 @@ class FailoverControllerTest {
         }
     }
 
+    @Test void fullAllocationBudgetTimeoutPenalizesHungWorkerAndMovesNextRequestToB() {
+        var a = new FakeWorker(8001,new BudgetExpiredException(true));
+        var b = new FakeWorker(8002,null); var pool = pool(a,b);
+        var response = infer(pool);
+        var error = (ErrorResponse)response.getBody();
+        assertEquals("BUDGET_EXHAUSTED",error.error());
+        assertEquals("BUDGET_EXHAUSTED",error.routing().terminalReason());
+        assertEquals("TIMEOUT",error.routing().attempts().get(0).failureClass());
+        assertEquals(0,b.calls);
+        var next = pool.reserveFailover(null,null,Set.of());
+        try(var reservation=next.reservation()) {
+            assertSame(b,reservation.worker());
+            assertTrue(next.decision().candidates().stream().filter(c->c.endpoint().equals(a.endpoint()))
+                    .findFirst().orElseThrow().health().cooldownMs()>0);
+        }
+        assertTrue(pool.counts().values().stream().allMatch(n->n==0));
+    }
+
     @Test void interruptedDuringAttemptReleasesAndNeverRetries() {
         var a = new FakeWorker(8001, null) {
             @Override WorkerPrediction predict(String text, DispatchBudget budget) {

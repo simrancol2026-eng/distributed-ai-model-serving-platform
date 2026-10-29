@@ -26,6 +26,8 @@ final class DispatchBudget {
         return Duration.ofNanos(elapsed >= allowance ? 0 : allowance - Math.max(0, elapsed));
     }
 
+    Duration allowance() { return Duration.ofNanos(allowance); }
+
     Duration cappedTimeout(long configuredMilliseconds) {
         if (configuredMilliseconds <= 0) throw new IllegalArgumentException("Timeout must be positive");
         Duration left = remaining();
