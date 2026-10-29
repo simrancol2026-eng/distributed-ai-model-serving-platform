@@ -132,11 +132,18 @@ public class RequestTracker {
      */
     public void completed(Trace trace, int httpStatus, String errorCode, String workerId, long totalMs,
             String routingJson) {
+        completed(trace, httpStatus, errorCode, workerId, totalMs, routingJson, null);
+    }
+
+    /** Final attempt endpoint must match the final worker id after failover. Null preserves legacy dispatch. */
+    public void completed(Trace trace, int httpStatus, String errorCode, String workerId, long totalMs,
+            String routingJson, String finalEndpoint) {
         String requestId = trace.requestId;
         write("completed", trace, () -> jdbc.sql("""
                 UPDATE inference_requests
                 SET status = :status, completed_at = CURRENT_TIMESTAMP, http_status = :http,
                     error_code = :error, worker_id = :workerId, total_ms = :totalMs,
+                    worker_endpoint = COALESCE(:finalEndpoint, worker_endpoint),
                     routing_decision = :routing
                 WHERE request_id = :id AND status IN ('RECEIVED', 'DISPATCHED')""")
                 .param("id", requestId)
@@ -144,6 +151,7 @@ public class RequestTracker {
                 .param("http", httpStatus)
                 .param("error", cut(errorCode, 40))
                 .param("workerId", cut(workerId, 100))
+                .param("finalEndpoint", cut(finalEndpoint, 255))
                 .param("totalMs", totalMs)
                 .param("routing", routingJson)
                 .update());

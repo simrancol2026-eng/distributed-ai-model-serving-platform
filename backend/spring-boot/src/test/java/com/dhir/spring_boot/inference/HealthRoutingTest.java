@@ -84,4 +84,23 @@ class HealthRoutingTest {
         router.mismatch(b);
         assertEquals("NO_HEALTHY_WORKER", router.choose("TEXT", null, null, Map.of()).error());
     }
+
+    @Test void failoverExclusionSurvivesCooldownOverride() {
+        poll();
+        router.failure(a, true, false);
+        router.failure(b, true, false);
+        var choice = router.choose("TEXT", "model", "rev", Map.of(), Set.of(a.endpoint()));
+        assertSame(b, choice.worker());
+        assertEquals("ALREADY_ATTEMPTED", choice.candidates().get(0).note());
+        assertFalse(choice.candidates().get(0).eligible());
+        assertNull(router.choose("TEXT", "model", "rev", Map.of(), Set.of(a.endpoint(), b.endpoint())).worker());
+    }
+
+    @Test void excludingFirstWorkerCannotWidenAlternateVersionOrFreshness() {
+        probeB.set(good("other")); poll();
+        assertNull(router.choose("TEXT", "model", "rev", Map.of(), Set.of(a.endpoint())).worker());
+        probeB.set(good("rev")); poll();
+        now.set(5_000_000_001L);
+        assertNull(router.choose("TEXT", null, null, Map.of(), Set.of(a.endpoint())).worker());
+    }
 }
