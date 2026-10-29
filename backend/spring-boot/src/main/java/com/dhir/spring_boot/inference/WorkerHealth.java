@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class WorkerHealth {
     record Probe(boolean healthy, String capability, WorkerClient.ServedModel identity) {}
     record Snapshot(boolean live, boolean latestProbeSucceeded, String capability,
-                    WorkerClient.ServedModel identity, Long ageMs, int failures) {}
+                    WorkerClient.ServedModel identity, Long ageMs, int failures, boolean fresh) {}
     private final Supplier<Probe> probe;
     private final LongSupplier ticker;
     private final long maxAgeNanos;
@@ -60,7 +60,7 @@ final class WorkerHealth {
         return new Snapshot(fresh && failures < 2, fresh && latestSucceeded,
                 lastSuccess == null ? null : lastSuccess.capability(),
                 lastSuccess == null ? null : lastSuccess.identity(),
-                lastSuccess == null ? null : age / 1_000_000L, failures);
+                lastSuccess == null ? null : age / 1_000_000L, failures, fresh);
     }
 
     synchronized void invalidateIdentity() {

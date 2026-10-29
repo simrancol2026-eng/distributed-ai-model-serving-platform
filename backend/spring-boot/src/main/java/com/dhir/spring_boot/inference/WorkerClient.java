@@ -22,6 +22,7 @@ public class WorkerClient {
     private final RestClient restClient;
     private final RestClient probeClient;
     private final String endpoint;
+    private final BudgetedWorkerTransport budgetedTransport;
 
     /** What this worker reported serving on GET /health: artifact (model name) and loaded revision. */
     public record ServedModel(String artifact, String revision) {
@@ -36,6 +37,7 @@ public class WorkerClient {
         this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
         this.restClient = java.util.Objects.requireNonNull(restClient);
         this.probeClient = java.util.Objects.requireNonNull(probeClient);
+        this.budgetedTransport = null;
     }
 
     /**
@@ -64,6 +66,8 @@ public class WorkerClient {
         probeFactory.setReadTimeout(Duration.ofMillis(probeTimeoutMs));
         this.probeClient = RestClient.builder().baseUrl(workerUrl).requestFactory(probeFactory).build();
         this.endpoint = WorkerUrlValidator.endpoint(workerUrl);
+        this.budgetedTransport = new BudgetedWorkerTransport(httpClient,
+                java.net.URI.create(workerUrl.replaceAll("/+$", "") + "/predict"), readTimeoutMs);
     }
 
     /** host:port of this worker, safe to log and return (no path, no credentials). */
@@ -153,6 +157,14 @@ public class WorkerClient {
             // Anything else from the HTTP client, e.g. a response body that is not the expected JSON.
             throw new WorkerErrorException("Worker at " + endpoint + " response could not be read: " + e.getMessage(), e);
         }
+    }
+
+    /** Opt-in bounded dispatch. The original predict method remains unchanged when failover is off. */
+    WorkerPrediction predict(String text, DispatchBudget budget) {
+        if (budgetedTransport == null) {
+            throw new IllegalStateException("A budget-capable transport is required for failover");
+        }
+        return budgetedTransport.predict(text, budget);
     }
 
     /** True if a socket/read timeout appears anywhere in the cause chain. */

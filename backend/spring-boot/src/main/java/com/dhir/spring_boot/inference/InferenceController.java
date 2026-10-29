@@ -58,11 +58,19 @@ public class InferenceController {
     private final WorkerPool workers;
     private final RegistryRepository registry;
     private final RequestTracker tracker;
+    private final FailoverSettings failover;
 
     public InferenceController(WorkerPool workers, RegistryRepository registry, RequestTracker tracker) {
+        this(workers, registry, tracker, new FailoverSettings(false, 10000));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public InferenceController(WorkerPool workers, RegistryRepository registry, RequestTracker tracker,
+            FailoverSettings failover) {
         this.workers = workers;
         this.registry = registry;
         this.tracker = tracker;
+        this.failover = failover;
     }
 
     /** A registry version resolved for this request. */
@@ -100,7 +108,7 @@ public class InferenceController {
         String errorCode = body instanceof ErrorResponse e ? e.error() : null;
         String workerId = body instanceof InferenceResponse r ? r.worker() : null;
         tracker.completed(trace, response.getStatusCode().value(), errorCode, workerId,
-                (System.nanoTime() - started) / 1_000_000, decision.toJson(MAX_DECISION_JSON));
+                (System.nanoTime() - started) / 1_000_000, decision.toJson(MAX_DECISION_JSON), decision.chosen());
         return response;
     }
 
@@ -128,6 +136,7 @@ public class InferenceController {
                 return rejected(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
                         + ". Available: " + workers.capability() + ".", requestId);
             }
+            if (failover.enabled()) return failoverCall(request.input(), null, trace, started);
             if (workers.healthAware()) return healthyCall(request.input(), null, trace, started);
             try (WorkerPool.Reservation reservation = workers.reserve()) {
                 WorkerClient worker = reservation.worker();
@@ -180,6 +189,7 @@ public class InferenceController {
                     + " (model '" + modelId + "').", requestId);
         }
         String target = v.artifact() + "@" + v.artifactRevision();
+        if (failover.enabled()) return failoverCall(request.input(), new Target(modelId, v), trace, started);
         if (workers.healthAware()) return healthyCall(request.input(), new Target(modelId, v), trace, started);
         List<WorkerPool.Assessment> assessed = workers.assess(v.artifact(), v.artifactRevision());
         List<WorkerClient> eligible = new ArrayList<>();
@@ -230,6 +240,15 @@ public class InferenceController {
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
     private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
             long started, RoutingDecision decision) {
+        return call(worker, input, target, trace, started, decision, null, null);
+    }
+
+    private static final class AttemptState {
+        FailoverFailure failure;
+    }
+
+    private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
+            long started, RoutingDecision decision, DispatchBudget budget, AttemptState state) {
         String requestId = trace.requestId();
         tracker.dispatched(trace, worker.endpoint(),
                 target == null ? null : target.version().version(),
@@ -238,7 +257,7 @@ public class InferenceController {
                 decision.toJson(MAX_DECISION_JSON));
         try {
             long predictStarted = System.nanoTime();
-            WorkerPrediction p = worker.predict(input);
+            WorkerPrediction p = budget == null ? worker.predict(input) : worker.predict(input, budget);
             long predictNanos = System.nanoTime() - predictStarted;
             if (target != null && !(target.version().artifact().equals(p.model())
                     && target.version().artifactRevision().equals(p.version()))) {
@@ -261,12 +280,14 @@ public class InferenceController {
                     target == null ? null : target.modelId(), target == null ? null : target.version().version(),
                     decision));
         } catch (WorkerUnavailableException e) {
+            if (state != null) state.failure = FailoverFailure.classify(e);
             workers.predictionFailed(worker, true, false);
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_UNAVAILABLE {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(503, "WORKER_UNAVAILABLE", "The model worker at " + worker.endpoint()
                     + " is not reachable. Please try again shortly.", requestId);
         } catch (WorkerErrorException e) {
+            if (state != null) state.failure = FailoverFailure.classify(e);
             workers.predictionFailed(worker, false, e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
                     && response.getStatusCode().is5xxServerError());
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_ERROR {}", requestId,
@@ -274,6 +295,59 @@ public class InferenceController {
             return error(502, "WORKER_ERROR", "The model worker at " + worker.endpoint() + " returned an error.",
                     requestId);
         }
+    }
+
+    private Routed failoverCall(String input, Target target, RequestTracker.Trace trace, long started) {
+        DispatchBudget budget = new DispatchBudget(failover.budgetMs());
+        var attempts = new ArrayList<RoutingDecision.Attempt>();
+        var excluded = new java.util.HashSet<String>();
+        RoutingDecision finalDecision = RoutingDecision.notRouted(workers.size(), "No attempt dispatched")
+                .withSelection(workers.policy(), java.util.Map.of());
+        ResponseEntity<?> response = error(503, "WORKER_UNAVAILABLE", "No worker attempt was dispatched.", trace.requestId());
+        String terminal = "ATTEMPTS_EXHAUSTED";
+        for (int index = 0; index < 2; index++) {
+            if (Thread.currentThread().isInterrupted()) { terminal = "INTERRUPTED"; break; }
+            if (budget.remaining().isZero()) { terminal = "BUDGET_EXHAUSTED"; break; }
+            var selected = workers.reserveFailover(target == null ? null : target.version().artifact(),
+                    target == null ? null : target.version().artifactRevision(), excluded);
+            if (selected.reservation() == null) {
+                terminal = attempts.isEmpty() ? selected.error() : "NO_ALTERNATE";
+                if (attempts.isEmpty()) {
+                    finalDecision = selected.decision();
+                    response = error("NO_ELIGIBLE_WORKER".equals(selected.error()) ? 422 : 503,
+                            selected.error(), "No fresh healthy eligible worker is available.", trace.requestId());
+                }
+                break;
+            }
+            var state = new AttemptState();
+            long attemptStarted = System.nanoTime();
+            try (var reservation = selected.reservation()) {
+                if (Thread.currentThread().isInterrupted()) { terminal = "INTERRUPTED"; break; }
+                if (budget.remaining().isZero()) { terminal = "BUDGET_EXHAUSTED"; break; }
+                finalDecision = selected.decision();
+                excluded.add(reservation.worker().endpoint());
+                response = call(reservation.worker(), input, target, trace, started, finalDecision, budget, state);
+            }
+            boolean succeeded = response.getStatusCode().is2xxSuccessful();
+            String failureClass = succeeded ? null : state.failure == null ? "MODEL_MISMATCH" : state.failure.name();
+            attempts.add(new RoutingDecision.Attempt(finalDecision.chosen(), succeeded ? "SUCCEEDED" : "FAILED",
+                    (System.nanoTime() - attemptStarted) / 1_000_000L, failureClass));
+            log.info("worker attempt requestId={} endpoint={} outcome={} failureClass={}", trace.requestId(),
+                    finalDecision.chosen(), succeeded ? "SUCCEEDED" : "FAILED", failureClass);
+            if (succeeded) { terminal = "SUCCEEDED"; break; }
+              if (state.failure == FailoverFailure.INTERRUPTED) { terminal = "INTERRUPTED"; break; }
+            if (state.failure == null || !state.failure.retryable()) { terminal = "NOT_RETRYABLE"; break; }
+        }
+        finalDecision = finalDecision.withAttempts(attempts, terminal);
+        if (response.getBody() instanceof InferenceResponse r) {
+            response = ResponseEntity.status(response.getStatusCode()).body(new InferenceResponse(r.status(), r.requestId(),
+                    r.capability(), r.worker(), r.workerEndpoint(), r.model(), r.version(), r.task(), r.prediction(),
+                    r.workerInferenceMs(), r.totalLatencyMs(), r.modelId(), r.modelVersion(), finalDecision));
+        } else if (response.getBody() instanceof ErrorResponse r) {
+            response = ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(r.status(), r.error(),
+                    r.message(), r.requestId(), finalDecision));
+        }
+        return new Routed(response, finalDecision);
     }
 
     /** An error returned before any worker was considered. */

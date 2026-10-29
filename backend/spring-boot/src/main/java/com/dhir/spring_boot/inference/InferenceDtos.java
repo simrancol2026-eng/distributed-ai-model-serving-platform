@@ -50,7 +50,12 @@ public final class InferenceDtos {
     }
 
     /** Uniform error body: status is always "error"; error is a stable machine-readable code. */
-    public record ErrorResponse(String status, String error, String message, String requestId) {
+    public record ErrorResponse(String status, String error, String message, String requestId,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            RoutingDecision routing) {
+        public ErrorResponse(String status, String error, String message, String requestId) {
+            this(status, error, message, requestId, null);
+        }
         public static ErrorResponse of(String error, String message, String requestId) {
             return new ErrorResponse("error", error, message, requestId);
         }

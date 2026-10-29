@@ -27,7 +27,23 @@ public record RoutingDecision(
         List<Candidate> candidates,
         String chosen,
         String reason,
-        String policy) {
+        String policy,
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        List<Attempt> attempts,
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        String terminalReason) {
+
+    public record Attempt(String endpoint, String outcome, long elapsedMs, String failureClass) {}
+
+    public RoutingDecision(String strategy, String target, int poolSize, int eligibleCount,
+            List<Candidate> candidates, String chosen, String reason, String policy) {
+        this(strategy, target, poolSize, eligibleCount, candidates, chosen, reason, policy, null, null);
+    }
+
+    public RoutingDecision withAttempts(List<Attempt> attempts, String terminalReason) {
+        return new RoutingDecision(strategy, target, poolSize, eligibleCount, candidates, chosen, reason,
+                policy, attempts, terminalReason);
+    }
 
     public RoutingDecision(String strategy, String target, int poolSize, int eligibleCount,
             List<Candidate> candidates, String chosen, String reason) {
@@ -37,7 +53,7 @@ public record RoutingDecision(
     public RoutingDecision withSelection(String policy, java.util.Map<String, Integer> counts) {
         return new RoutingDecision(strategy, target, poolSize, eligibleCount,
                 candidates.stream().map(c -> new Candidate(c.endpoint(), c.eligible(), c.note(), c.served(),
-                        counts.get(c.endpoint()), c.health())).toList(), chosen, reason, policy);
+                        counts.get(c.endpoint()), c.health())).toList(), chosen, reason, policy, attempts, terminalReason);
     }
 
     public static final String ROUND_ROBIN_ALL = "ROUND_ROBIN_ALL";
@@ -75,6 +91,10 @@ public record RoutingDecision(
 
     public RoutingDecision {
         candidates = candidates == null ? List.of() : List.copyOf(candidates);
+        if (attempts != null) {
+            attempts = List.copyOf(attempts);
+            if (attempts.size() > 2) throw new IllegalArgumentException("At most two attempts are supported");
+        }
     }
 
     /** Rejected before routing: no worker was considered. */
@@ -108,6 +128,10 @@ public record RoutingDecision(
         }
         sb.append("] chosen=").append(chosen == null ? "-" : oneLine(chosen))
                 .append(" reason=\"").append(oneLine(reason)).append('"');
+        if (attempts != null) {
+            sb.append(" attempts=").append(oneLine(attempts.toString()))
+                    .append(" terminalReason=").append(oneLine(terminalReason));
+        }
         return sb.toString();
     }
 
@@ -184,6 +208,20 @@ public record RoutingDecision(
         }
         field(sb, "chosen", chosen).append(',');
         field(sb, "reason", reason);
+        if (attempts != null) {
+            sb.append(",\"attempts\":[");
+            for (int i = 0; i < attempts.size(); i++) {
+                if (i > 0) sb.append(',');
+                Attempt a = attempts.get(i);
+                sb.append('{');
+                field(sb, "endpoint", a.endpoint()).append(',');
+                field(sb, "outcome", a.outcome()).append(',');
+                sb.append("\"elapsedMs\":").append(a.elapsedMs()).append(',');
+                field(sb, "failureClass", a.failureClass()).append('}');
+            }
+            sb.append("],");
+            field(sb, "terminalReason", terminalReason);
+        }
         return sb.append('}').toString();
     }
 

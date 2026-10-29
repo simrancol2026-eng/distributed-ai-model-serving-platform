@@ -40,6 +40,16 @@ final class HealthRouting {
     void mismatch(WorkerClient worker) { health.get(worker).invalidateIdentity(); }
 
     Choice choose(String capability, String artifact, String revision, Map<WorkerClient, Integer> counts) {
+        return choose(capability, artifact, revision, counts, Set.of());
+    }
+
+    Choice choose(String capability, String artifact, String revision, Map<WorkerClient, Integer> counts,
+                  Set<String> excludedEndpoints) {
+        return choose(capability, artifact, revision, counts, excludedEndpoints, false);
+    }
+
+    Choice choose(String capability, String artifact, String revision, Map<WorkerClient, Integer> counts,
+                  Set<String> excludedEndpoints, boolean failover) {
         long now = ticker.getAsLong();
         var snapshots = new LinkedHashMap<WorkerClient, WorkerHealth.Snapshot>();
         var samples = new HashMap<WorkerClient, LatencyEstimate.Snapshot>();
@@ -56,7 +66,7 @@ final class HealthRouting {
             boolean match = capability.equals(h.capability()) && (wanted == null || wanted.equals(h.identity()));
             // Missing identity is uncertainty, not proof that a requested revision is absent.
             if (!h.latestProbeSucceeded() || !identityKnown || match) provenAbsent = false;
-            if (h.live() && match) {
+            if (h.live() && match && !excludedEndpoints.contains(w.endpoint())) {
                 matches.add(w);
                 if (latency.ewmaMs() != null && latency.ageMs() <= 30_000) {
                     optimistic = Math.min(optimistic, Math.max(0.001, latency.ewmaMs()));
@@ -80,7 +90,9 @@ final class HealthRouting {
             double estimate = l.ewmaMs() == null || l.ageMs() > 30_000 ? optimistic : Math.max(0.001, l.ewmaMs());
             double score = (counts.getOrDefault(w, 0) + 1.0) * estimate;
             scores.put(w, score);
-            String note = !h.live() ? "UNHEALTHY"
+            String note = excludedEndpoints.contains(w.endpoint()) ? "ALREADY_ATTEMPTED"
+                    : failover && !h.fresh() ? "NO_FRESH_OBSERVATION"
+                    : !h.live() ? "UNHEALTHY"
                     : !capability.equals(h.capability()) ? "CAPABILITY_MISMATCH"
                     : wanted != null && h.identity() == null ? "IDENTITY_UNKNOWN"
                     : wanted != null && !wanted.equals(h.identity()) ? "SERVES_OTHER"
@@ -93,6 +105,9 @@ final class HealthRouting {
         }
         if (selectable.isEmpty()) {
             String error = provenAbsent ? "NO_ELIGIBLE_WORKER" : "NO_HEALTHY_WORKER";
+            if (failover && snapshots.values().stream().noneMatch(WorkerHealth.Snapshot::fresh)) {
+                error = "NO_FRESH_OBSERVATION";
+            }
             return new Choice(null, List.copyOf(evidence), error, error);
         }
         String key = capability + ":" + artifact + "@" + revision;

@@ -48,6 +48,15 @@ public class WorkerPool {
 
     static final long HEALTH_POLL_INTERVAL_MS = 2000;
 
+    /** Injected observations/transports for deterministic routing integration tests. */
+    WorkerPool(List<WorkerClient> workers, Policy policy, java.util.Map<WorkerClient, WorkerHealth> observations) {
+        this.workers = List.copyOf(workers);
+        this.policy = policy;
+        this.capability = "TEXT";
+        this.identityMaxAgeMs = 30000;
+        this.healthRouting = new HealthRouting(workers, observations, System::nanoTime);
+    }
+
     /**
      * How long a successful health observation stays usable. The poller waits a fixed delay after each probe
      * ends and a probe may take up to probeTimeoutMs, so two consecutive failed probes can span
@@ -64,7 +73,11 @@ public class WorkerPool {
     record HealthSelection(Reservation reservation, RoutingDecision decision, String error) {}
 
     synchronized HealthSelection reserveHealthy(String artifact, String revision) {
-        var choice = healthRouting.choose(capability, artifact, revision, inFlight);
+        return reserveHealthy(artifact, revision, Set.of());
+    }
+
+    synchronized HealthSelection reserveHealthy(String artifact, String revision, Set<String> excludedEndpoints) {
+        var choice = healthRouting.choose(capability, artifact, revision, inFlight, excludedEndpoints);
         var before = counts();
         var candidates = choice.candidates().stream().map(c ->
                 new RoutingDecision.Candidate(c.worker().endpoint(), c.eligible(), c.note(),
@@ -78,6 +91,32 @@ public class WorkerPool {
         if (chosen == null) return new HealthSelection(null, decision, choice.error());
         inFlight.merge(chosen, 1, Integer::sum);
         return new HealthSelection(new Reservation(chosen, before), decision, null);
+    }
+
+    /** Failover selection uses fresh observations without probes under the pool monitor. */
+    synchronized HealthSelection reserveFailover(String artifact, String revision, Set<String> excludedEndpoints) {
+        if (healthRouting == null) throw new IllegalStateException("Failover health observations are not enabled");
+        var assessment = healthRouting.choose(capability, artifact, revision, inFlight, excludedEndpoints, true);
+        var eligible = assessment.candidates().stream().filter(HealthRouting.Candidate::eligible)
+                .map(HealthRouting.Candidate::worker).toList();
+        var before = counts();
+        var candidates = assessment.candidates().stream().map(c -> new RoutingDecision.Candidate(
+                c.worker().endpoint(), c.eligible(), c.note(),
+                c.identity() == null ? null : c.identity().artifact() + "@" + c.identity().revision(),
+                before.get(c.worker().endpoint()), c.evidence())).toList();
+        Reservation reservation = null;
+        if (!eligible.isEmpty()) {
+            if (healthAware()) {
+                inFlight.merge(assessment.worker(), 1, Integer::sum);
+                reservation = new Reservation(assessment.worker(), before);
+            } else reservation = reserve(eligible, artifact, revision);
+        }
+        var decision = new RoutingDecision(artifact == null ? RoutingDecision.ROUND_ROBIN_ALL : RoutingDecision.VERSION_AWARE,
+                artifact == null ? null : artifact + "@" + revision, size(), eligible.size(), candidates,
+                reservation == null ? null : reservation.worker().endpoint(),
+                reservation == null ? assessment.error() : healthAware() ? assessment.reason()
+                        : policyDescription() + " over fresh healthy eligible workers", policy());
+        return new HealthSelection(reservation, decision, reservation == null ? assessment.error() : null);
     }
 
     synchronized void predictionSucceeded(WorkerClient worker, long durationNanos) {
@@ -160,6 +199,12 @@ public class WorkerPool {
         this(urls, capability, connectTimeoutMs, readTimeoutMs, probeTimeoutMs, identityMaxAgeMs, "ROUND_ROBIN");
     }
 
+    public WorkerPool(String urls, String capability, long connectTimeoutMs, long readTimeoutMs,
+            long probeTimeoutMs, long identityMaxAgeMs, String policy) {
+        this(urls, capability, connectTimeoutMs, readTimeoutMs, probeTimeoutMs, identityMaxAgeMs,
+                policy, new FailoverSettings(false, 10000));
+    }
+
     @Autowired
     public WorkerPool(
             @Value("${platform.worker.urls}") String urls,
@@ -168,7 +213,8 @@ public class WorkerPool {
             @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs,
             @Value("${platform.worker.probe-timeout-ms:2000}") long probeTimeoutMs,
             @Value("${platform.worker.identity-max-age-ms:30000}") long identityMaxAgeMs,
-            @Value("${platform.routing.policy:ROUND_ROBIN}") String policy) {
+            @Value("${platform.routing.policy:ROUND_ROBIN}") String policy,
+            FailoverSettings failover) {
         try {
             this.policy = Policy.valueOf(policy);
         } catch (IllegalArgumentException | NullPointerException e) {
@@ -182,7 +228,7 @@ public class WorkerPool {
         this.workers = List.copyOf(clients);
         this.capability = capability;
         this.identityMaxAgeMs = identityMaxAgeMs;
-        if (healthAware()) {
+        if (healthAware() || failover.enabled()) {
             var observations = new java.util.LinkedHashMap<WorkerClient, WorkerHealth>();
             for (WorkerClient worker : workers) {
                 observations.put(worker, new WorkerHealth(worker::probeHealth, System::nanoTime,
