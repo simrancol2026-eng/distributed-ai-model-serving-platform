@@ -43,7 +43,8 @@ final class BudgetedWorkerTransport {
         }
         String body = JSON.writeValueAsString(Map.of("text", text));
         Duration timeout = budget.cappedTimeout(readTimeoutMs);
-        if (timeout.isZero()) throw expired();
+        boolean requestBudgetLimited = timeout.compareTo(Duration.ofMillis(readTimeoutMs)) < 0;
+        if (timeout.isZero()) throw new BudgetExpiredException();
         HttpRequest request = HttpRequest.newBuilder(predictUri).timeout(timeout)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build();
@@ -54,10 +55,11 @@ final class BudgetedWorkerTransport {
         }
         try {
             // Re-read after request setup: no fresh allowance for the second attempt or body consumption.
-            long remaining = Math.min(timeout.toNanos(), budget.remaining().toNanos());
-            if (remaining <= 0) { future.cancel(true); throw expired(); }
+            long budgetRemaining = budget.remaining().toNanos();
+            long remaining = Math.min(timeout.toNanos(), budgetRemaining);
+            if (remaining <= 0) { future.cancel(true); throw new BudgetExpiredException(); }
             HttpResponse<String> response = future.get(remaining, TimeUnit.NANOSECONDS);
-            if (budget.remaining().isZero()) throw expired();
+            if (budget.remaining().isZero()) throw new BudgetExpiredException();
             if (response.statusCode() >= 400) {
                 throw new WorkerClient.WorkerErrorException("Worker returned HTTP " + response.statusCode(),
                         new RestClientResponseException("Worker HTTP failure", response.statusCode(), "",
@@ -71,22 +73,28 @@ final class BudgetedWorkerTransport {
             if (prediction == null || prediction.label() == null) {
                 throw new WorkerClient.WorkerErrorException("Worker returned an empty or malformed prediction");
             }
-            if (budget.remaining().isZero()) throw expired();
+            if (budget.remaining().isZero()) throw new BudgetExpiredException();
             return prediction;
         } catch (TimeoutException timeoutFailure) {
             future.cancel(true);
-            throw expired();
+            if (requestBudgetLimited || budget.remaining().isZero()) throw new BudgetExpiredException();
+            throw readTimeout();
         } catch (InterruptedException interrupted) {
             future.cancel(true);
             Thread.currentThread().interrupt();
             throw new WorkerClient.WorkerUnavailableException("Dispatch interrupted", interrupted);
         } catch (ExecutionException failed) {
+            // A shorter configured connect timeout is still a real transport timeout.
+            if (requestBudgetLimited && failed.getCause() instanceof HttpTimeoutException
+                    && !(failed.getCause() instanceof java.net.http.HttpConnectTimeoutException)) {
+                throw new BudgetExpiredException();
+            }
             throw new WorkerClient.WorkerUnavailableException("Worker transport failed", failed.getCause());
         }
     }
 
-    private static WorkerClient.WorkerUnavailableException expired() {
-        return new WorkerClient.WorkerUnavailableException("Worker dispatch budget/timeout expired",
-                new HttpTimeoutException("Dispatch budget/timeout expired"));
+    private static WorkerClient.WorkerUnavailableException readTimeout() {
+        return new WorkerClient.WorkerUnavailableException("Worker read timeout expired",
+                new HttpTimeoutException("Worker read timeout expired"));
     }
 }

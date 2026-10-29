@@ -23,7 +23,8 @@ Round-robin remains the default policy. The disabled dispatch path is retained.
   10 seconds with the default 2-second probe timeout. Existing two-failure/
   one-success health hysteresis and cooldown override remain in effect.
 - RR and LIF select within that eligible set; health/latency uses its existing
-  score. RR advances on each selection, including an alternate.
+  score. An alternate advances only this backend process's RR cursor or LIF tie
+  cursor; there is no cursor shared between backend replicas.
 
 ## Budget and evidence limits
 
@@ -33,6 +34,11 @@ body receipt and is capped by remaining budget and configured read timeout.
 Timeout/interruption cancels the local response future; it cannot prove remote
 execution stopped. There is no exactly-once promise: even HTTP 503 may follow
 remote execution. No retry is performed for ambiguous timeout/reset failures.
+Budget-limited expiry is BUDGET_EXPIRED with terminalReason BUDGET_EXHAUSTED;
+it does not feed worker cooldown. A shorter configured read/connect timeout
+retains TIMEOUT/CONNECT_TIMEOUT and the existing worker-failure feedback.
+Before an attempt starts, expiry/interruption returns the corresponding
+BUDGET_EXHAUSTED/INTERRUPTED error code and retains any selection evidence.
 
 Tracking `dispatched` is invoked per attempt (up to twice). Its SQL transitions
 only a RECEIVED row; final completion updates the endpoint to match the final

@@ -71,3 +71,26 @@ Raw local logs retained by Codex: `sprint4-full-tests-agent.log` (successful
 run), `sprint4-full-tests.log` (stopped attachment run), and Surefire reports in
 the local backend target directory. These are not committed because test
 reports can contain environment-specific properties.
+
+## Review-fix validation, October 28
+
+Claude reviewed published `d18a74921e643bda3d6c8b10c4020c551c8eb90d`
+and approved with a recommended budget/cooldown fix. Grok reported an independent
+150-test pass plus PostgreSQL/fake-worker and single-run real-model experiments;
+supporting artifacts were requested and are still pending inspection at this
+revision. These reported experiments are not Codex-verified execution evidence.
+
+The follow-up separates BUDGET_EXPIRED from genuine TIMEOUT/CONNECT_TIMEOUT,
+avoids worker cooldown on budget expiry, exposes BUDGET_EXHAUSTED/INTERRUPTED
+before dispatch, retains selection evidence, and clarifies process-local cursors.
+Full backend rerun using the explicit agent command above: **155 tests across
+33 classes, zero failures/errors/skips, exit 0**. Local log:
+`sprint4-review-fix-tests.log`. Java 21.0.12.1, Windows, H2/fake/loopback only.
+Five new regression tests distinguish budget-vs-read/connect timer expiry and
+verify alternate budget expiry leaves cooldown zero while a true read timeout
+still penalizes the worker. The controller budget-expiry test injects the
+failure deterministically; Grok's real delayed-A/short-remainder-B retest is
+requested on the newly published SHA. Diff check passed.
+
+The revised commit still requires Claude's delta review and Grok's delta test
+before merge. No Sprint 4 completion, client-disconnect or Docker claim.

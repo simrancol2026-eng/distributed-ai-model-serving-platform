@@ -22,7 +22,7 @@ class BudgetedWorkerTransportTest {
         respond(future);
         var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
                 () -> transport.predict("x", new DispatchBudget(30)));
-        assertEquals(FailoverFailure.TIMEOUT, FailoverFailure.classify(failure));
+        assertEquals(FailoverFailure.BUDGET_EXPIRED, FailoverFailure.classify(failure));
         assertTrue(future.isCancelled());
     }
 
@@ -32,6 +32,29 @@ class BudgetedWorkerTransportTest {
         clock.set(1_000_000L);
         assertThrows(WorkerClient.WorkerUnavailableException.class, () -> transport.predict("x", budget));
         assertEquals(0, sends);
+    }
+
+    @Test void configuredReadTimeoutStillCountsAsWorkerTimeout() {
+        var future = new CompletableFuture<HttpResponse<String>>();
+        var shortRead = new BudgetedWorkerTransport(request -> future,URI.create("http://localhost:8011/predict"),20);
+        var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
+                () -> shortRead.predict("x",new DispatchBudget(3000)));
+        assertEquals(FailoverFailure.TIMEOUT,FailoverFailure.classify(failure));
+        assertTrue(future.isCancelled());
+    }
+
+    @Test void connectTimeoutIsNotConfusedWithLongerBudgetCap() {
+        respond(CompletableFuture.failedFuture(new HttpConnectTimeoutException("connect")));
+        var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
+                () -> transport.predict("x",new DispatchBudget(1000)));
+        assertEquals(FailoverFailure.CONNECT_TIMEOUT,FailoverFailure.classify(failure));
+    }
+
+    @Test void requestTimerCappedByBudgetIsBudgetExpiry() {
+        respond(CompletableFuture.failedFuture(new HttpTimeoutException("request timer")));
+        var failure = assertThrows(WorkerClient.WorkerUnavailableException.class,
+                () -> transport.predict("x",new DispatchBudget(1000)));
+        assertEquals(FailoverFailure.BUDGET_EXPIRED,FailoverFailure.classify(failure));
     }
 
     @Test void interruptedCallerNeverSendsAndRetainsFlag() {

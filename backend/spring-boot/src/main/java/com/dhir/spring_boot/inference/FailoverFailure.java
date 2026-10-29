@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClientResponseException;
 
 /** Conservative retry boundary; an unknown transport failure may have executed remotely. */
 enum FailoverFailure {
-    PRE_SEND_CONNECTION(true), TRANSIENT_HTTP(true), CONNECT_TIMEOUT(false), TIMEOUT(false),
+    PRE_SEND_CONNECTION(true), TRANSIENT_HTTP(true), BUDGET_EXPIRED(false), CONNECT_TIMEOUT(false), TIMEOUT(false),
     INTERRUPTED(false), HTTP_ERROR(false), UNKNOWN(false);
 
     private final boolean retryable;
@@ -24,11 +24,13 @@ enum FailoverFailure {
         boolean connection = false;
         boolean timeout = false;
         boolean connectTimeout = false;
+        boolean budgetExpired = false;
         boolean interrupted = Thread.currentThread().isInterrupted();
         Integer status = null;
         Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable t = failure; t != null && seen.add(t); t = t.getCause()) {
             interrupted |= t instanceof InterruptedException;
+            budgetExpired |= t instanceof BudgetExpiredException;
             connectTimeout |= t instanceof HttpConnectTimeoutException;
             timeout |= t instanceof HttpTimeoutException || t instanceof SocketTimeoutException;
             connection |= t instanceof ConnectException || t instanceof UnknownHostException
@@ -36,6 +38,7 @@ enum FailoverFailure {
             if (t instanceof RestClientResponseException response) status = response.getStatusCode().value();
         }
         if (interrupted) return INTERRUPTED;
+        if (budgetExpired) return BUDGET_EXPIRED;
         if (connectTimeout) return CONNECT_TIMEOUT;
         if (timeout) return TIMEOUT;
         if (status != null) return status == 502 || status == 503 ? TRANSIENT_HTTP : HTTP_ERROR;

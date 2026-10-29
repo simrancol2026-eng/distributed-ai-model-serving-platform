@@ -3,7 +3,7 @@ package com.dhir.spring_boot.inference;
 import java.time.Duration;
 import java.util.function.LongSupplier;
 
-/** One monotonic budget shared by selection and worker attempts, excluding database tracking. */
+/** One monotonic dispatch allowance; tracking elapsed time consumes it but JDBC is not cancelled. */
 final class DispatchBudget {
     private final LongSupplier clock;
     private final long started;

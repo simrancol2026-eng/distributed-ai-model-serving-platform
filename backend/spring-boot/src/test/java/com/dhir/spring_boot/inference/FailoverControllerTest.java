@@ -99,11 +99,42 @@ class FailoverControllerTest {
             assertEquals(503, response.getStatusCode().value());
             var routing = ((ErrorResponse) response.getBody()).routing();
             assertEquals("INTERRUPTED", routing.terminalReason());
+            assertEquals("INTERRUPTED", ((ErrorResponse) response.getBody()).error());
             assertTrue(routing.attempts().isEmpty());
             assertEquals(0, a.calls);
             assertEquals(0, pool.counts().get(a.endpoint()));
             assertTrue(Thread.currentThread().isInterrupted());
         } finally { Thread.interrupted(); }
+    }
+
+    @Test void budgetExpiredAlternateDoesNotPenalizeHealthyWorker() {
+        var http = new org.springframework.web.client.RestClientResponseException("worker",503,"",null,
+                new byte[0], java.nio.charset.StandardCharsets.UTF_8);
+        var a = new FakeWorker(8001,new WorkerClient.WorkerErrorException("retry",http));
+        var b = new FakeWorker(8002,new BudgetExpiredException()); var pool = pool(a,b);
+        var response = infer(pool);
+        var routing = ((ErrorResponse) response.getBody()).routing();
+        assertEquals("BUDGET_EXHAUSTED",routing.terminalReason());
+        assertEquals("BUDGET_EXPIRED",routing.attempts().get(1).failureClass());
+        assertTrue(pool.counts().values().stream().allMatch(n -> n == 0));
+        var next = pool.reserveFailover(null,null,Set.of());
+        try (var reservation = next.reservation()) {
+            assertNotNull(reservation);
+            var evidence = next.decision().candidates().stream().filter(c -> c.endpoint().equals(b.endpoint())).findFirst().orElseThrow();
+            assertEquals(0,evidence.health().cooldownMs());
+        }
+    }
+
+    @Test void configuredWorkerTimeoutStillSetsCooldown() {
+        var a = new FakeWorker(8001,new WorkerClient.WorkerUnavailableException("read",new HttpTimeoutException("read")));
+        var b = new FakeWorker(8002,null); var pool = pool(a,b);
+        infer(pool);
+        var next = pool.reserveFailover(null,null,Set.of());
+        try (var reservation = next.reservation()) {
+            assertNotNull(reservation);
+            assertTrue(next.decision().candidates().stream().filter(c -> c.endpoint().equals(a.endpoint()))
+                    .findFirst().orElseThrow().health().cooldownMs() > 0);
+        }
     }
 
     @Test void interruptedDuringAttemptReleasesAndNeverRetries() {

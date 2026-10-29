@@ -281,7 +281,7 @@ public class InferenceController {
                     decision));
         } catch (WorkerUnavailableException e) {
             if (state != null) state.failure = FailoverFailure.classify(e);
-            workers.predictionFailed(worker, true, false);
+            if (!(e instanceof BudgetExpiredException)) workers.predictionFailed(worker, true, false);
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_UNAVAILABLE {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(503, "WORKER_UNAVAILABLE", "The model worker at " + worker.endpoint()
@@ -322,9 +322,9 @@ public class InferenceController {
             var state = new AttemptState();
             long attemptStarted = System.nanoTime();
             try (var reservation = selected.reservation()) {
+                finalDecision = selected.decision();
                 if (Thread.currentThread().isInterrupted()) { terminal = "INTERRUPTED"; break; }
                 if (budget.remaining().isZero()) { terminal = "BUDGET_EXHAUSTED"; break; }
-                finalDecision = selected.decision();
                 excluded.add(reservation.worker().endpoint());
                 response = call(reservation.worker(), input, target, trace, started, finalDecision, budget, state);
             }
@@ -335,10 +335,14 @@ public class InferenceController {
             log.info("worker attempt requestId={} endpoint={} outcome={} failureClass={}", trace.requestId(),
                     finalDecision.chosen(), succeeded ? "SUCCEEDED" : "FAILED", failureClass);
             if (succeeded) { terminal = "SUCCEEDED"; break; }
-              if (state.failure == FailoverFailure.INTERRUPTED) { terminal = "INTERRUPTED"; break; }
+            if (state.failure == FailoverFailure.INTERRUPTED) { terminal = "INTERRUPTED"; break; }
+            if (state.failure == FailoverFailure.BUDGET_EXPIRED) { terminal = "BUDGET_EXHAUSTED"; break; }
             if (state.failure == null || !state.failure.retryable()) { terminal = "NOT_RETRYABLE"; break; }
         }
         finalDecision = finalDecision.withAttempts(attempts, terminal);
+        if (attempts.isEmpty() && (terminal.equals("BUDGET_EXHAUSTED") || terminal.equals("INTERRUPTED"))) {
+            response = error(503, terminal, "No worker attempt was dispatched: " + terminal, trace.requestId());
+        }
         if (response.getBody() instanceof InferenceResponse r) {
             response = ResponseEntity.status(response.getStatusCode()).body(new InferenceResponse(r.status(), r.requestId(),
                     r.capability(), r.worker(), r.workerEndpoint(), r.model(), r.version(), r.task(), r.prediction(),
