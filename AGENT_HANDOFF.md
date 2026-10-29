@@ -3,7 +3,7 @@
 Read this first when resuming work. GitHub is the source of truth; this file says where to look.
 Team coordination happens in Slack `#capstone-ai-team` (one thread per task, `FROM/TO/TYPE/PHASE/COMMIT` header).
 
-Last updated: 2026-10-25 by Claude.
+Last updated: 2026-10-28 by Claude and Codex.
 
 ## Current sprint and feature
 
@@ -12,7 +12,10 @@ Last updated: 2026-10-25 by Claude.
   distinct endpoints, retry only positively classified pre-send connection failures and worker HTTP 502/503,
   no timeout retry (including connect timeout), one dispatch budget (`worker.failover.budget-ms`, default 10000),
   default disabled. Real client-disconnect cancellation is deferred.
-- **No Sprint 4 code is published yet.** Codex's repository access was pending on 2026-10-24.
+- **Candidate published:** PR #12, branch `codex/sprint4-bounded-failover`, head `58db847` (tree `001cea4`), base `2aca70a`.
+  Codex full backend suite: 158 tests passing on an identical tree (H2/fake/loopback). Claude final source review:
+  APPROVE exact `58db847`. Grok baseline PASS/evidence on `d18a749` inspected; targeted `58db847` retest pending.
+  Not merged. No real-model rerun on the revised head is claimed.
 
 ## Merged
 
@@ -28,32 +31,33 @@ Last updated: 2026-10-25 by Claude.
 | Health/latency (Sprint 3) | `4a2c343` | `ed28851` |
 | Sprint 3 docs (PRs #8–#10) | `39e59e7`, `dec1b5b`, `2aca70a` | docs only |
 
-`main` = `2aca70a` as of 2026-10-25.
+`main` = `2aca70a` as of 2026-10-28. Sprint 3 is closed (retrospective published 2026-10-24).
 
 ## Open pull requests
 
 - **PR #3** `ci/docker-integration-tests` (`273e185`): Docker worker build + `/health` smoke test.
-  CI run 38541943495 succeeded; Grok confirmed the log (D-048). Waiting for Codex review and **Dhir's approval to merge**.
-- **Docs PR** `claude/docker-status-and-handoff`: this file, README Docker wording, D-048.
+  CI run 38541943495 succeeded on 2026-10-14 (head `273e185`, tested merge ref `5c0219f`); Grok confirmed the log (D-048). Waiting for Codex review.
+- **PR #11** `claude/docker-status-and-handoff`: this file, README Docker/status wording, D-048. Waiting for Codex wording review and Grok's diff check.
+- **PR #12** `codex/sprint4-bounded-failover` (`58db847`): Sprint 4 bounded failover. See above.
+
+Merge rule: per Dhir (2026-10-15), a PR may be merged once its review and tests/checks pass; no separate approval step.
 
 ## Blockers
 
 - Local Docker on the owner's PC: Docker Desktop's WSL engine does not start (2026-10-24; a factory reset was chosen in its error dialog). Local container checks cannot run there.
-- Sprint 4 implementation waits on Codex publishing a SHA.
 
 ## Last tests executed
 
-- No new runtime tests by Claude this session. Evidence used: PR #3 Actions run (Success) and Grok's reading of its log.
+- Claude: none (source review only). Grok: fresh-clone matrix on `d18a749`, 150/150 Maven tests plus PostgreSQL 16.4 and real DistilBERT fault runs (2026-10-28).
+- Docker evidence: PR #3 Actions run (Success) and Grok's reading of its log.
 
 ## Pending
 
-- **Grok:** run the Sprint 4 failover matrix on Codex's published SHA (fresh clone).
-- **Claude:** source review of Codex's failover diff against the points in Claude's 2026-10-24 design review
-  (failure classification, per-attempt timeout vs budget, alternate selection per policy, final-endpoint tracking, `attempts[]` in decision JSON).
-- **Codex:** review of PR #3 and of the docs PR.
-- **Dhir:** merge approvals for PR #3 and the docs PR.
+- **Codex:** merge PR #12 after Grok's exact-head delta test passes and head/base checks; review PR #3 and integrate PR #11.
+- **Claude:** PR #12 source review complete on `58db847`; documentation diff review for PR #11.
+- **Grok:** exact-head PR #12 delta test on `58db847` and docs-only diff check of PR #11.
 
 ## Next step
 
-When Codex posts the failover BUILD REPORT + SHA in the Sprint 4 thread, review that diff and post findings in the same thread.
+The PR #12 review findings are fixed and approved; merge after the targeted test passes. Then the Sprint 4 demo/retrospective.
 Docker: after PR #3 is approved, add a `/predict` call to the smoke test as the next small increment.
