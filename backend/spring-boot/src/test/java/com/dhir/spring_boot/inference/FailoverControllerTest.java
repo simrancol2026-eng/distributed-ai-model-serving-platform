@@ -29,7 +29,7 @@ class FailoverControllerTest {
             assertEquals(1, pool.counts().values().stream().mapToInt(Integer::intValue).sum(),
                     "previous reservation must be released before alternate dispatch");
             if (failure != null) throw failure;
-            return new WorkerPrediction(endpoint(), "model", "rev", "sentiment", "POSITIVE", 0.9, 1);
+            return new WorkerPrediction(endpoint(), "model", "rev", "sentiment", "POSITIVE", 0.9, 1, null);
         }
     }
     static RequestTracker tracker() {

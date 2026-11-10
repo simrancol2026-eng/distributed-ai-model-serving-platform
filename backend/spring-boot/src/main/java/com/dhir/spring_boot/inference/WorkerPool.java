@@ -50,9 +50,14 @@ public class WorkerPool {
 
     /** Injected observations/transports for deterministic routing integration tests. */
     WorkerPool(List<WorkerClient> workers, Policy policy, java.util.Map<WorkerClient, WorkerHealth> observations) {
+        this(workers, policy, observations, "TEXT");
+    }
+
+    WorkerPool(List<WorkerClient> workers, Policy policy, java.util.Map<WorkerClient, WorkerHealth> observations,
+            String capability) {
         this.workers = List.copyOf(workers);
         this.policy = policy;
-        this.capability = "TEXT";
+        this.capability = capability;
         this.identityMaxAgeMs = 30000;
         this.healthRouting = new HealthRouting(workers, observations, System::nanoTime);
     }
