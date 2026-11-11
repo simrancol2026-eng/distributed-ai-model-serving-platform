@@ -213,7 +213,9 @@ class FailoverControllerTest {
             var b = new FakeWorker(8002, null); var pool = pool(a,b);
             var response = infer(pool);
             boolean retry = status == 502 || status == 503;
-            assertEquals(retry ? 200 : 502, response.getStatusCode().value(), "worker status " + status);
+            // A worker 422 is its own input validation: a client 422 (D-049), still never retried.
+            int expected = retry ? 200 : status == 422 ? 422 : 502;
+            assertEquals(expected, response.getStatusCode().value(), "worker status " + status);
             assertEquals(retry ? 1 : 0, b.calls);
             assertTrue(pool.counts().values().stream().allMatch(n -> n == 0));
         }
