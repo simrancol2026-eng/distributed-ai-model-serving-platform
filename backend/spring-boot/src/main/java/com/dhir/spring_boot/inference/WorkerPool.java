@@ -283,6 +283,20 @@ public class WorkerPool {
         return assess(artifact, revision).stream().filter(Assessment::eligible).map(Assessment::worker).toList();
     }
 
+    /** One worker of a specialist pool: the capability its /health reports (null = unknown), and whether it matches. */
+    public record CapabilityCheck(WorkerClient worker, String reported, boolean eligible) {
+    }
+
+    /** Specialist pools (D-049): which workers report this pool's capability right now. Fails closed on unknown. */
+    public List<CapabilityCheck> assessCapability() {
+        List<CapabilityCheck> result = new ArrayList<>();
+        for (WorkerClient w : workers) {
+            String reported = w.reportedCapability(identityMaxAgeMs).orElse(null);
+            result.add(new CapabilityCheck(w, reported, capability.equals(reported)));
+        }
+        return result;
+    }
+
     /** One worker as seen by version-aware routing: what its /health says it serves, and whether that matches. */
     public record Assessment(WorkerClient worker, WorkerClient.ServedModel served, boolean eligible) {
     }

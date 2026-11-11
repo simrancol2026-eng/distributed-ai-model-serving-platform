@@ -50,10 +50,14 @@ def load_worker(task, monkeypatch):
     return module
 
 
-def png_base64(color=(200, 120, 40)):
+def image_base64(fmt="PNG", size=(8, 8), color=(200, 120, 40)):
     buffer = io.BytesIO()
-    Image.new("RGB", (8, 8), color).save(buffer, format="PNG")
+    Image.new("RGB", size, color).save(buffer, format=fmt)
     return base64.b64encode(buffer.getvalue()).decode()
+
+
+def png_base64(color=(200, 120, 40)):
+    return image_base64("PNG", color=color)
 
 
 def test_code_task_reports_capability_and_language(monkeypatch):
@@ -91,6 +95,43 @@ def test_image_task_rejects_non_images_concisely(monkeypatch, text):
     assert r.json()["detail"][0]["type"] == "invalid_image"
     assert text not in r.text
     assert client.get("/health").json()["predictionsServed"] == before
+
+
+def test_image_task_accepts_jpeg(monkeypatch):
+    worker = load_worker("image", monkeypatch)
+    r = TestClient(worker.app).post("/predict", json={"text": image_base64("JPEG")})
+    assert r.status_code == 200 and r.json()["label"] == "tabby cat"
+
+
+@pytest.mark.parametrize("fmt", ["GIF", "BMP", "WEBP", "TIFF"])
+def test_image_task_rejects_formats_other_than_png_and_jpeg(monkeypatch, fmt):
+    worker = load_worker("image", monkeypatch)
+    r = TestClient(worker.app).post("/predict", json={"text": image_base64(fmt)})
+    assert r.status_code == 422 and r.json()["detail"][0]["type"] == "invalid_image"
+    assert worker.classifier.calls == []
+
+
+@pytest.mark.parametrize("size", [(4097, 1), (1, 4097), (8192, 8192)])
+def test_image_task_rejects_oversized_dimensions_before_decoding(monkeypatch, size):
+    worker = load_worker("image", monkeypatch)
+    r = TestClient(worker.app).post("/predict", json={"text": image_base64("PNG", size=size)})
+    assert r.status_code == 422 and r.json()["detail"][0]["type"] == "invalid_image"
+    assert worker.classifier.calls == []
+
+
+def test_image_task_accepts_the_maximum_size(monkeypatch):
+    worker = load_worker("image", monkeypatch)
+    r = TestClient(worker.app).post("/predict", json={"text": image_base64("PNG", size=(4096, 4096))})
+    assert r.status_code == 200
+
+
+def test_image_task_rejects_truncated_png(monkeypatch):
+    worker = load_worker("image", monkeypatch)
+    raw = base64.b64decode(image_base64("PNG", size=(64, 64), color=(1, 2, 3)))
+    truncated = base64.b64encode(raw[: len(raw) // 2]).decode()
+    r = TestClient(worker.app).post("/predict", json={"text": truncated})
+    assert r.status_code == 422
+    assert worker.classifier.calls == []
 
 
 def test_image_task_allows_large_inputs(monkeypatch):

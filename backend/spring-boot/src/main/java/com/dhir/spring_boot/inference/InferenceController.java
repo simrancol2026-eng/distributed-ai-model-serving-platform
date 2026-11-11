@@ -43,6 +43,8 @@ import com.dhir.spring_boot.tracking.RequestTracker;
  *   (specialist models, D-049: each capability has its own WorkerPool, see WorkerPools; AUTO = the default TEXT pool;
  *    IMAGE input is base64 and may be up to MAX_IMAGE_INPUT_CHARS characters)
  *   422 NO_ELIGIBLE_WORKER     no worker serves the capability / the resolved artifact + revision
+ *   422 INVALID_IMAGE          the IMAGE worker could not read the input as a PNG/JPEG within its size limit
+ *   422 INVALID_INPUT          another worker rejected the input with 422 (its own validation)
  *   503 REGISTRY_UNAVAILABLE   the registry database could not be read
  *   503 WORKER_UNAVAILABLE     the chosen worker is down or timed out (no failover)
  *   502 WORKER_ERROR           the chosen worker answered with an error
@@ -153,6 +155,7 @@ public class InferenceController {
             }
             if (failover.enabled()) return failoverCall(workers, request.input(), null, trace, started);
             if (workers.healthAware()) return healthyCall(workers, request.input(), null, trace, started);
+            if (workers != pools.defaultPool()) return specialistCall(workers, request.input(), trace, started);
             try (WorkerPool.Reservation reservation = workers.reserve()) {
                 WorkerClient worker = reservation.worker();
                 List<RoutingDecision.Candidate> all = new ArrayList<>();
@@ -240,6 +243,43 @@ public class InferenceController {
         }
     }
 
+    /**
+     * ROUND_ROBIN / LEAST_IN_FLIGHT for a specialist (CODE/IMAGE) pool: unlike the TEXT pool, a configured URL
+     * is not trusted. Only workers whose /health reports this pool's capability are used (D-049), so a
+     * misconfigured URL can never answer a CODE request with the sentiment model.
+     */
+    private Routed specialistCall(WorkerPool workers, String input, RequestTracker.Trace trace, long started) {
+        List<WorkerClient> eligible = new ArrayList<>();
+        List<RoutingDecision.Candidate> candidates = new ArrayList<>();
+        boolean anyUnknown = false;
+        for (WorkerPool.CapabilityCheck c : workers.assessCapability()) {
+            String note = c.eligible() ? RoutingDecision.ELIGIBLE
+                    : c.reported() == null ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
+            candidates.add(new RoutingDecision.Candidate(c.worker().endpoint(), c.eligible(), note,
+                    c.reported() == null ? null : "capability " + c.reported()));
+            if (c.eligible()) eligible.add(c.worker());
+            anyUnknown |= c.reported() == null;
+        }
+        if (eligible.isEmpty()) {
+            // 422 only when every worker answered and none serves it; otherwise it may just be down (503).
+            int status = anyUnknown ? 503 : 422;
+            String code = anyUnknown ? "NO_HEALTHY_WORKER" : "NO_ELIGIBLE_WORKER";
+            RoutingDecision none = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(), 0,
+                    candidates, null, code + ": no worker reports capability " + workers.capability())
+                    .withSelection(workers.policy(), workers.counts());
+            return new Routed(error(status, code, "No reachable worker currently reports capability "
+                    + workers.capability() + ".", trace.requestId()), none);
+        }
+        try (WorkerPool.Reservation reservation = workers.reserve(eligible, null, null)) {
+            WorkerClient worker = reservation.worker();
+            RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
+                    eligible.size(), candidates, worker.endpoint(), "no model requested: " + workers.policyDescription()
+                            + " over " + eligible.size() + " of " + workers.size() + " worker(s) reporting "
+                            + workers.capability()).withSelection(workers.policy(), reservation.before());
+            return new Routed(call(workers, worker, input, null, trace, started, decision), decision);
+        }
+    }
+
     private Routed healthyCall(WorkerPool workers, String input, Target target, RequestTracker.Trace trace, long started) {
         var selected = workers.reserveHealthy(target == null ? null : target.version().artifact(),
                 target == null ? null : target.version().artifactRevision());
@@ -316,6 +356,18 @@ public class InferenceController {
             if (state != null) state.failure = FailoverFailure.classify(e);
             workers.predictionFailed(worker, false, e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
                     && response.getStatusCode().is5xxServerError());
+            if (e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
+                    && response.getStatusCode().value() == 422) {
+                // The worker validated the input and rejected it (e.g. not a PNG/JPEG image): a client error,
+                // not a worker fault. No cooldown (4xx) and never retried by failover (HTTP_ERROR). D-049.
+                log.warn("inference rejected requestId={} routedTo={} reason=INVALID_INPUT", requestId,
+                        worker.endpoint());
+                return "IMAGE".equals(workers.capability())
+                        ? error(422, "INVALID_IMAGE", "Field 'input' must be a base64-encoded PNG or JPEG image of at most "
+                                + "4096 x 4096 pixels.", requestId)
+                        : error(422, "INVALID_INPUT", "The " + workers.capability() + " model worker rejected the input.",
+                                requestId);
+            }
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_ERROR {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(502, "WORKER_ERROR", "The model worker at " + worker.endpoint() + " returned an error.",

@@ -24,11 +24,21 @@ class SpecialistModelsTest {
         final List<Prediction> topK;
         int calls;
         RuntimeException failure;
+        String reports; // capability this fake's /health reports (null = unreachable / unknown)
 
         TaskWorker(int port, String task, List<Prediction> topK) {
             super("http://localhost:" + port, FailoverControllerTest.unused(), FailoverControllerTest.unused());
             this.task = task;
             this.topK = topK;
+            this.reports = switch (task) {
+                case "text-classification" -> "CODE";
+                case "image-classification" -> "IMAGE";
+                default -> "TEXT";
+            };
+        }
+
+        @Override public java.util.Optional<String> reportedCapability(long maxAgeMs) {
+            return java.util.Optional.ofNullable(reports);
         }
 
         @Override public WorkerPrediction predict(String text) { return answer(); }
@@ -153,6 +163,79 @@ class SpecialistModelsTest {
                 "CODE", "print(1)");
         assertEquals(422, response.getStatusCode().value());
         assertEquals(0, misconfigured.calls);
+    }
+
+    // ---- fix 3 on 02dceaa (Grok/Codex): RR and LIF must not trust a misconfigured specialist URL ----
+
+    @Test void roundRobinSkipsAWorkerReportingAnotherCapability() {
+        for (WorkerPool.Policy policy : new WorkerPool.Policy[] { WorkerPool.Policy.ROUND_ROBIN, WorkerPool.Policy.LEAST_IN_FLIGHT }) {
+            var wrong = new TaskWorker(8001, "sentiment-analysis", null); // a TEXT worker listed as CODE
+            var right = new TaskWorker(8101, "text-classification", CODE_TOP);
+            var codePool = new WorkerPool(List.<WorkerClient>of(wrong, right), policy, Map.of(), "CODE");
+            var p = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text), Map.of("CODE", codePool));
+            for (int i = 0; i < 4; i++) {
+                var r = (InferenceResponse) infer(p, "CODE", "print(1)").getBody();
+                assertEquals(right.endpoint(), r.workerEndpoint());
+                assertEquals("python", r.prediction().label());
+                var notes = r.routing().candidates().stream().map(RoutingDecision.Candidate::note).toList();
+                assertEquals(List.of(RoutingDecision.SERVES_OTHER, RoutingDecision.ELIGIBLE), notes);
+            }
+            assertEquals(0, wrong.calls, policy.name());
+            assertEquals(4, right.calls, policy.name());
+        }
+    }
+
+    @Test void specialistPoolWithOnlyWrongWorkersIs422AndUnknownIs503() {
+        var wrong = new TaskWorker(8001, "sentiment-analysis", null);
+        var codePool = new WorkerPool(List.<WorkerClient>of(wrong), WorkerPool.Policy.ROUND_ROBIN, Map.of(), "CODE");
+        var p = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text), Map.of("CODE", codePool));
+        var response = infer(p, "CODE", "print(1)");
+        assertEquals(422, response.getStatusCode().value());
+        assertEquals("NO_ELIGIBLE_WORKER", ((ErrorResponse) response.getBody()).error());
+        wrong.reports = null; // unreachable: absence cannot be proven
+        response = infer(p, "CODE", "print(1)");
+        assertEquals(503, response.getStatusCode().value());
+        assertEquals("NO_HEALTHY_WORKER", ((ErrorResponse) response.getBody()).error());
+        assertEquals(0, wrong.calls + text.calls);
+    }
+
+    // ---- fix 1 on 02dceaa: a worker's own 422 (invalid image) is a client error, not 502 ----
+
+    static WorkerClient.WorkerErrorException worker422() {
+        return new WorkerClient.WorkerErrorException("Worker returned HTTP 422",
+                new org.springframework.web.client.RestClientResponseException("Worker HTTP failure", 422, "",
+                        null, new byte[0], java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Test void invalidImageIsA422ClientErrorWithoutFailoverRetry() {
+        for (boolean failoverOn : new boolean[] { false, true }) {
+            var a = new TaskWorker(8201, "image-classification", IMAGE_TOP);
+            var b = new TaskWorker(8202, "image-classification", IMAGE_TOP);
+            a.failure = worker422();
+            b.failure = worker422();
+            var p = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                    Map.of("IMAGE", pool("IMAGE", WorkerPool.Policy.ROUND_ROBIN, a, b)));
+            var response = infer(p, new FailoverSettings(failoverOn, 10000), "IMAGE", "bm90IGFuIGltYWdl");
+            assertEquals(422, response.getStatusCode().value(), "failover=" + failoverOn);
+            var error = (ErrorResponse) response.getBody();
+            assertEquals("INVALID_IMAGE", error.error());
+            assertFalse(error.message().contains("bm90IGFuIGltYWdl"));
+            assertEquals(1, a.calls + b.calls, "never retried on another worker, failover=" + failoverOn);
+        }
+    }
+
+    @Test void otherWorker422IsInvalidInputAndOther4xxStays502() {
+        var c = new TaskWorker(8101, "text-classification", CODE_TOP);
+        c.failure = worker422();
+        var p = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                Map.of("CODE", pool("CODE", WorkerPool.Policy.ROUND_ROBIN, c)));
+        var response = infer(p, "CODE", "print(1)");
+        assertEquals(422, response.getStatusCode().value());
+        assertEquals("INVALID_INPUT", ((ErrorResponse) response.getBody()).error());
+        c.failure = new WorkerClient.WorkerErrorException("Worker returned HTTP 500",
+                new org.springframework.web.client.RestClientResponseException("x", 500, "", null, new byte[0],
+                        java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(502, infer(p, "CODE", "print(1)").getStatusCode().value());
     }
 
     @Test void aCapabilityCannotBeConfiguredTwice() {

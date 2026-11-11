@@ -293,7 +293,7 @@ One platform, three kinds of specialist model. Each runs as ordinary worker proc
 |---|---|---|---|---|
 | `text` (default) | `TEXT` | `distilbert-base-uncased-finetuned-sst-2-english` | text, ≤ 10 000 chars | sentiment `POSITIVE`/`NEGATIVE` |
 | `code` | `CODE` | `huggingface/CodeBERTa-language-id` | source code, ≤ 10 000 chars | programming language (go, java, javascript, php, python, ruby) |
-| `image` | `IMAGE` | `google/vit-base-patch16-224` | base64 image or `data:` URL, ≤ 7 000 000 chars (~5 MB) | ImageNet class |
+| `image` | `IMAGE` | `google/vit-base-patch16-224` | base64 PNG or JPEG (or a `data:` URL), ≤ 7 000 000 chars (~5 MB), ≤ 4096 × 4096 px | ImageNet class |
 
 ```bash
 cd model-workers/model-a
@@ -303,10 +303,11 @@ WORKER_ID=image-a WORKER_TASK=image uvicorn worker:app --port 8201
 PLATFORM_CODE_WORKER_URLS=http://localhost:8101 PLATFORM_IMAGE_WORKER_URLS=http://localhost:8201 ./mvnw spring-boot:run
 ```
 
-- **Routing:** each capability is a separate worker pool with the same routing policy and failover setting as §2b–2e. A request goes only to workers of its own capability, so the TEXT path is unchanged. `AUTO` still means the TEXT pool; the backend does not guess the input type. An unconfigured capability returns 422 `NO_ELIGIBLE_WORKER` and lists what is available.
+- **Routing:** each capability is a separate worker pool with the same routing policy and failover setting as §2b–2e. A request goes only to workers of its own capability, so the TEXT path is unchanged. In a CODE/IMAGE pool a configured URL is not trusted under any policy: only workers whose `/health` reports that capability are used (candidate notes `ELIGIBLE` / `SERVES_OTHER` / `IDENTITY_UNKNOWN`); none matching → 422 `NO_ELIGIBLE_WORKER`, none confirmable → 503 `NO_HEALTHY_WORKER`.
+- **Bad input:** an IMAGE that is not real PNG/JPEG content, is truncated, or exceeds 4096 × 4096 px → 422 `INVALID_IMAGE` (the worker checks the header before decoding pixels). Any other worker 422 → 422 `INVALID_INPUT`. These are client errors: no cooldown, no failover retry, and the input is never echoed or stored. `AUTO` still means the TEXT pool; the backend does not guess the input type. An unconfigured capability returns 422 `NO_ELIGIBLE_WORKER` and lists what is available.
 - **`GET /api/capabilities`:** lists the configured capabilities and, for every worker, what its own `/health` reports right now (`reachable`, `healthy`, `reportedCapability`, `model`, `revision`). It probes live and caches nothing, so the UI can show which specialist models are really up.
 - **Example:** `curl -s localhost:8080/api/inference -H 'Content-Type: application/json' -d '{"capability":"CODE","input":"def add(a, b):\n    return a + b"}'` should give `label` `python`. For an image, use `{"capability":"IMAGE","input":"'"$(base64 -w0 cat.jpg)"'"}`.
-- **Not done in this slice:** registry entries and version-aware dispatch for CODE/IMAGE (they can be added through `POST /api/models` with the revision each worker reports), generative code models, automatic capability detection. With `ROUND_ROBIN`/`LEAST_IN_FLIGHT` the backend trusts the configured list; only `HEALTH_LATENCY` and failover check the capability a worker reports.
+- **Not done in this slice:** registry entries and version-aware dispatch for CODE/IMAGE (they can be added through `POST /api/models` with the revision each worker reports), generative code models, automatic capability detection. The TEXT pool keeps its Sprint 2 behaviour (no capability check under `ROUND_ROBIN`/`LEAST_IN_FLIGHT`).
 
 ### 3. Frontend: http://localhost:5173
 

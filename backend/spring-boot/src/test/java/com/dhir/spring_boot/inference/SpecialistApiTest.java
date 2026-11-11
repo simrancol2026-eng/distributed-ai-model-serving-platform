@@ -23,8 +23,9 @@ import com.sun.net.httpserver.HttpServer;
 
 /**
  * Full Spring app with a FAKE TEXT worker and a FAKE CODE worker (JDK HTTP servers), configured through
- * platform.worker.url and platform.worker.code.urls. Proves bean wiring, JSON shape and GET /api/capabilities.
- * No IMAGE worker is configured, so IMAGE must stay 422. It does NOT run any model.
+ * platform.worker.url and platform.worker.code.urls, plus a FAKE IMAGE worker that rejects every image with the
+ * real worker's 422 invalid_image body. Proves bean wiring, JSON shape, GET /api/capabilities and the
+ * 422 INVALID_IMAGE translation through Spring. It does NOT run any model.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SpecialistApiTest {
@@ -37,6 +38,7 @@ class SpecialistApiTest {
             {"worker":"code-a","model":"fake-codeberta","version":"rev2","task":"text-classification",
              "label":"python","score":0.91,"inferenceMs":2.0,
              "topK":[{"label":"python","score":0.91},{"label":"ruby","score":0.05}]}""", codeRequest);
+    static final HttpServer imageWorker = fake("IMAGE", "fake-vit", null, null);
 
     static HttpServer fake(String capability, String model, String predictJson, AtomicReference<String> received) {
         try {
@@ -44,9 +46,13 @@ class SpecialistApiTest {
             server.createContext("/predict", exchange -> {
                 String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 if (received != null) received.set(body);
-                reply(exchange, predictJson);
+                if (predictJson == null) { // what worker.py sends for an unreadable image
+                    reply(exchange, 422, "{\"detail\":[{\"loc\":[\"body\",\"text\"],\"type\":\"invalid_image\"}]}");
+                } else {
+                    reply(exchange, 200, predictJson);
+                }
             });
-            server.createContext("/health", exchange -> reply(exchange, "{\"status\":\"healthy\",\"model\":\"" + model
+            server.createContext("/health", exchange -> reply(exchange, 200, "{\"status\":\"healthy\",\"model\":\"" + model
                     + "\",\"revision\":\"rev\",\"capability\":\"" + capability + "\"}"));
             server.start();
             return server;
@@ -55,10 +61,10 @@ class SpecialistApiTest {
         }
     }
 
-    static void reply(com.sun.net.httpserver.HttpExchange exchange, String json) throws IOException {
+    static void reply(com.sun.net.httpserver.HttpExchange exchange, int status, String json) throws IOException {
         byte[] out = json.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
-        exchange.sendResponseHeaders(200, out.length);
+        exchange.sendResponseHeaders(status, out.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(out);
         }
@@ -72,12 +78,14 @@ class SpecialistApiTest {
     static void workers(DynamicPropertyRegistry registry) {
         registry.add("platform.worker.url", () -> url(textWorker));
         registry.add("platform.worker.code.urls", () -> url(codeWorker));
+        registry.add("platform.worker.image.urls", () -> url(imageWorker));
     }
 
     @AfterAll
     static void stop() {
         textWorker.stop(0);
         codeWorker.stop(0);
+        imageWorker.stop(0);
     }
 
     @Value("${local.server.port}")
@@ -111,10 +119,11 @@ class SpecialistApiTest {
     }
 
     @Test
-    void unconfiguredImageIsStill422() throws Exception {
-        HttpResponse<String> r = post("{\"capability\":\"IMAGE\",\"input\":\"aGVsbG8=\"}");
+    void invalidImageIsA422ClientErrorThroughSpring() throws Exception {
+        HttpResponse<String> r = post("{\"capability\":\"IMAGE\",\"input\":\"eA==\"}");
         assertEquals(422, r.statusCode(), r.body());
-        assertTrue(r.body().contains("Available: TEXT, CODE."), r.body());
+        assertTrue(r.body().contains("\"error\":\"INVALID_IMAGE\""), r.body());
+        assertFalse(r.body().contains("eA=="), r.body());
     }
 
     @Test
@@ -129,6 +138,6 @@ class SpecialistApiTest {
         assertTrue(body.contains("\"reportedCapability\":\"CODE\""), body);
         assertTrue(body.contains("\"model\":\"fake-codeberta\""), body);
         assertTrue(body.contains("\"healthyCount\":1"), body);
-        assertFalse(body.contains("\"capability\":\"IMAGE\""), body);
+        assertTrue(body.indexOf("\"capability\":\"CODE\"") < body.indexOf("\"capability\":\"IMAGE\""), body);
     }
 }

@@ -12,7 +12,8 @@ honest output; "topK" (best first) is added for code and image only:
   text   TEXT   sentiment-analysis     distilbert-base-uncased-finetuned-sst-2-english   (unchanged)
   code   CODE   text-classification    huggingface/CodeBERTa-language-id  -> programming language of a snippet
   image  IMAGE  image-classification   google/vit-base-patch16-224        -> ImageNet class of a picture;
-                "text" is the image as base64 (optionally a data: URL), at most MAX_TEXT_CHARS characters
+                "text" is the image as base64 (optionally a data: URL), at most MAX_TEXT_CHARS characters;
+                only PNG/JPEG content of at most MAX_IMAGE_SIDE x MAX_IMAGE_SIDE pixels, else 422 invalid_image
 
 The model loads once at startup. If loading fails, the process fails to start,
 so a worker that answers /health always has a loaded model.
@@ -100,21 +101,35 @@ def health():
     }
 
 
+# Image input limits (D-049). Only real PNG/JPEG content is decoded (the header decides, not a file name or
+# data: URL type), and the size is checked from the header BEFORE any pixel data is decoded.
+IMAGE_FORMATS = ("PNG", "JPEG")
+MAX_IMAGE_SIDE = 4096
+MAX_IMAGE_PIXELS = MAX_IMAGE_SIDE * MAX_IMAGE_SIDE
+
+
 def _decode_image(text):
-    """base64 (or a data: URL) -> RGB PIL image; None if it is not a readable image."""
+    """base64 (or a data: URL) -> RGB PIL image; None if it is not an acceptable PNG/JPEG image."""
     from PIL import Image, UnidentifiedImageError  # only image workers need Pillow
     if text.startswith("data:"):
         text = text.partition(",")[2]
     try:
-        image = Image.open(io.BytesIO(base64.b64decode(text, validate=True)))
+        image = Image.open(io.BytesIO(base64.b64decode(text, validate=True)), formats=IMAGE_FORMATS)
+        width, height = image.size
+        if width < 1 or height < 1 or width > MAX_IMAGE_SIDE or height > MAX_IMAGE_SIDE \
+                or width * height > MAX_IMAGE_PIXELS:
+            return None
+        image.load()  # decodes fully now: truncated files fail here, not inside the model
         return image.convert("RGB")
-    except (binascii.Error, ValueError, UnidentifiedImageError, OSError):
+    except (binascii.Error, ValueError, UnidentifiedImageError, OSError, Image.DecompressionBombError):
         return None
 
 
 def _invalid_image():
     return JSONResponse(status_code=422, content={"detail": [{
-        "loc": ["body", "text"], "msg": "Field 'text' must be a base64-encoded image (PNG, JPEG, ...)",
+        "loc": ["body", "text"],
+        "msg": f"Field 'text' must be a base64-encoded PNG or JPEG image of at most "
+               f"{MAX_IMAGE_SIDE} x {MAX_IMAGE_SIDE} pixels",
         "type": "invalid_image"}]})
 
 
