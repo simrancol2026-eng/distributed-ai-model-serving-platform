@@ -40,7 +40,11 @@ import com.dhir.spring_boot.tracking.RequestTracker;
  *   404 MODEL_NOT_FOUND        "model" is not registered
  *   404 VERSION_NOT_FOUND      that version (or any version, for "latest") is not registered
  *   422 CAPABILITY_MISMATCH    requested capability differs from the registered model's capability
+ *   (specialist models, D-049: each capability has its own WorkerPool, see WorkerPools; AUTO = the default TEXT pool;
+ *    IMAGE input is base64 and may be up to MAX_IMAGE_INPUT_CHARS characters)
  *   422 NO_ELIGIBLE_WORKER     no worker serves the capability / the resolved artifact + revision
+ *   422 INVALID_IMAGE          the IMAGE worker could not read the input as a PNG/JPEG within its size limit
+ *   422 INVALID_INPUT          another worker rejected the input with 422 (its own validation)
  *   503 REGISTRY_UNAVAILABLE   the registry database could not be read
  *   503 WORKER_UNAVAILABLE     the chosen worker is down or timed out (no failover)
  *   502 WORKER_ERROR           the chosen worker answered with an error
@@ -53,9 +57,12 @@ import com.dhir.spring_boot.tracking.RequestTracker;
 public class InferenceController {
 
     static final int MAX_INPUT_CHARS = 10_000;
+    /** IMAGE input is a base64 image: about 5 MB of image bytes. Must match the image worker's limit. */
+    static final int MAX_IMAGE_INPUT_CHARS = 7_000_000;
     private static final Logger log = LoggerFactory.getLogger(InferenceController.class);
 
-    private final WorkerPool workers;
+    private final WorkerPool workers; // default (TEXT) pool; requests for other capabilities use pools
+    private final WorkerPools pools;
     private final RegistryRepository registry;
     private final RequestTracker tracker;
     private final FailoverSettings failover;
@@ -64,10 +71,16 @@ public class InferenceController {
         this(workers, registry, tracker, new FailoverSettings(false, 10000));
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
     public InferenceController(WorkerPool workers, RegistryRepository registry, RequestTracker tracker,
             FailoverSettings failover) {
-        this.workers = workers;
+        this(WorkerPools.of(workers), registry, tracker, failover);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public InferenceController(WorkerPools pools, RegistryRepository registry, RequestTracker tracker,
+            FailoverSettings failover) {
+        this.workers = pools.defaultPool();
+        this.pools = pools;
         this.registry = registry;
         this.tracker = tracker;
         this.failover = failover;
@@ -117,27 +130,32 @@ public class InferenceController {
         if (request == null || request.input() == null || request.input().isBlank()) {
             return rejected(400, "INVALID_REQUEST", "Field 'input' is required and must not be blank.", requestId);
         }
-        if (request.input().length() > MAX_INPUT_CHARS) {
-            return rejected(400, "INVALID_REQUEST",
-                    "Field 'input' must be at most " + MAX_INPUT_CHARS + " characters.", requestId);
-        }
         // AUTO (or missing) means "any capability"; otherwise it must match.
         String capability = request.capability() == null ? "AUTO"
                 : request.capability().trim().toUpperCase(Locale.ROOT);
         String modelId = blankToNull(request.model());
         String version = blankToNull(request.version());
+        // A named model may turn out to be IMAGE, so its text limit is re-checked once the model is resolved.
+        int maxChars = capability.equals("IMAGE") || (modelId != null && capability.equals("AUTO"))
+                ? MAX_IMAGE_INPUT_CHARS : MAX_INPUT_CHARS;
+        if (request.input().length() > maxChars) {
+            return rejected(400, "INVALID_REQUEST",
+                    "Field 'input' must be at most " + maxChars + " characters.", requestId);
+        }
 
         if (modelId == null && version != null) {
             return rejected(400, "INVALID_REQUEST", "Field 'version' requires field 'model'.", requestId);
         }
         if (modelId == null) {
-            // Any configured worker; the configured policy chooses within this set.
-            if (!capability.equals("AUTO") && !capability.equals(workers.capability())) {
+            // Any configured worker of the requested capability; the configured policy chooses within this set.
+            WorkerPool workers = pools.forCapability(capability);
+            if (workers == null) {
                 return rejected(422, "NO_ELIGIBLE_WORKER", "No worker is registered for capability " + capability
-                        + ". Available: " + workers.capability() + ".", requestId);
+                        + ". Available: " + pools.describe() + ".", requestId);
             }
-            if (failover.enabled()) return failoverCall(request.input(), null, trace, started);
-            if (workers.healthAware()) return healthyCall(request.input(), null, trace, started);
+            if (failover.enabled()) return failoverCall(workers, request.input(), null, trace, started);
+            if (workers.healthAware()) return healthyCall(workers, request.input(), null, trace, started);
+            if (workers != pools.defaultPool()) return specialistCall(workers, request.input(), trace, started);
             try (WorkerPool.Reservation reservation = workers.reserve()) {
                 WorkerClient worker = reservation.worker();
                 List<RoutingDecision.Candidate> all = new ArrayList<>();
@@ -148,7 +166,7 @@ public class InferenceController {
                 RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
                         all.size(), all, worker.endpoint(),
                         "no model requested: " + workers.policyDescription() + " over all " + all.size() + " worker(s)").withSelection(workers.policy(), reservation.before());
-                return new Routed(call(worker, request.input(), null, trace, started, decision), decision);
+                return new Routed(call(workers, worker, request.input(), null, trace, started, decision), decision);
             }
         }
 
@@ -184,22 +202,38 @@ public class InferenceController {
                     : "Model '" + modelId + "' has no version '" + version + "'.", requestId);
         }
         ModelVersion v = resolved.get();
-        if (!model.capability().equals(workers.capability())) {
+        if (!model.capability().equals("IMAGE") && request.input().length() > MAX_INPUT_CHARS) {
+            return rejected(400, "INVALID_REQUEST",
+                    "Field 'input' must be at most " + MAX_INPUT_CHARS + " characters.", requestId);
+        }
+        WorkerPool workers = pools.forCapability(model.capability());
+        if (workers == null) {
             return rejected(422, "NO_ELIGIBLE_WORKER", "No worker serves capability " + model.capability()
                     + " (model '" + modelId + "').", requestId);
         }
         String target = v.artifact() + "@" + v.artifactRevision();
-        if (failover.enabled()) return failoverCall(request.input(), new Target(modelId, v), trace, started);
-        if (workers.healthAware()) return healthyCall(request.input(), new Target(modelId, v), trace, started);
+        if (failover.enabled()) return failoverCall(workers, request.input(), new Target(modelId, v), trace, started);
+        if (workers.healthAware()) return healthyCall(workers, request.input(), new Target(modelId, v), trace, started);
         List<WorkerPool.Assessment> assessed = workers.assess(v.artifact(), v.artifactRevision());
+        // Specialist (CODE/IMAGE) pools: a named request also needs the worker's reported capability (D-049),
+        // as on the unnamed path. The TEXT pool keeps its artifact/revision-only check.
+        java.util.Map<WorkerClient, String> reportedCapability = new java.util.HashMap<>();
+        if (workers != pools.defaultPool()) {
+            for (WorkerPool.CapabilityCheck c : workers.assessCapability()) reportedCapability.put(c.worker(), c.reported());
+        }
         List<WorkerClient> eligible = new ArrayList<>();
         List<RoutingDecision.Candidate> candidates = new ArrayList<>();
         for (WorkerPool.Assessment a : assessed) {
             String served = a.served() == null ? null : a.served().artifact() + "@" + a.served().revision();
-            String note = a.eligible() ? RoutingDecision.ELIGIBLE
-                    : a.served() == null ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
-            candidates.add(new RoutingDecision.Candidate(a.worker().endpoint(), a.eligible(), note, served));
-            if (a.eligible()) {
+            boolean capabilityOk = workers == pools.defaultPool()
+                    || workers.capability().equals(reportedCapability.get(a.worker()));
+            boolean ok = a.eligible() && capabilityOk;
+            boolean unknown = a.served() == null
+                    || (workers != pools.defaultPool() && reportedCapability.get(a.worker()) == null);
+            String note = ok ? RoutingDecision.ELIGIBLE
+                    : unknown ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
+            candidates.add(new RoutingDecision.Candidate(a.worker().endpoint(), ok, note, served));
+            if (ok) {
                 eligible.add(a.worker());
             }
         }
@@ -216,11 +250,48 @@ public class InferenceController {
             RoutingDecision decision = new RoutingDecision(RoutingDecision.VERSION_AWARE, target, workers.size(),
                     eligible.size(), candidates, worker.endpoint(), "model '" + modelId + "' version '" + v.version()
                             + "': " + workers.policyDescription() + " over " + eligible.size() + " eligible of " + workers.size() + " worker(s)").withSelection(workers.policy(), reservation.before());
-            return new Routed(call(worker, request.input(), new Target(modelId, v), trace, started, decision), decision);
+            return new Routed(call(workers, worker, request.input(), new Target(modelId, v), trace, started, decision), decision);
         }
     }
 
-    private Routed healthyCall(String input, Target target, RequestTracker.Trace trace, long started) {
+    /**
+     * ROUND_ROBIN / LEAST_IN_FLIGHT for a specialist (CODE/IMAGE) pool: unlike the TEXT pool, a configured URL
+     * is not trusted. Only workers whose /health reports this pool's capability are used (D-049), so a
+     * misconfigured URL can never answer a CODE request with the sentiment model.
+     */
+    private Routed specialistCall(WorkerPool workers, String input, RequestTracker.Trace trace, long started) {
+        List<WorkerClient> eligible = new ArrayList<>();
+        List<RoutingDecision.Candidate> candidates = new ArrayList<>();
+        boolean anyUnknown = false;
+        for (WorkerPool.CapabilityCheck c : workers.assessCapability()) {
+            String note = c.eligible() ? RoutingDecision.ELIGIBLE
+                    : c.reported() == null ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
+            candidates.add(new RoutingDecision.Candidate(c.worker().endpoint(), c.eligible(), note,
+                    c.reported() == null ? null : "capability " + c.reported()));
+            if (c.eligible()) eligible.add(c.worker());
+            anyUnknown |= c.reported() == null;
+        }
+        if (eligible.isEmpty()) {
+            // 422 only when every worker answered and none serves it; otherwise it may just be down (503).
+            int status = anyUnknown ? 503 : 422;
+            String code = anyUnknown ? "NO_HEALTHY_WORKER" : "NO_ELIGIBLE_WORKER";
+            RoutingDecision none = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(), 0,
+                    candidates, null, code + ": no worker reports capability " + workers.capability())
+                    .withSelection(workers.policy(), workers.counts());
+            return new Routed(error(status, code, "No reachable worker currently reports capability "
+                    + workers.capability() + ".", trace.requestId()), none);
+        }
+        try (WorkerPool.Reservation reservation = workers.reserve(eligible, null, null)) {
+            WorkerClient worker = reservation.worker();
+            RoutingDecision decision = new RoutingDecision(RoutingDecision.ROUND_ROBIN_ALL, null, workers.size(),
+                    eligible.size(), candidates, worker.endpoint(), "no model requested: " + workers.policyDescription()
+                            + " over " + eligible.size() + " of " + workers.size() + " worker(s) reporting "
+                            + workers.capability()).withSelection(workers.policy(), reservation.before());
+            return new Routed(call(workers, worker, input, null, trace, started, decision), decision);
+        }
+    }
+
+    private Routed healthyCall(WorkerPool workers, String input, Target target, RequestTracker.Trace trace, long started) {
         var selected = workers.reserveHealthy(target == null ? null : target.version().artifact(),
                 target == null ? null : target.version().artifactRevision());
         if (selected.error() != null) {
@@ -233,14 +304,14 @@ public class InferenceController {
                     selected.decision());
         }
         try (var reservation = selected.reservation()) {
-            return new Routed(call(reservation.worker(), input, target, trace, started, selected.decision()), selected.decision());
+            return new Routed(call(workers, reservation.worker(), input, target, trace, started, selected.decision()), selected.decision());
         }
     }
 
     /** Calls one worker and maps the outcome. target == null for requests that named no model. */
-    private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
-            long started, RoutingDecision decision) {
-        return call(worker, input, target, trace, started, decision, null, null);
+    private ResponseEntity<?> call(WorkerPool workers, WorkerClient worker, String input, Target target,
+            RequestTracker.Trace trace, long started, RoutingDecision decision) {
+        return call(workers, worker, input, target, trace, started, decision, null, null);
     }
 
     private static final class AttemptState {
@@ -248,8 +319,9 @@ public class InferenceController {
         boolean budgetExpired;
     }
 
-    private ResponseEntity<?> call(WorkerClient worker, String input, Target target, RequestTracker.Trace trace,
-            long started, RoutingDecision decision, DispatchBudget budget, AttemptState state) {
+    private ResponseEntity<?> call(WorkerPool workers, WorkerClient worker, String input, Target target,
+            RequestTracker.Trace trace, long started, RoutingDecision decision, DispatchBudget budget,
+            AttemptState state) {
         String requestId = trace.requestId();
         tracker.dispatched(trace, worker.endpoint(),
                 target == null ? null : target.version().version(),
@@ -279,7 +351,7 @@ public class InferenceController {
                     p.worker(), worker.endpoint(), p.model(), p.version(), p.task(),
                     new Prediction(p.label(), p.score()), p.inferenceMs(), totalMs,
                     target == null ? null : target.modelId(), target == null ? null : target.version().version(),
-                    decision));
+                    decision, p.topK()));
         } catch (WorkerUnavailableException e) {
             if (state != null) state.failure = FailoverFailure.classify(e);
             if (state != null) state.budgetExpired = e instanceof BudgetExpiredException;
@@ -295,6 +367,18 @@ public class InferenceController {
             if (state != null) state.failure = FailoverFailure.classify(e);
             workers.predictionFailed(worker, false, e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
                     && response.getStatusCode().is5xxServerError());
+            if (e.getCause() instanceof org.springframework.web.client.RestClientResponseException response
+                    && response.getStatusCode().value() == 422) {
+                // The worker validated the input and rejected it (e.g. not a PNG/JPEG image): a client error,
+                // not a worker fault. No cooldown (4xx) and never retried by failover (HTTP_ERROR). D-049.
+                log.warn("inference rejected requestId={} routedTo={} reason=INVALID_INPUT", requestId,
+                        worker.endpoint());
+                return "IMAGE".equals(workers.capability())
+                        ? error(422, "INVALID_IMAGE", "Field 'input' must be a base64-encoded PNG or JPEG image of at most "
+                                + "4096 x 4096 pixels.", requestId)
+                        : error(422, "INVALID_INPUT", "The " + workers.capability() + " model worker rejected the input.",
+                                requestId);
+            }
             log.warn("inference failed requestId={} routedTo={} reason=WORKER_ERROR {}", requestId,
                     worker.endpoint(), e.getMessage());
             return error(502, "WORKER_ERROR", "The model worker at " + worker.endpoint() + " returned an error.",
@@ -302,7 +386,7 @@ public class InferenceController {
         }
     }
 
-    private Routed failoverCall(String input, Target target, RequestTracker.Trace trace, long started) {
+    private Routed failoverCall(WorkerPool workers, String input, Target target, RequestTracker.Trace trace, long started) {
         DispatchBudget budget = new DispatchBudget(failover.budgetMs());
         var attempts = new ArrayList<RoutingDecision.Attempt>();
         var excluded = new java.util.HashSet<String>();
@@ -331,7 +415,7 @@ public class InferenceController {
                 if (Thread.currentThread().isInterrupted()) { terminal = "INTERRUPTED"; break; }
                 if (budget.remaining().isZero()) { terminal = "BUDGET_EXHAUSTED"; break; }
                 excluded.add(reservation.worker().endpoint());
-                response = call(reservation.worker(), input, target, trace, started, finalDecision, budget, state);
+                response = call(workers, reservation.worker(), input, target, trace, started, finalDecision, budget, state);
             }
             boolean succeeded = response.getStatusCode().is2xxSuccessful();
             String failureClass = succeeded ? null : state.failure == null ? "MODEL_MISMATCH" : state.failure.name();
@@ -351,7 +435,7 @@ public class InferenceController {
         if (response.getBody() instanceof InferenceResponse r) {
             response = ResponseEntity.status(response.getStatusCode()).body(new InferenceResponse(r.status(), r.requestId(),
                     r.capability(), r.worker(), r.workerEndpoint(), r.model(), r.version(), r.task(), r.prediction(),
-                    r.workerInferenceMs(), r.totalLatencyMs(), r.modelId(), r.modelVersion(), finalDecision));
+                    r.workerInferenceMs(), r.totalLatencyMs(), r.modelId(), r.modelVersion(), finalDecision, r.topK()));
         } else if (response.getBody() instanceof ErrorResponse r) {
             response = ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(r.status(), r.error(),
                     r.message(), r.requestId(), finalDecision));

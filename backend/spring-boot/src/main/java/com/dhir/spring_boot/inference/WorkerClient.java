@@ -31,6 +31,9 @@ public class WorkerClient {
     // Last identity reported by the worker, and when (System.nanoTime). Null = unknown.
     private volatile ServedModel served;
     private volatile long servedAtNanos;
+    // Last capability reported on GET /health (specialist pools, D-049), and when. Null = unknown.
+    private volatile String capability;
+    private volatile long capabilityAtNanos;
 
     /** Injectable HTTP transports for deterministic tests without opening sockets. */
     WorkerClient(String workerUrl, RestClient restClient, RestClient probeClient) {
@@ -104,6 +107,8 @@ public class WorkerClient {
             Map<?, ?> health = probeClient.get().uri("/health").retrieve().body(Map.class);
             Object model = health == null ? null : health.get("model");
             Object revision = health == null ? null : health.get("revision");
+            capability = health != null && health.get("capability") instanceof String c && !c.isBlank() ? c : null;
+            capabilityAtNanos = System.nanoTime();
             if (model instanceof String m && revision instanceof String r && !m.isBlank() && !r.isBlank()) {
                 served = new ServedModel(m, r);
                 servedAtNanos = System.nanoTime();
@@ -114,6 +119,19 @@ public class WorkerClient {
             // Unreachable or unreadable right now: keep the last known identity (may be null).
         }
         return java.util.Optional.ofNullable(served);
+    }
+
+    /**
+     * The capability this worker reports on GET /health (TEXT, CODE, IMAGE). Cached like servedModel; if the
+     * probe fails the last known answer is kept. Empty = never known or not reported.
+     */
+    public java.util.Optional<String> reportedCapability(long maxAgeMs) {
+        String current = capability;
+        if (current != null && System.nanoTime() - capabilityAtNanos < maxAgeMs * 1_000_000L) {
+            return java.util.Optional.of(current);
+        }
+        servedModel(-1); // forces one /health probe, which refreshes both identity and capability
+        return java.util.Optional.ofNullable(capability);
     }
 
     /** Forget the cached identity (used when a response contradicts it). */

@@ -5,7 +5,15 @@ Contract (used by the Spring Boot control plane):
                      "predictionsServed": <successful /predict calls since this process started>,
                      "pid": <process id>}
   POST /predict  JSON {"text": "..."}
-              -> {"worker", "model", "version", "task", "label", "score", "inferenceMs"}
+              -> {"worker", "model", "version", "task", "label", "score", "inferenceMs"[, "topK"]}
+
+Specialist models (WORKER_TASK, default "text"). Every task is a real classifier, so label/score is its
+honest output; "topK" (best first) is added for code and image only:
+  text   TEXT   sentiment-analysis     distilbert-base-uncased-finetuned-sst-2-english   (unchanged)
+  code   CODE   text-classification    huggingface/CodeBERTa-language-id  -> programming language of a snippet
+  image  IMAGE  image-classification   google/vit-base-patch16-224        -> ImageNet class of a picture;
+                "text" is the image as base64 (optionally a data: URL), at most MAX_TEXT_CHARS characters;
+                only PNG/JPEG content of at most MAX_IMAGE_SIDE x MAX_IMAGE_SIDE pixels, else 422 invalid_image
 
 The model loads once at startup. If loading fails, the process fails to start,
 so a worker that answers /health always has a loaded model.
@@ -15,6 +23,9 @@ Several workers = several processes of this file, each with its own port and WOR
   WORKER_ID=worker-b uvicorn worker:app --port 8002
 """
 
+import base64
+import binascii
+import io
 import os
 import threading
 import time
@@ -26,14 +37,23 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from transformers import pipeline
 
+# task -> (pipeline task, capability, default model, max input characters, top-k reported or None)
+TASKS = {
+    "text": ("sentiment-analysis", "TEXT", "distilbert-base-uncased-finetuned-sst-2-english", 10_000, None),
+    "code": ("text-classification", "CODE", "huggingface/CodeBERTa-language-id", 10_000, 3),
+    # ~5 MB of image bytes once base64 encoded.
+    "image": ("image-classification", "IMAGE", "google/vit-base-patch16-224", 7_000_000, 3),
+}
+WORKER_TASK = os.getenv("WORKER_TASK", "text").strip().lower()
+if WORKER_TASK not in TASKS:
+    raise RuntimeError(f"WORKER_TASK must be one of {sorted(TASKS)}, not {WORKER_TASK!r}")
+TASK, CAPABILITY, _DEFAULT_MODEL, MAX_TEXT_CHARS, TOP_K = TASKS[WORKER_TASK]
+
 WORKER_ID = os.getenv("WORKER_ID", "model-a")
-MODEL_NAME = os.getenv("MODEL_NAME", "distilbert-base-uncased-finetuned-sst-2-english")
+MODEL_NAME = os.getenv("MODEL_NAME", _DEFAULT_MODEL)
 # Optional: load a specific Hugging Face revision (commit hash, tag or branch). Default: the latest.
 # The revision actually loaded is what /health and /predict report, not this setting.
 MODEL_REVISION = os.getenv("MODEL_REVISION") or None
-TASK = "sentiment-analysis"
-CAPABILITY = "TEXT"
-MAX_TEXT_CHARS = 10_000
 
 classifier = pipeline(TASK, model=MODEL_NAME, revision=MODEL_REVISION) if MODEL_REVISION \
     else pipeline(TASK, model=MODEL_NAME)
@@ -81,16 +101,67 @@ def health():
     }
 
 
+# Image input limits (D-049). Only real PNG/JPEG content is decoded (the header decides, not a file name or
+# data: URL type), and the size is checked from the header BEFORE any pixel data is decoded.
+IMAGE_FORMATS = ("PNG", "JPEG")
+MAX_IMAGE_SIDE = 4096
+MAX_IMAGE_PIXELS = MAX_IMAGE_SIDE * MAX_IMAGE_SIDE
+
+
+def _decode_image(text):
+    """base64 (or a data: URL) -> RGB PIL image; None if it is not an acceptable PNG/JPEG image."""
+    from PIL import Image, UnidentifiedImageError  # only image workers need Pillow
+    if text.startswith("data:"):
+        text = text.partition(",")[2]
+    try:
+        image = Image.open(io.BytesIO(base64.b64decode(text, validate=True)), formats=IMAGE_FORMATS)
+        width, height = image.size
+        if width < 1 or height < 1 or width > MAX_IMAGE_SIDE or height > MAX_IMAGE_SIDE \
+                or width * height > MAX_IMAGE_PIXELS:
+            return None
+        image.load()  # decodes fully now: truncated files fail here, not inside the model
+        return image.convert("RGB")
+    except (binascii.Error, ValueError, UnidentifiedImageError, OSError, Image.DecompressionBombError):
+        return None
+
+
+def _invalid_image():
+    return JSONResponse(status_code=422, content={"detail": [{
+        "loc": ["body", "text"],
+        "msg": f"Field 'text' must be a base64-encoded PNG or JPEG image of at most "
+               f"{MAX_IMAGE_SIDE} x {MAX_IMAGE_SIDE} pixels",
+        "type": "invalid_image"}]})
+
+
+def _ranked(output):
+    """Pipeline output for ONE input -> list of {"label", "score"}, best first."""
+    if output and isinstance(output[0], list):  # some versions nest one list per input
+        output = output[0]
+    ranked = sorted(output, key=lambda r: r["score"], reverse=True)
+    return [{"label": r["label"], "score": float(r["score"])} for r in ranked]
+
+
 @app.post("/predict")
 def predict(request: PredictRequest):
     started = time.perf_counter()
-    # truncation=True: DistilBERT accepts at most 512 tokens; longer input would raise an error.
-    result = classifier(request.text, truncation=True)[0]
+    top_k = None
+    if WORKER_TASK == "text":
+        # truncation=True: DistilBERT accepts at most 512 tokens; longer input would raise an error.
+        result = classifier(request.text, truncation=True)[0]
+    elif WORKER_TASK == "code":
+        top_k = _ranked(classifier(request.text, truncation=True, top_k=TOP_K))
+        result = top_k[0]
+    else:
+        image = _decode_image(request.text)
+        if image is None:
+            return _invalid_image()
+        top_k = _ranked(classifier(image, top_k=TOP_K))
+        result = top_k[0]
     inference_ms = (time.perf_counter() - started) * 1000
     global _predictions_served
     with _served_lock:  # FastAPI runs sync endpoints on a thread pool
         _predictions_served += 1
-    return {
+    body = {
         "worker": WORKER_ID,
         "model": MODEL_NAME,
         "version": MODEL_VERSION,
@@ -99,3 +170,6 @@ def predict(request: PredictRequest):
         "score": float(result["score"]),
         "inferenceMs": round(inference_ms, 2),
     }
+    if top_k is not None:
+        body["topK"] = top_k
+    return body

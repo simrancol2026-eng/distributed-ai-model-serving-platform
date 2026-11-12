@@ -50,9 +50,14 @@ public class WorkerPool {
 
     /** Injected observations/transports for deterministic routing integration tests. */
     WorkerPool(List<WorkerClient> workers, Policy policy, java.util.Map<WorkerClient, WorkerHealth> observations) {
+        this(workers, policy, observations, "TEXT");
+    }
+
+    WorkerPool(List<WorkerClient> workers, Policy policy, java.util.Map<WorkerClient, WorkerHealth> observations,
+            String capability) {
         this.workers = List.copyOf(workers);
         this.policy = policy;
-        this.capability = "TEXT";
+        this.capability = capability;
         this.identityMaxAgeMs = 30000;
         this.healthRouting = new HealthRouting(workers, observations, System::nanoTime);
     }
@@ -276,6 +281,20 @@ public class WorkerPool {
      */
     public List<WorkerClient> eligible(String artifact, String revision) {
         return assess(artifact, revision).stream().filter(Assessment::eligible).map(Assessment::worker).toList();
+    }
+
+    /** One worker of a specialist pool: the capability its /health reports (null = unknown), and whether it matches. */
+    public record CapabilityCheck(WorkerClient worker, String reported, boolean eligible) {
+    }
+
+    /** Specialist pools (D-049): which workers report this pool's capability right now. Fails closed on unknown. */
+    public List<CapabilityCheck> assessCapability() {
+        List<CapabilityCheck> result = new ArrayList<>();
+        for (WorkerClient w : workers) {
+            String reported = w.reportedCapability(identityMaxAgeMs).orElse(null);
+            result.add(new CapabilityCheck(w, reported, capability.equals(reported)));
+        }
+        return result;
     }
 
     /** One worker as seen by version-aware routing: what its /health says it serves, and whether that matches. */

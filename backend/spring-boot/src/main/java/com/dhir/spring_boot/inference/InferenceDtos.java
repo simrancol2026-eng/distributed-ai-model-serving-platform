@@ -17,7 +17,10 @@ public final class InferenceDtos {
     public record InferenceRequest(String capability, String input, String model, String version) {
     }
 
-    /** What the Python worker returns from POST /predict (field names must match its JSON). */
+    /**
+     * What the Python worker returns from POST /predict (field names must match its JSON).
+     * topK: ranked label/score list, sent by CODE and IMAGE workers only (null for TEXT).
+     */
     public record WorkerPrediction(
             String worker,
             String model,
@@ -25,7 +28,8 @@ public final class InferenceDtos {
             String task,
             String label,
             double score,
-            double inferenceMs) {
+            double inferenceMs,
+            java.util.List<Prediction> topK) {
     }
 
     public record Prediction(String label, double score) {
@@ -46,7 +50,10 @@ public final class InferenceDtos {
             long totalLatencyMs,
             String modelId,       // registry model id, only when the request named a model (else null)
             String modelVersion,  // registry version label that was resolved and served (else null)
-            RoutingDecision routing) { // why this worker was chosen (Sprint 2 #5, D-044)
+            RoutingDecision routing, // why this worker was chosen (Sprint 2 #5, D-044)
+            // Specialist models (D-049): ranked alternatives from CODE/IMAGE workers; omitted for TEXT.
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            java.util.List<Prediction> topK) {
     }
 
     /** Uniform error body: status is always "error"; error is a stable machine-readable code. */
