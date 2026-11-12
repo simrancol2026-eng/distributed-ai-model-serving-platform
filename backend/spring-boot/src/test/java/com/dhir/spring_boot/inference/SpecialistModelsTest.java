@@ -199,6 +199,70 @@ class SpecialistModelsTest {
         assertEquals(0, wrong.calls + text.calls);
     }
 
+    // ---- Codex review on 9c8d2c5: a NAMED specialist request must also check the reported capability ----
+
+    @Test void namedSpecialistRequestSkipsWorkersReportingAnotherCapabilityAndTextIsUnchanged() {
+        String rev = "a".repeat(40);
+        var version = new com.dhir.spring_boot.registry.RegistryDtos.ModelVersion(1, "lang-id", "v1", "same-artifact",
+                rev, "transformers", null, "2026-11-12T00:00:00Z");
+        var registry = new com.dhir.spring_boot.registry.RegistryRepository(null) {
+            String capability = "CODE";
+            @Override public java.util.Optional<com.dhir.spring_boot.registry.RegistryDtos.ModelDetail> findModel(String id) {
+                return java.util.Optional.of(new com.dhir.spring_boot.registry.RegistryDtos.ModelDetail(
+                        id, id, "task", capability, null, "2026-11-12T00:00:00Z", 1, version));
+            }
+            @Override public java.util.Optional<com.dhir.spring_boot.registry.RegistryDtos.ModelVersion> latestVersion(String id) {
+                return java.util.Optional.of(version);
+            }
+        };
+        class Named extends TaskWorker { // serves the registered artifact@revision, whatever capability it reports
+            Named(int port, String task, List<Prediction> topK) { super(port, task, topK); }
+            @Override public java.util.Optional<WorkerClient.ServedModel> servedModel(long maxAgeMs) {
+                return java.util.Optional.of(new WorkerClient.ServedModel("same-artifact", rev));
+            }
+            @Override public WorkerPrediction predict(String text) { return named(super.predict(text)); }
+            @Override WorkerPrediction predict(String text, DispatchBudget budget) { return named(super.predict(text, budget)); }
+            private WorkerPrediction named(WorkerPrediction p) {
+                return new WorkerPrediction(p.worker(), "same-artifact", rev, p.task(), p.label(), p.score(), 1, p.topK());
+            }
+        }
+        for (WorkerPool.Policy policy : new WorkerPool.Policy[] { WorkerPool.Policy.ROUND_ROBIN, WorkerPool.Policy.LEAST_IN_FLIGHT }) {
+            var wrong = new Named(8001, "sentiment-analysis", null); // reports TEXT, listed as CODE
+            var right = new Named(8101, "text-classification", CODE_TOP); // reports CODE
+            var p = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                    Map.of("CODE", new WorkerPool(List.<WorkerClient>of(wrong, right), policy, Map.of(), "CODE")));
+            var controller = new InferenceController(p, registry, FailoverControllerTest.tracker(),
+                    new FailoverSettings(false, 10000));
+            for (int i = 0; i < 4; i++) {
+                var r = (InferenceResponse) controller.infer(new InferenceRequest("CODE", "print(1)", "lang-id", null)).getBody();
+                assertEquals(right.endpoint(), r.workerEndpoint());
+                var notes = r.routing().candidates().stream().map(RoutingDecision.Candidate::note).toList();
+                assertEquals(List.of(RoutingDecision.SERVES_OTHER, RoutingDecision.ELIGIBLE), notes);
+            }
+            assertEquals(0, wrong.calls, policy.name());
+
+            // Only a mismatched worker: rejected before dispatch.
+            var onlyWrong = new WorkerPools(pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                    Map.of("CODE", new WorkerPool(List.<WorkerClient>of(wrong), policy, Map.of(), "CODE")));
+            var response = new InferenceController(onlyWrong, registry, FailoverControllerTest.tracker(),
+                    new FailoverSettings(false, 10000)).infer(new InferenceRequest("CODE", "print(1)", "lang-id", null));
+            assertEquals(422, response.getStatusCode().value());
+            assertEquals("NO_ELIGIBLE_WORKER", ((ErrorResponse) response.getBody()).error());
+            assertEquals(0, wrong.calls, policy.name());
+        }
+
+        // Legacy TEXT pool: artifact/revision only, as before (capability not required).
+        registry.capability = "TEXT";
+        var legacy = new Named(8002, "sentiment-analysis", null);
+        legacy.reports = null;
+        var p = new WorkerPools(new WorkerPool(List.<WorkerClient>of(legacy), WorkerPool.Policy.ROUND_ROBIN, Map.of(), "TEXT"),
+                Map.of());
+        var response = new InferenceController(p, registry, FailoverControllerTest.tracker(),
+                new FailoverSettings(false, 10000)).infer(new InferenceRequest("TEXT", "great", "lang-id", null));
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(1, legacy.calls);
+    }
+
     // ---- fix 1 on 02dceaa: a worker's own 422 (invalid image) is a client error, not 502 ----
 
     static WorkerClient.WorkerErrorException worker422() {

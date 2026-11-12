@@ -215,14 +215,25 @@ public class InferenceController {
         if (failover.enabled()) return failoverCall(workers, request.input(), new Target(modelId, v), trace, started);
         if (workers.healthAware()) return healthyCall(workers, request.input(), new Target(modelId, v), trace, started);
         List<WorkerPool.Assessment> assessed = workers.assess(v.artifact(), v.artifactRevision());
+        // Specialist (CODE/IMAGE) pools: a named request also needs the worker's reported capability (D-049),
+        // as on the unnamed path. The TEXT pool keeps its artifact/revision-only check.
+        java.util.Map<WorkerClient, String> reportedCapability = new java.util.HashMap<>();
+        if (workers != pools.defaultPool()) {
+            for (WorkerPool.CapabilityCheck c : workers.assessCapability()) reportedCapability.put(c.worker(), c.reported());
+        }
         List<WorkerClient> eligible = new ArrayList<>();
         List<RoutingDecision.Candidate> candidates = new ArrayList<>();
         for (WorkerPool.Assessment a : assessed) {
             String served = a.served() == null ? null : a.served().artifact() + "@" + a.served().revision();
-            String note = a.eligible() ? RoutingDecision.ELIGIBLE
-                    : a.served() == null ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
-            candidates.add(new RoutingDecision.Candidate(a.worker().endpoint(), a.eligible(), note, served));
-            if (a.eligible()) {
+            boolean capabilityOk = workers == pools.defaultPool()
+                    || workers.capability().equals(reportedCapability.get(a.worker()));
+            boolean ok = a.eligible() && capabilityOk;
+            boolean unknown = a.served() == null
+                    || (workers != pools.defaultPool() && reportedCapability.get(a.worker()) == null);
+            String note = ok ? RoutingDecision.ELIGIBLE
+                    : unknown ? RoutingDecision.IDENTITY_UNKNOWN : RoutingDecision.SERVES_OTHER;
+            candidates.add(new RoutingDecision.Candidate(a.worker().endpoint(), ok, note, served));
+            if (ok) {
                 eligible.add(a.worker());
             }
         }
