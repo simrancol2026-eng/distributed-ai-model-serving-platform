@@ -1,5 +1,14 @@
 # Distributed AI Model Serving Platform
 
+The updated Nexus AI Operations dashboard lives in `frontend-operations/`.
+From that directory, run `npm ci --legacy-peer-deps`, set
+`VITE_API_BASE_URL=http://localhost:8080`, then run `npm run dev -- --port 5173`.
+Stop the earlier frontend first if it is using port 5173. The Operations
+dashboard sends TEXT, CODE and IMAGE inference to Spring Boot. IMAGE takes a
+PNG or JPEG data URL or base64 string. Start and configure the corresponding
+worker pools using the specialist model instructions below. Example dashboard
+metrics remain demo fixtures.
+
 An MSCS capstone project: a **general, model-agnostic** platform for deploying, routing, monitoring and scaling multiple AI models across multiple workers.
 
 It is **not** an application for one specific model. Lung-image classification (AlexNet, ResNet50, CNN) is planned as the first demonstration workload, and the current worker serves a text-sentiment model. Any model that can sit behind the worker HTTP contract should be servable.
