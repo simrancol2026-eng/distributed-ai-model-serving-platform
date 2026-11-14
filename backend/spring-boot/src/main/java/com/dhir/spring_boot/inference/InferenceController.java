@@ -40,7 +40,7 @@ import com.dhir.spring_boot.tracking.RequestTracker;
  *   404 MODEL_NOT_FOUND        "model" is not registered
  *   404 VERSION_NOT_FOUND      that version (or any version, for "latest") is not registered
  *   422 CAPABILITY_MISMATCH    requested capability differs from the registered model's capability
- *   (specialist models, D-049: each capability has its own WorkerPool, see WorkerPools; AUTO = the default TEXT pool;
+ *   (each capability has its own WorkerPool; AUTO resolves a named model, task hint or conservative input detection;
  *    IMAGE input is base64 and may be up to MAX_IMAGE_INPUT_CHARS characters)
  *   422 NO_ELIGIBLE_WORKER     no worker serves the capability / the resolved artifact + revision
  *   422 INVALID_IMAGE          the IMAGE worker could not read the input as a PNG/JPEG within its size limit
@@ -122,6 +122,10 @@ public class InferenceController {
         String workerId = body instanceof InferenceResponse r ? r.worker() : null;
         tracker.completed(trace, response.getStatusCode().value(), errorCode, workerId,
                 (System.nanoTime() - started) / 1_000_000, decision.toJson(MAX_DECISION_JSON), decision.chosen());
+        if (body instanceof ErrorResponse e && e.routing() == null) {
+            return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(e.status(), e.error(),
+                    e.message(), e.requestId(), decision));
+        }
         return response;
     }
 
@@ -135,8 +139,17 @@ public class InferenceController {
                 : request.capability().trim().toUpperCase(Locale.ROOT);
         String modelId = blankToNull(request.model());
         String version = blankToNull(request.version());
-        // A named model may turn out to be IMAGE, so its text limit is re-checked once the model is resolved.
-        int maxChars = capability.equals("IMAGE") || (modelId != null && capability.equals("AUTO"))
+        String taskCapability;
+        try {
+            taskCapability = AutoCapability.taskCapability(request.task());
+        } catch (IllegalArgumentException e) {
+            return rejected(400, "INVALID_REQUEST", e.getMessage(), requestId);
+        }
+        if (taskCapability != null && !capability.equals("AUTO") && !capability.equals(taskCapability)) {
+            return rejected(422, "CAPABILITY_MISMATCH", "The requested task does not match capability " + capability + ".", requestId);
+        }
+        // AUTO may resolve to an image model. Apply the absolute bound before inspecting any input.
+        int maxChars = AutoCapability.imageCapability(capability) || capability.equals("AUTO")
                 ? MAX_IMAGE_INPUT_CHARS : MAX_INPUT_CHARS;
         if (request.input().length() > maxChars) {
             return rejected(400, "INVALID_REQUEST",
@@ -147,6 +160,15 @@ public class InferenceController {
             return rejected(400, "INVALID_REQUEST", "Field 'version' requires field 'model'.", requestId);
         }
         if (modelId == null) {
+            if (capability.equals("AUTO")) {
+                capability = taskCapability != null ? taskCapability : AutoCapability.detect(request.input());
+                if (capability == null) {
+                    return rejected(422, "AUTO_AMBIGUOUS", "Input type is ambiguous or unsupported. Select a task or an explicit capability.", requestId);
+                }
+            }
+            if (!AutoCapability.imageCapability(capability) && request.input().length() > MAX_INPUT_CHARS) {
+                return rejected(400, "INVALID_REQUEST", "Field 'input' must be at most " + MAX_INPUT_CHARS + " characters.", requestId);
+            }
             // Any configured worker of the requested capability; the configured policy chooses within this set.
             WorkerPool workers = pools.forCapability(capability);
             if (workers == null) {
@@ -196,13 +218,16 @@ public class InferenceController {
             return rejected(422, "CAPABILITY_MISMATCH", "Model '" + modelId + "' has capability "
                     + model.capability() + ", not " + capability + ".", requestId);
         }
+        if (taskCapability != null && !taskCapability.equals(model.capability())) {
+            return rejected(422, "CAPABILITY_MISMATCH", "The requested task does not match the registered model capability.", requestId);
+        }
         if (resolved.isEmpty()) {
             return rejected(404, "VERSION_NOT_FOUND", latest
                     ? "Model '" + modelId + "' has no registered versions."
                     : "Model '" + modelId + "' has no version '" + version + "'.", requestId);
         }
         ModelVersion v = resolved.get();
-        if (!model.capability().equals("IMAGE") && request.input().length() > MAX_INPUT_CHARS) {
+        if (!AutoCapability.imageCapability(model.capability()) && request.input().length() > MAX_INPUT_CHARS) {
             return rejected(400, "INVALID_REQUEST",
                     "Field 'input' must be at most " + MAX_INPUT_CHARS + " characters.", requestId);
         }
@@ -332,6 +357,11 @@ public class InferenceController {
             long predictStarted = System.nanoTime();
             WorkerPrediction p = budget == null ? worker.predict(input) : worker.predict(input, budget);
             long predictNanos = System.nanoTime() - predictStarted;
+            if ("HEALTHCARE".equals(workers.capability()) && !"chest-xray".equals(p.task())) {
+                worker.forgetServedModel();
+                workers.predictionMismatch(worker);
+                return error(502, "WORKER_MODEL_MISMATCH", "The healthcare worker returned a different task than chest-xray.", requestId);
+            }
             if (target != null && !(target.version().artifact().equals(p.model())
                     && target.version().artifactRevision().equals(p.version()))) {
                 worker.forgetServedModel();
@@ -373,7 +403,7 @@ public class InferenceController {
                 // not a worker fault. No cooldown (4xx) and never retried by failover (HTTP_ERROR). D-049.
                 log.warn("inference rejected requestId={} routedTo={} reason=INVALID_INPUT", requestId,
                         worker.endpoint());
-                return "IMAGE".equals(workers.capability())
+                return AutoCapability.imageCapability(workers.capability())
                         ? error(422, "INVALID_IMAGE", "Field 'input' must be a base64-encoded PNG or JPEG image of at most "
                                 + "4096 x 4096 pixels.", requestId)
                         : error(422, "INVALID_INPUT", "The " + workers.capability() + " model worker rejected the input.",
@@ -456,3 +486,5 @@ public class InferenceController {
         return s == null || s.isBlank() ? null : s.trim();
     }
 }
+
+

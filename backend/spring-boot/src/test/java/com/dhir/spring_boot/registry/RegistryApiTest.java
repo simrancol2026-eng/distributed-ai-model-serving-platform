@@ -131,6 +131,14 @@ class RegistryApiTest {
     }
 
     @Test
+    void healthcareCapabilityCanBeRegisteredAfterMigration() throws Exception {
+        HttpResponse<String> r = post("/api/models", """
+                {"id":"chest-research","name":"Chest research","task":"chest-xray","capability":"HEALTHCARE"}""");
+        assertEquals(201, r.statusCode(), r.body());
+        assertTrue(r.body().contains("\"capability\":\"HEALTHCARE\""), r.body());
+    }
+
+    @Test
     void versionsBelongToTheirModelAndLatestIsMostRecentlyRegistered() throws Exception {
         post("/api/models", model("m-one"));
         post("/api/models", model("m-two"));
@@ -329,3 +337,5 @@ class RegistryApiTest {
         assertFalse(r.headers().firstValue("Content-Type").orElse("").contains("json"));
     }
 }
+
+

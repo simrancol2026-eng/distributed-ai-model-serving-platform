@@ -19,21 +19,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class CapabilitiesController {
 
     private final WorkerPools pools;
+    private final FailoverSettings failover;
 
-    public CapabilitiesController(WorkerPools pools) {
+    public CapabilitiesController(WorkerPools pools, FailoverSettings failover) {
         this.pools = pools;
+        this.failover = failover;
     }
 
     /** One configured worker as it describes itself. reportedCapability comes from the worker, not config. */
     public record WorkerView(String endpoint, boolean reachable, boolean healthy, String reportedCapability,
-            String model, String revision) {
+            String model, String revision, Integer inFlight) {
     }
 
     public record CapabilityView(String capability, String policy, int workerCount, int healthyCount,
             List<WorkerView> workers) {
     }
 
-    public record CapabilitiesResponse(String defaultCapability, List<CapabilityView> capabilities) {
+    public record CapabilitiesResponse(String defaultCapability, List<CapabilityView> capabilities,
+            boolean failoverEnabled, long budgetMs) {
     }
 
     @GetMapping("/api/capabilities")
@@ -43,25 +46,28 @@ public class CapabilitiesController {
             WorkerPool pool = entry.getValue();
             List<WorkerView> views = new ArrayList<>();
             int healthy = 0;
+            Map<String, Integer> counts = pool.counts(); // current reservations on this backend instance only
             for (WorkerClient worker : pool.all()) {
-                WorkerView view = describe(worker);
+                WorkerView view = describe(worker, counts.get(worker.endpoint()));
                 // Counted healthy only if it reports healthy AND the capability its pool is configured for.
                 if (view.healthy() && entry.getKey().equals(view.reportedCapability())) healthy++;
                 views.add(view);
             }
             result.add(new CapabilityView(entry.getKey(), pool.policy(), views.size(), healthy, views));
         }
-        return new CapabilitiesResponse(pools.defaultPool().capability(), result);
+        return new CapabilitiesResponse(pools.defaultPool().capability(), result, failover.enabled(), failover.budgetMs());
     }
 
-    private static WorkerView describe(WorkerClient worker) {
+    private static WorkerView describe(WorkerClient worker, Integer inFlight) {
         try {
             WorkerHealth.Probe probe = worker.probeHealth();
             WorkerClient.ServedModel identity = probe.identity();
             return new WorkerView(worker.endpoint(), true, probe.healthy(), probe.capability(),
-                    identity == null ? null : identity.artifact(), identity == null ? null : identity.revision());
+                    identity == null ? null : identity.artifact(), identity == null ? null : identity.revision(), inFlight);
         } catch (RuntimeException e) { // unreachable, timed out, or not a readable /health body
-            return new WorkerView(worker.endpoint(), false, false, null, null, null);
+            return new WorkerView(worker.endpoint(), false, false, null, null, null, inFlight);
         }
     }
 }
+
+

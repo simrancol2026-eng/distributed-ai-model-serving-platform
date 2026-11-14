@@ -201,7 +201,9 @@ class FailoverControllerTest {
                 .infer(new InferenceRequest("TEXT", "hello", null, null));
         assertEquals(503, response.getStatusCode().value());
         assertEquals(1, a.calls); assertEquals(0, b.calls);
-        assertNull(((ErrorResponse) response.getBody()).routing());
+        assertNotNull(((ErrorResponse) response.getBody()).routing());
+        assertNull(((ErrorResponse) response.getBody()).routing().attempts());
+        assertNull(((ErrorResponse) response.getBody()).routing().terminalReason());
         assertTrue(pool.counts().values().stream().allMatch(n -> n == 0));
     }
 
@@ -221,3 +223,5 @@ class FailoverControllerTest {
         }
     }
 }
+
+

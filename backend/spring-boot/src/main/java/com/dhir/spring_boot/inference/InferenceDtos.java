@@ -14,7 +14,10 @@ public final class InferenceDtos {
      * Optional (Sprint 2): "model" = registry model id, "version" = registry version label or "latest"
      * (default when "model" is given). Without "model" the request behaves exactly as before.
      */
-    public record InferenceRequest(String capability, String input, String model, String version) {
+    public record InferenceRequest(String capability, String input, String model, String version, String task) {
+        public InferenceRequest(String capability, String input, String model, String version) {
+            this(capability, input, model, version, null);
+        }
     }
 
     /**
@@ -68,3 +71,5 @@ public final class InferenceDtos {
         }
     }
 }
+
+

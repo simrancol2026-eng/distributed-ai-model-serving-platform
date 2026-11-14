@@ -1,0 +1,4 @@
+# Optional: only WORKER_TASK=healthcare needs this research model adapter.
+-r requirements.txt
+torchxrayvision==1.4.0
+
