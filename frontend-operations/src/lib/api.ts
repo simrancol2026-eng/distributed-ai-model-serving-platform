@@ -1,5 +1,5 @@
 /**
- * NEXUS AI API client - Spring Boot serving platform, contract verified at baseline 7dc4649.
+ * NEXUS AI API client — Spring Boot serving platform, contract verified at baseline 7dc4649.
  * Base URL comes from VITE_API_BASE_URL; when unset no request is made and no URL is assumed.
  * TEXT, CODE and IMAGE share the inference endpoint.
  */
@@ -69,7 +69,7 @@ export function errorFromBody(status: number, statusText: string, body: string):
     /* plain text body */
   }
   return new ApiError(
-    `${status}${statusText ? " " + statusText : ""}${msg ? " - " + msg : ""}`,
+    `${status}${statusText ? " " + statusText : ""}${msg ? " — " + msg : ""}`,
     status,
     requestId,
     routing,
@@ -77,7 +77,7 @@ export function errorFromBody(status: number, statusText: string, body: string):
 }
 
 async function send(path: string, init?: RequestInit, base = API_BASE_URL): Promise<string> {
-  if (!base) throw new ApiError("API not configured - set VITE_API_BASE_URL");
+  if (!base) throw new ApiError("API not configured — set VITE_API_BASE_URL");
   const res = await fetch(base + path, { ...init, signal: init?.signal ?? AbortSignal.timeout(path === ENDPOINTS.inference ? 60000 : 15000) });
   const text = await res.text();
   if (!res.ok) throw errorFromBody(res.status, res.statusText, text);
@@ -87,7 +87,7 @@ async function send(path: string, init?: RequestInit, base = API_BASE_URL): Prom
 export function parseInference(text: string): InferenceResult {
   const r = JSON.parse(text) as InferenceResult;
   if (!r || typeof r.prediction?.label !== "string" || typeof r.prediction?.score !== "number")
-    throw new ApiError("Malformed inference response - missing prediction.label/score");
+    throw new ApiError("Malformed inference response — missing prediction.label/score");
   return r;
 }
 
@@ -121,5 +121,4 @@ export const api = {
       ),
     ),
 };
-
 

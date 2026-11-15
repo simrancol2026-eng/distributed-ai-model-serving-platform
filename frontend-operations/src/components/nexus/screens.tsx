@@ -41,20 +41,20 @@ const getCapabilities = () => api.capabilities();
 const getRequests = () => api.requests();
 function Availability({ error, checked }: { error: string; checked: string }) {
   return <p className="mb-4 text-xs text-muted-foreground" role="status">
-    {error ? "Unavailable - " + error : checked ? "Last completed check " + checked + " � refreshes every 5 seconds" : "Checking."}
+    {error ? "Unavailable — " + error : checked ? "Last completed check " + checked + " · refreshes every 5 seconds" : "Checking…"}
   </p>;
 }
 export function RoutingDetails({ routing }: { routing: RoutingEvidence }) {
   return <div className="space-y-2 border-t hairline pt-3 text-xs">
-    <p>Policy: {routing.policy ?? "Unavailable"} � eligible: {routing.eligibleCount ?? "-"} / {routing.poolSize ?? "-"}</p>
+    <p>Policy: {routing.policy ?? "Unavailable"} · eligible: {routing.eligibleCount ?? "—"} / {routing.poolSize ?? "—"}</p>
     <p>{routing.reason}</p><p>Selected endpoint: {routing.chosen ?? "None"}</p>
     <p>{failoverState(routing)}</p>
     {routing.attempts?.map((a, i) => <div key={i} className="rounded border hairline p-2">
-      Attempt {i + 1}: {a.endpoint}  {a.outcome} � {a.elapsedMs} ms {a.failureClass && <span> � {a.failureClass}</span>}
+      Attempt {i + 1}: {a.endpoint} → {a.outcome} · {a.elapsedMs} ms {a.failureClass && <span> · {a.failureClass}</span>}
     </div>)}
     {routing.terminalReason && <p>Final reason: {routing.terminalReason}</p>}
     {!!routing.candidates?.length && <details><summary>Workers considered at dispatch</summary>
-      {routing.candidates.map(c => <p key={c.endpoint}>{c.endpoint} � {c.note} � in-flight at selection: {c.inFlight ?? "Unavailable"}</p>)}
+      {routing.candidates.map(c => <p key={c.endpoint}>{c.endpoint} · {c.note} · in-flight at selection: {c.inFlight ?? "Unavailable"}</p>)}
     </details>}
   </div>;
 }
@@ -73,13 +73,13 @@ function OperationsSummary() {
   const models = pools ? new Set(pools.flatMap(p => p.workers.filter(w => workerState(w, p.capability) === "Healthy" && w.model && w.revision).map(w => w.model + "@" + w.revision))).size : null;
   return <Panel title="Live operations"><Availability {...live} />
     <div className="grid gap-6 md:grid-cols-3">
-      <Metric label="Configured pool entries" value={configured ?? "-"} note="A URL can appear in more than one pool" />
-      <Metric label="Healthy matching entries" value={healthy ?? "-"} note="Reachable, healthy and correct capability" />
-      <Metric label="Observed model revisions" value={models ?? "-"} note="From healthy matching workers" />
+      <Metric label="Configured pool entries" value={configured ?? "—"} note="A URL can appear in more than one pool" />
+      <Metric label="Healthy matching entries" value={healthy ?? "—"} note="Reachable, healthy and correct capability" />
+      <Metric label="Observed model revisions" value={models ?? "—"} note="From healthy matching workers" />
     </div>
     <div className="mt-5 grid gap-4 md:grid-cols-3 text-sm">
-      <p>Load balancing: {pools?.map(p => p.capability + ": " + p.policy).join(" � ") || "Status unavailable"}</p>
-      <p>Failover: {live.data?.failoverEnabled == null ? "Status unavailable" : live.data.failoverEnabled ? "Enabled" : "Disabled"}{live.data?.budgetMs != null && ` � dispatch budget ${live.data.budgetMs} ms`}. Actual attempts appear below.</p>
+      <p>Load balancing: {pools?.map(p => p.capability + ": " + p.policy).join(" · ") || "Status unavailable"}</p>
+      <p>Failover: {live.data?.failoverEnabled == null ? "Status unavailable" : live.data.failoverEnabled ? "Enabled" : "Disabled"}{live.data?.budgetMs != null && ` · dispatch budget ${live.data.budgetMs} ms`}. Actual attempts appear below.</p>
       <p>Autoscaling: Planned. CPU, memory and global throughput: unavailable.</p>
     </div>
   </Panel>;
@@ -92,7 +92,7 @@ export function WorkersTable() {
     <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm">
       <thead><tr>{["Pool / policy", "Endpoint", "State", "Reported capability", "In-flight", "Model / revision"].map(h => <th className="pb-3 font-normal" key={h}>{h}</th>)}</tr></thead>
       <tbody>{live.data?.capabilities.flatMap(p => p.workers.map(w => <tr className="border-t hairline" key={p.capability + w.endpoint}>
-        <td className="py-3">{p.capability}<div className="text-xs text-muted-foreground">{p.policy} � {p.healthyCount}/{p.workerCount} healthy</div></td>
+        <td className="py-3">{p.capability}<div className="text-xs text-muted-foreground">{p.policy} · {p.healthyCount}/{p.workerCount} healthy</div></td>
         <td className="font-mono text-xs">{w.endpoint}</td>
         <td><Status tone={workerState(w, p.capability) === "Healthy" ? "ok" : "off"}>{workerState(w, p.capability)}</Status></td>
         <td>{w.reportedCapability ?? "Unknown"}</td><td>{w.inFlight ?? "Unavailable"}</td>
@@ -102,7 +102,7 @@ export function WorkersTable() {
   </Panel>;
 }
 export function ModelsScreen() {
-  return <div className="space-y-4"><WorkersTable /><Panel title="Healthcare � chest X-ray">
+  return <div className="space-y-4"><WorkersTable /><Panel title="Healthcare · chest X-ray">
     <p className="text-sm">Choose Healthcare in Inference, or Auto with the chest X-ray task. A dedicated HEALTHCARE worker is required. Research model scores are not a clinical diagnosis. General image classification is a separate task.</p>
   </Panel></div>;
 }
@@ -112,12 +112,12 @@ function RequestEvidence() {
   const counts = new Map<string, number>();
   rows?.forEach(r => { if (r.workerEndpoint) counts.set(r.workerEndpoint, (counts.get(r.workerEndpoint) ?? 0) + 1); });
   return <Panel title="Recorded requests and failover evidence"><Availability {...live} />
-    <p className="mb-4 text-xs text-muted-foreground">Latest {rows?.length ?? "-"} stored requests (limit 100). Best-effort tracking can miss requests; these are sample counts, not global throughput. Endpoint totals use the recorded final endpoint, not every attempt.</p>
+    <p className="mb-4 text-xs text-muted-foreground">Latest {rows?.length ?? "—"} stored requests (limit 100). Best-effort tracking can miss requests; these are sample counts, not global throughput. Endpoint totals use the recorded final endpoint, not every attempt.</p>
     {!!counts.size && <div className="mb-4 flex flex-wrap gap-4">{Array.from(counts).map(([endpoint, n]) => <p className="text-sm" key={endpoint}>{endpoint}: {n} recorded requests</p>)}</div>}
     {rows?.length === 0 && <p>No recorded requests yet.</p>}
     <div className="space-y-3">{rows?.map(r => <details className="rounded border hairline p-3 text-sm" key={r.requestId}>
-      <summary className="cursor-pointer break-all">{r.status} � {r.capability} � {r.workerEndpoint ?? "No endpoint"} � {failoverState(r.routing)}</summary>
-      <p className="mt-2 text-xs">{r.requestId} � {r.receivedAt} � {r.totalMs ?? "-"} ms {r.errorCode ? "� " + r.errorCode : ""}</p>
+      <summary className="cursor-pointer break-all">{r.status} · {r.capability} · {r.workerEndpoint ?? "No endpoint"} · {failoverState(r.routing)}</summary>
+      <p className="mt-2 text-xs">{r.requestId} · {r.receivedAt} · {r.totalMs ?? "—"} ms {r.errorCode ? "· " + r.errorCode : ""}</p>
       {r.routing ? <RoutingDetails routing={r.routing} /> : <p className="mt-2">Routing evidence unavailable.</p>}
     </details>)}</div>
   </Panel>;
@@ -179,7 +179,7 @@ export function InferenceScreen() {
   };
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <Panel title={`Inference � ${capability}`} right={<span className="micro">POST {ENDPOINTS.inference}</span>}>
+      <Panel title={`Inference · ${capability}`} right={<span className="micro">POST {ENDPOINTS.inference}</span>}>
         <div className="mb-3 flex flex-wrap gap-2">
           {CAPS.map((c) => (
             <button key={c.id} type="button" disabled={busy || uploading} aria-pressed={capability === c.id}
@@ -193,7 +193,7 @@ export function InferenceScreen() {
             <option value="sentiment-analysis">Text sentiment</option>
             <option value="code-language">Code language</option>
             <option value="image-classification">General image classification</option>
-            <option value="chest-xray">Healthcare � chest X-ray</option>
+            <option value="chest-xray">Healthcare · chest X-ray</option>
           </select>
         </label>}
         {medical && <p className="mb-4 text-sm text-muted-foreground">Research demonstration only, not a diagnosis. Upload a frontal chest X-ray PNG or JPEG without personal identifiers. Model scores are not calibrated probabilities of disease; a clinician must interpret medical images.</p>}
@@ -213,13 +213,13 @@ export function InferenceScreen() {
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <Status tone={health.state === "ok" ? "ok" : health.state === "unset" ? "off" : "idle"}>
-            {health.state === "ok" ? "Connected" : health.state === "checking" ? "Checking." : health.state === "down" ? "Unreachable" : "Not connected"}
+            {health.state === "ok" ? "Connected" : health.state === "checking" ? "Checking…" : health.state === "down" ? "Unreachable" : "Not connected"}
           </Status>
           <button onClick={run} disabled={busy || uploading || !text.trim() || !isApiConfigured()} className="rounded-[3px] border border-leaf/60 px-4 py-1.5 text-[13px] text-leaf transition-colors hover:bg-leaf hover:text-primary-foreground disabled:opacity-40">
-            {busy ? "Running." : "Run inference"}
+            {busy ? "Running…" : "Run inference"}
           </button>
         </div>
-        {!isApiConfigured() && <p className="mt-3 text-[12px] text-muted-foreground">Not connected - set VITE_API_BASE_URL to send real requests.</p>}
+        {!isApiConfigured() && <p className="mt-3 text-[12px] text-muted-foreground">Not connected — set VITE_API_BASE_URL to send real requests.</p>}
         {health.state === "down" && <p className="mt-3 font-mono text-[11px] text-destructive">{health.detail}</p>}
       </Panel>
       <Panel title="Response">
@@ -227,7 +227,7 @@ export function InferenceScreen() {
           <div className="space-y-4">
             <div>
               <div className="num text-4xl">{res.prediction.label}</div>
-              <div className="micro mt-2">score {res.prediction.score.toFixed(3)} � {res.totalLatencyMs}ms</div>
+              <div className="micro mt-2">score {res.prediction.score.toFixed(3)} · {res.totalLatencyMs}ms</div>
             </div>
             <dl className="grid grid-cols-[90px_1fr] gap-y-1 font-mono text-[11px]">
               {([["model", `${res.model} ${res.version}`], ["worker", res.worker], ["endpoint", res.workerEndpoint], ["request", res.requestId]] as const).map(([k, v]) => (
@@ -235,7 +235,7 @@ export function InferenceScreen() {
               ))}
             </dl>
             {res.capability && <p className="text-sm">Resolved capability: {res.capability}</p>}
-            {medical && <p className="text-sm text-muted-foreground">Research score only - this result does not establish or exclude disease.</p>}
+            {medical && <p className="text-sm text-muted-foreground">Research score only — this result does not establish or exclude disease.</p>}
             {res.topK && <ul className="text-sm">{res.topK.map(p => <li key={p.label}>{p.label}: {p.score.toFixed(3)}</li>)}</ul>}
             {rt && <RoutingDetails routing={rt} />}
 
@@ -249,5 +249,4 @@ export function InferenceScreen() {
     </div>
   );
 }
-
 
