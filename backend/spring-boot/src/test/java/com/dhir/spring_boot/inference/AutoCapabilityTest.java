@@ -8,6 +8,24 @@ import com.dhir.spring_boot.inference.InferenceDtos.*;
 
 /** Dispatch tests with deterministic fake workers, not medical/model accuracy evidence. */
 class AutoCapabilityTest {
+    static class MedicalMetadataWorker extends SpecialistModelsTest.TaskWorker {
+        Boolean researchOnly;
+        String scoreMeaning;
+        MedicalMetadataWorker(int port, Boolean researchOnly, String scoreMeaning) {
+            super(port, "chest-xray", List.of(new Prediction("research-label", .5)));
+            reports = "HEALTHCARE";
+            this.researchOnly = researchOnly;
+            this.scoreMeaning = scoreMeaning;
+        }
+        private WorkerPrediction metadata(WorkerPrediction p) {
+            return new WorkerPrediction(p.worker(), p.model(), p.version(), p.task(), p.label(), p.score(),
+                    p.inferenceMs(), p.topK(), researchOnly, scoreMeaning);
+        }
+        @Override public WorkerPrediction predict(String input) { return metadata(super.predict(input)); }
+        @Override WorkerPrediction predict(String input, DispatchBudget budget) {
+            return metadata(super.predict(input, budget));
+        }
+    }
     final SpecialistModelsTest.TaskWorker text = new SpecialistModelsTest.TaskWorker(8001, "sentiment-analysis", null);
     final SpecialistModelsTest.TaskWorker code = new SpecialistModelsTest.TaskWorker(8101, "text-classification", SpecialistModelsTest.CODE_TOP);
     final SpecialistModelsTest.TaskWorker image = new SpecialistModelsTest.TaskWorker(8201, "image-classification", SpecialistModelsTest.IMAGE_TOP);
@@ -146,5 +164,61 @@ class AutoCapabilityTest {
         assertEquals(422, conflict.getStatusCode().value());
         assertEquals("CAPABILITY_MISMATCH", ((ErrorResponse) conflict.getBody()).error());
     }
-}
 
+    @Test void medicalMetadataSurvivesJsonAndNormalDispatchWithLegacyFallback() {
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+        var workerJson = mapper.readValue("""
+                {"worker":"chest-a","model":"chest-model","version":"revision","task":"chest-xray",
+                 "label":"research-label","score":0.5,"inferenceMs":1,"researchOnly":true,
+                 "scoreMeaning":"Independent research scores, not a diagnosis"}
+                """, WorkerPrediction.class);
+        assertEquals(Boolean.TRUE, workerJson.researchOnly());
+        assertEquals("Independent research scores, not a diagnosis", workerJson.scoreMeaning());
+        var worker = new MedicalMetadataWorker(8501, workerJson.researchOnly(), workerJson.scoreMeaning());
+        var pools = new WorkerPools(SpecialistModelsTest.pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                Map.of("HEALTHCARE", SpecialistModelsTest.pool("HEALTHCARE", WorkerPool.Policy.ROUND_ROBIN, worker)));
+        var controller = new InferenceController(pools, null, FailoverControllerTest.tracker(), new FailoverSettings(false, 10000));
+        var request = new InferenceRequest("AUTO", "image", null, null, "chest-xray");
+        var response = (InferenceResponse) controller.infer(request).getBody();
+        assertEquals(Boolean.TRUE, response.researchOnly());
+        assertEquals(workerJson.scoreMeaning(), response.scoreMeaning());
+        var json = mapper.readTree(mapper.writeValueAsString(response));
+        assertTrue(json.get("researchOnly").asBoolean());
+        assertEquals(workerJson.scoreMeaning(), json.get("scoreMeaning").asText());
+
+        for (Boolean flag : new Boolean[] { null, false, true }) {
+            worker.researchOnly = flag;
+            worker.scoreMeaning = flag == Boolean.FALSE ? "Clinical diagnosis" : "  ";
+            response = (InferenceResponse) controller.infer(request).getBody();
+            assertEquals(Boolean.TRUE, response.researchOnly());
+            assertEquals(InferenceController.HEALTHCARE_SCORE_MEANING, response.scoreMeaning());
+        }
+    }
+
+    @Test void alternateWorkerFailoverReconstructionPreservesMedicalMetadata() {
+        var first = new MedicalMetadataWorker(8502, true, "First worker metadata");
+        first.failure = FailoverControllerTest.refused();
+        var alternate = new MedicalMetadataWorker(8503, true, "Independent research scores, not a diagnosis");
+        var pools = new WorkerPools(SpecialistModelsTest.pool("TEXT", WorkerPool.Policy.ROUND_ROBIN, text),
+                Map.of("HEALTHCARE", SpecialistModelsTest.pool("HEALTHCARE", WorkerPool.Policy.ROUND_ROBIN, first, alternate)));
+        var controller = new InferenceController(pools, null, FailoverControllerTest.tracker(), new FailoverSettings(true, 10000));
+        var result = (InferenceResponse) controller.infer(new InferenceRequest("HEALTHCARE", "image", null, null)).getBody();
+        assertEquals(1, first.calls);
+        assertEquals(1, alternate.calls);
+        assertEquals(alternate.endpoint(), result.workerEndpoint());
+        assertEquals(List.of("FAILED", "SUCCEEDED"), result.routing().attempts().stream().map(RoutingDecision.Attempt::outcome).toList());
+        assertEquals(Boolean.TRUE, result.researchOnly());
+        assertEquals(alternate.scoreMeaning, result.scoreMeaning());
+        assertEquals(alternate.topK, result.topK());
+    }
+
+    @Test void nonHealthcareResponseOmitsMissingMedicalMetadata() {
+        var result = (InferenceResponse) infer("TEXT", "I love it", null).getBody();
+        assertNull(result.researchOnly());
+        assertNull(result.scoreMeaning());
+        var json = tools.jackson.databind.json.JsonMapper.builder().build()
+                .readTree(tools.jackson.databind.json.JsonMapper.builder().build().writeValueAsString(result));
+        assertFalse(json.has("researchOnly"));
+        assertFalse(json.has("scoreMeaning"));
+    }
+}

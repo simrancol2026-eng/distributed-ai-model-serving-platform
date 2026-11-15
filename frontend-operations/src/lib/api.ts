@@ -48,6 +48,8 @@ export interface InferenceResult {
   requestId: string;
   capability?: string;
   task?: string;
+  researchOnly?: boolean;
+  scoreMeaning?: string;
   topK?: { label: string; score: number }[];
   routing?: RoutingEvidence;
 }

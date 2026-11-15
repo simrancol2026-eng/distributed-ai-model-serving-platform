@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { HomeScreen, InferenceScreen, workerState, failoverState } from "@/components/nexus/screens";
+import { HomeScreen, InferenceScreen, HealthcareNotice, workerState, failoverState } from "@/components/nexus/screens";
 import { api, errorFromBody, type WorkerView, type RoutingEvidence } from "@/lib/api";
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
@@ -11,6 +11,16 @@ const routing: RoutingEvidence = { policy: "ROUND_ROBIN", chosen: "host:8002", r
 ] };
 
 describe("operational evidence", () => {
+  it("labels healthcare from the resolved response even without a selected task", () => {
+    const html = renderToStaticMarkup(<HealthcareNotice result={{ capability: "HEALTHCARE", researchOnly: true, scoreMeaning: "Independent research scores" }} />);
+    expect(html).toContain("not a diagnosis");
+    expect(html).toContain("Independent research scores");
+    expect(html).toContain("does not verify");
+  });
+  it("keeps a fallback label for older healthcare responses but not text results", () => {
+    expect(renderToStaticMarkup(<HealthcareNotice result={{ task: "chest-xray" }} />)).toContain("not calibrated disease probabilities");
+    expect(renderToStaticMarkup(<HealthcareNotice result={{ capability: "TEXT" }} />)).toBe("");
+  });
   it("distinguishes failure, mismatch and health", () => {
     expect(workerState(worker, "TEXT")).toBe("Healthy");
     expect(workerState({ ...worker, reachable: false }, "TEXT")).toBe("Unreachable");
@@ -54,4 +64,3 @@ describe("operational evidence", () => {
     await expect(api.capabilities("http://backend")).rejects.toThrow("Malformed");
   });
 });
-

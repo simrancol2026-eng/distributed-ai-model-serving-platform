@@ -145,6 +145,15 @@ const CAPS = [
   { id: "IMAGE", label: "Image", on: true },
 ] as const;
 
+export function HealthcareNotice({ result }: { result: Pick<InferenceResult, "capability" | "task" | "researchOnly" | "scoreMeaning"> }) {
+  if (result.capability !== "HEALTHCARE" && result.task !== "chest-xray" && result.researchOnly !== true) return null;
+  return <div className="rounded border hairline p-3 text-sm" role="note">
+    <strong>Research only — not a diagnosis.</strong>
+    <p>{result.scoreMeaning || "Independent model scores, not calibrated disease probabilities or diagnoses."}</p>
+    <p>This result does not establish or exclude disease. The model does not verify that an uploaded image is a chest X-ray.</p>
+  </div>;
+}
+
 export function InferenceScreen() {
   const health = useHealth();
   const [capability, setCapability] = useState<Capability>("AUTO");
@@ -225,6 +234,7 @@ export function InferenceScreen() {
       <Panel title="Response">
         {res ? (
           <div className="space-y-4">
+            <HealthcareNotice result={res} />
             <div>
               <div className="num text-4xl">{res.prediction.label}</div>
               <div className="micro mt-2">score {res.prediction.score.toFixed(3)} · {res.totalLatencyMs}ms</div>
@@ -235,7 +245,6 @@ export function InferenceScreen() {
               ))}
             </dl>
             {res.capability && <p className="text-sm">Resolved capability: {res.capability}</p>}
-            {medical && <p className="text-sm text-muted-foreground">Research score only — this result does not establish or exclude disease.</p>}
             {res.topK && <ul className="text-sm">{res.topK.map(p => <li key={p.label}>{p.label}: {p.score.toFixed(3)}</li>)}</ul>}
             {rt && <RoutingDetails routing={rt} />}
 

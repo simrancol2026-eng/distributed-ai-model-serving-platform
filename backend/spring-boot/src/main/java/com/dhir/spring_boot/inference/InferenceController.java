@@ -59,6 +59,8 @@ public class InferenceController {
     static final int MAX_INPUT_CHARS = 10_000;
     /** IMAGE input is a base64 image: about 5 MB of image bytes. Must match the image worker's limit. */
     static final int MAX_IMAGE_INPUT_CHARS = 7_000_000;
+    static final String HEALTHCARE_SCORE_MEANING =
+            "Independent model scores, not calibrated disease probabilities or diagnoses";
     private static final Logger log = LoggerFactory.getLogger(InferenceController.class);
 
     private final WorkerPool workers; // default (TEXT) pool; requests for other capabilities use pools
@@ -381,7 +383,8 @@ public class InferenceController {
                     p.worker(), worker.endpoint(), p.model(), p.version(), p.task(),
                     new Prediction(p.label(), p.score()), p.inferenceMs(), totalMs,
                     target == null ? null : target.modelId(), target == null ? null : target.version().version(),
-                    decision, p.topK()));
+                    decision, p.topK(), "HEALTHCARE".equals(workers.capability()) ? Boolean.TRUE : p.researchOnly(),
+                    scoreMeaning(workers.capability(), p)));
         } catch (WorkerUnavailableException e) {
             if (state != null) state.failure = FailoverFailure.classify(e);
             if (state != null) state.budgetExpired = e instanceof BudgetExpiredException;
@@ -465,12 +468,21 @@ public class InferenceController {
         if (response.getBody() instanceof InferenceResponse r) {
             response = ResponseEntity.status(response.getStatusCode()).body(new InferenceResponse(r.status(), r.requestId(),
                     r.capability(), r.worker(), r.workerEndpoint(), r.model(), r.version(), r.task(), r.prediction(),
-                    r.workerInferenceMs(), r.totalLatencyMs(), r.modelId(), r.modelVersion(), finalDecision, r.topK()));
+                    r.workerInferenceMs(), r.totalLatencyMs(), r.modelId(), r.modelVersion(), finalDecision, r.topK(),
+                    r.researchOnly(), r.scoreMeaning()));
         } else if (response.getBody() instanceof ErrorResponse r) {
             response = ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(r.status(), r.error(),
                     r.message(), r.requestId(), finalDecision));
         }
         return new Routed(response, finalDecision);
+    }
+
+    private static String scoreMeaning(String capability, WorkerPrediction prediction) {
+        if (!"HEALTHCARE".equals(capability)) return prediction.scoreMeaning();
+        String meaning = prediction.scoreMeaning();
+        // Older workers may omit metadata. A worker cannot turn healthcare into a clinical result.
+        return Boolean.TRUE.equals(prediction.researchOnly()) && meaning != null && !meaning.isBlank()
+                ? meaning : HEALTHCARE_SCORE_MEANING;
     }
 
     /** An error returned before any worker was considered. */
@@ -486,5 +498,4 @@ public class InferenceController {
         return s == null || s.isBlank() ? null : s.trim();
     }
 }
-
 
