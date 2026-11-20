@@ -1,170 +1,130 @@
 import { useEffect, useState } from "react";
-import { api, ENDPOINTS, isApiConfigured, API_BASE_URL, type Capability, type InferenceResult } from "@/lib/api";
+import { api, ENDPOINTS, isApiConfigured, type Capability, type Task, type InferenceResult, type Capabilities, type TrackedRequest, type RoutingEvidence, type WorkerView, ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { InfraCube } from "./Cube";
-import { Bars, Demo, Metric, Panel, Status, Tabs, Timeline } from "./ui";
+import { Metric, Panel, Status, Tabs } from "./ui";
 
-/* ---------- Demo fixtures (replace with API responses) ---------- */
-const DEMO_WORKERS = [
-  { id: "worker-01", host: "10.0.1.11:8081", model: "distilbert-sst2", inFlight: 3, p50: 41, state: "healthy" },
-  { id: "worker-02", host: "10.0.1.12:8081", model: "distilbert-sst2", inFlight: 1, p50: 38, state: "healthy" },
-  { id: "worker-03", host: "10.0.1.13:8081", model: "distilbert-sst2", inFlight: 5, p50: 57, state: "degraded" },
-  { id: "worker-04", host: "10.0.1.14:8081", model: "distilbert-sst2", inFlight: 0, p50: 0, state: "draining" },
-];
-
-export const MODELS = [
-  { name: "Text Sentiment", id: "distilbert-base-uncased-sst2", kind: "NLP · classification", status: "available" as const, note: "TEXT capability via POST /api/inference" },
-  { name: "Code Language", id: "CodeBERTa", kind: "Code · classification", status: "configured" as const, note: "Requires a CODE worker configured in Spring Boot." },
-  { name: "Image Classify", id: "ViT", kind: "Vision · classification", status: "configured" as const, note: "Requires an IMAGE worker configured in Spring Boot." },
-];
-
-/* ---------- Home: My deployments / Overview / Workers ---------- */
+export function workerState(w: WorkerView, capability: string) {
+  if (!w.reachable) return "Unreachable";
+  if (!w.healthy) return "Unhealthy";
+  if (w.reportedCapability !== capability) return "Capability mismatch";
+  return "Healthy";
+}
+export function failoverState(routing?: RoutingEvidence | null) {
+  const attempts = routing?.attempts;
+  if (!Array.isArray(attempts)) return "Attempt evidence unavailable";
+  if (attempts.length < 2) return "No retry recorded";
+  if (new Set(attempts.map(a => a.endpoint)).size < 2) return "No alternate worker recorded";
+  return attempts.at(-1)?.outcome === "SUCCEEDED" ? "Recovered on another worker" : "Alternate worker attempted";
+}
+function useLive<T>(fetcher: () => Promise<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState("");
+  const [checked, setChecked] = useState("");
+  useEffect(() => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      try {
+        if (!isApiConfigured()) throw new Error("API not configured");
+        const result = await fetcher();
+        if (active) { setData(result); setError(""); setChecked(new Date().toLocaleTimeString()); }
+      } catch (e) {
+        if (active) { setData(null); setError((e as Error).message); setChecked(""); }
+      } finally { if (active) timer = setTimeout(refresh, 5000); }
+    };
+    void refresh();
+    return () => { active = false; clearTimeout(timer); };
+  }, [fetcher]);
+  return { data, error, checked };
+}
+const getCapabilities = () => api.capabilities();
+const getRequests = () => api.requests();
+function Availability({ error, checked }: { error: string; checked: string }) {
+  return <p className="mb-4 text-xs text-muted-foreground" role="status">
+    {error ? "Unavailable — " + error : checked ? "Last completed check " + checked + " · refreshes every 5 seconds" : "Checking…"}
+  </p>;
+}
+export function RoutingDetails({ routing }: { routing: RoutingEvidence }) {
+  return <div className="space-y-2 border-t hairline pt-3 text-xs">
+    <p>Policy: {routing.policy ?? "Unavailable"} · eligible: {routing.eligibleCount ?? "—"} / {routing.poolSize ?? "—"}</p>
+    <p>{routing.reason}</p><p>Selected endpoint: {routing.chosen ?? "None"}</p>
+    <p>{failoverState(routing)}</p>
+    {routing.attempts?.map((a, i) => <div key={i} className="rounded border hairline p-2">
+      Attempt {i + 1}: {a.endpoint} → {a.outcome} · {a.elapsedMs} ms {a.failureClass && <span> · {a.failureClass}</span>}
+    </div>)}
+    {routing.terminalReason && <p>Final reason: {routing.terminalReason}</p>}
+    {!!routing.candidates?.length && <details><summary>Workers considered at dispatch</summary>
+      {routing.candidates.map(c => <p key={c.endpoint}>{c.endpoint} · {c.note} · in-flight at selection: {c.inFlight ?? "Unavailable"}</p>)}
+    </details>}
+  </div>;
+}
 const HOME_TABS = ["My deployments", "Overview", "Workers"] as const;
-
 export function HomeScreen() {
   const [tab, setTab] = useState<(typeof HOME_TABS)[number]>("My deployments");
-  return (
-    <div>
-      <Tabs value={tab} options={HOME_TABS} onChange={setTab} />
-      <div className="pt-6" key={tab}>
-        <div className="rise">
-          {tab === "My deployments" && <Deployments />}
-          {tab === "Overview" && <OverviewBoard />}
-          {tab === "Workers" && <WorkersTable />}
-        </div>
-      </div>
+  return <div><Tabs value={tab} options={HOME_TABS} onChange={setTab} />
+    <div className="space-y-4 pt-6">{tab === "Workers" ? <WorkersTable /> : <><OperationsSummary /><WorkersTable />{tab === "Overview" && <RequestEvidence />}</>}</div>
+  </div>;
+}
+function OperationsSummary() {
+  const live = useLive<Capabilities>(getCapabilities);
+  const pools = live.data?.capabilities;
+  const configured = pools?.reduce((n, p) => n + p.workerCount, 0);
+  const healthy = pools?.reduce((n, p) => n + p.healthyCount, 0);
+  const models = pools ? new Set(pools.flatMap(p => p.workers.filter(w => workerState(w, p.capability) === "Healthy" && w.model && w.revision).map(w => w.model + "@" + w.revision))).size : null;
+  return <Panel title="Live operations"><Availability {...live} />
+    <div className="grid gap-6 md:grid-cols-3">
+      <Metric label="Configured pool entries" value={configured ?? "—"} note="A URL can appear in more than one pool" />
+      <Metric label="Healthy matching entries" value={healthy ?? "—"} note="Reachable, healthy and correct capability" />
+      <Metric label="Observed model revisions" value={models ?? "—"} note="From healthy matching workers" />
     </div>
-  );
-}
-
-function Deployments() {
-  return (
-    <>
-      <div className="grid gap-8 lg:grid-cols-[220px_1fr_220px]">
-        <aside className="space-y-6">
-          <div className="group relative aspect-square w-32 rounded-[4px] border border-leaf/25 bg-deep p-3 transition-colors hover:border-leaf/50">
-            <div className="micro !text-foreground/80">System health</div>
-            <div className="num absolute bottom-2 left-3 text-4xl text-foreground">—%</div>
-            <Demo className="absolute right-2 top-7 !text-foreground/70" />
-          </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">Placeholder until {ENDPOINTS.health} is reachable.</p>
-          <Metric label="Registered workers" value={DEMO_WORKERS.length} note={<Demo />} />
-          <Metric label="Models served" value="1" unit="/ 3" note="2 planned" />
-        </aside>
-        <div className="relative flex min-h-[420px] items-center justify-center lg:min-h-[560px]">
-          <div className="absolute left-0 top-0 micro">Cluster topology</div>
-          <div className="absolute right-0 top-0"><Demo /></div>
-          <InfraCube size={760} />
-          <div className="absolute bottom-0 left-0 micro">Gateway → load balancer → workers</div>
-        </div>
-        <aside className="space-y-6 lg:text-right">
-          <Metric label="Requests / min" value="1,284" note={<Demo />} />
-          <Metric label="p50 latency" value="42" unit="ms" note={<Demo />} />
-          <Metric label="In-flight" value="9" note={<Demo />} />
-        </aside>
-      </div>
-      <div className="mt-8"><Timeline /></div>
-    </>
-  );
-}
-
-function OverviewBoard() {
-  const charts = [
-    { t: "Throughput", v: "1.2k", u: "req/min", s: 2 },
-    { t: "Latency p95", v: "88", u: "ms", s: 5 },
-    { t: "Error rate", v: "0.4", u: "%", s: 9 },
-  ];
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          {charts.map((c) => (
-            <Panel key={c.t} title={c.t} right={<Demo />}>
-              <div className="num mb-4 text-3xl">{c.v}<span className="ml-1 text-sm text-muted-foreground">{c.u}</span></div>
-              <Bars seed={c.s} n={30} h={70} accentEvery={7} />
-            </Panel>
-          ))}
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-[6px] border hairline bg-card p-4 text-foreground transition-transform hover:-translate-y-0.5">
-            <div className="micro !text-muted-foreground">Active model</div>
-            <div className="num mt-6 text-2xl">DistilBERT</div>
-            <div className="mt-1 text-[12px] opacity-70">Text sentiment · SST-2</div>
-          </div>
-          <Panel title="Routing" right={<Demo />}>
-            <div className="num text-2xl">Server-chosen</div>
-            <div className="mt-2"><Status tone="idle">See routing evidence per request</Status></div>
-          </Panel>
-          <Panel title="Worker pool" right={<Demo />}>
-            <div className="flex gap-1.5">
-              {DEMO_WORKERS.map((w) => (
-                <span key={w.id} className={cn("h-6 flex-1 rounded-[2px]", w.state === "healthy" ? "bg-leaf/70" : w.state === "degraded" ? "bg-foreground/30" : "border hairline")} />
-              ))}
-            </div>
-            <div className="micro mt-3">2 healthy · 1 degraded · 1 draining</div>
-          </Panel>
-        </div>
-      </div>
-      <Panel title="Recommendations" right={<Demo />}>
-        <ul className="space-y-4 text-[13px]">
-          {[
-            ["Switch to Least In-Flight", "worker-03 shows elevated queue depth."],
-            ["Drain worker-04", "No traffic in the last 15 min."],
-            ["Metrics unavailable", "No metrics endpoint in the current API contract."],
-          ].map(([a, b]) => (
-            <li key={a} className="border-b hairline pb-3 last:border-0">
-              <div className="flex items-center gap-2"><span className="size-1 rounded-full bg-leaf" />{a}</div>
-              <div className="mt-1 pl-3 text-[11px] text-muted-foreground">{b}</div>
-            </li>
-          ))}
-        </ul>
-      </Panel>
+    <div className="mt-5 grid gap-4 md:grid-cols-3 text-sm">
+      <p>Load balancing: {pools?.map(p => p.capability + ": " + p.policy).join(" · ") || "Status unavailable"}</p>
+      <p>Failover: {live.data?.failoverEnabled == null ? "Status unavailable" : live.data.failoverEnabled ? "Enabled" : "Disabled"}{live.data?.budgetMs != null && ` · dispatch budget ${live.data.budgetMs} ms`}. Actual attempts appear below.</p>
+      <p>Autoscaling: Planned. CPU, memory and global throughput: unavailable.</p>
     </div>
-  );
+  </Panel>;
 }
-
 export function WorkersTable() {
-  return (
-    <Panel title="Workers · no endpoint yet" right={<Demo />}>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-left text-[13px]">
-          <thead>
-            <tr className="micro">{["Worker", "Host", "Model", "In-flight", "p50", "State"].map((h) => <th key={h} className="pb-2 font-normal">{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {DEMO_WORKERS.map((w) => (
-              <tr key={w.id} className="border-t hairline transition-colors hover:bg-foreground/[0.03]">
-                <td className="py-2.5 font-mono text-[12px]">{w.id}</td>
-                <td className="font-mono text-[12px] text-muted-foreground">{w.host}</td>
-                <td className="text-muted-foreground">{w.model}</td>
-                <td className="num">{w.inFlight}</td>
-                <td className="num">{w.p50 ? `${w.p50}ms` : "—"}</td>
-                <td><Status tone={w.state === "healthy" ? "ok" : w.state === "draining" ? "off" : "idle"}>{w.state}</Status></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Panel>
-  );
+  const live = useLive<Capabilities>(getCapabilities);
+  return <Panel title="Worker health and deployed models"><Availability {...live} />
+    <p className="mb-3 text-xs text-muted-foreground">In-flight is this backend's reservation snapshot before its health probes, not cluster-wide load or a worker queue.</p>
+    {live.data?.capabilities.length === 0 && <p>No worker pools configured.</p>}
+    <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm">
+      <thead><tr>{["Pool / policy", "Endpoint", "State", "Reported capability", "In-flight", "Model / revision"].map(h => <th className="pb-3 font-normal" key={h}>{h}</th>)}</tr></thead>
+      <tbody>{live.data?.capabilities.flatMap(p => p.workers.map(w => <tr className="border-t hairline" key={p.capability + w.endpoint}>
+        <td className="py-3">{p.capability}<div className="text-xs text-muted-foreground">{p.policy} · {p.healthyCount}/{p.workerCount} healthy</div></td>
+        <td className="font-mono text-xs">{w.endpoint}</td>
+        <td><Status tone={workerState(w, p.capability) === "Healthy" ? "ok" : "off"}>{workerState(w, p.capability)}</Status></td>
+        <td>{w.reportedCapability ?? "Unknown"}</td><td>{w.inFlight ?? "Unavailable"}</td>
+        <td className="max-w-xs break-all font-mono text-xs">{w.model ?? "Unavailable"}<div className="text-muted-foreground">{w.revision ?? "Revision unavailable"}</div></td>
+      </tr>))}</tbody>
+    </table></div>
+  </Panel>;
 }
-
-/* ---------- Models ---------- */
 export function ModelsScreen() {
-  return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {MODELS.map((m) => (
-        <Panel key={m.name} title={m.kind} right={<Status tone="off">Worker required</Status>}>
-          <div className="num mt-6 text-3xl">{m.name}</div>
-          <div className="mt-2 font-mono text-[11px] text-muted-foreground">{m.id}</div>
-          <div className="mt-8 border-t hairline pt-3 text-[12px] text-muted-foreground">{m.note}</div>
-        </Panel>
-      ))}
-    </div>
-  );
+  return <div className="space-y-4"><WorkersTable /><Panel title="Healthcare · chest X-ray">
+    <p className="text-sm">Choose Healthcare in Inference, or Auto with the chest X-ray task. A dedicated HEALTHCARE worker is required. Research model scores are not a clinical diagnosis. General image classification is a separate task.</p>
+  </Panel></div>;
 }
+function RequestEvidence() {
+  const live = useLive<TrackedRequest[]>(getRequests);
+  const rows = live.data;
+  const counts = new Map<string, number>();
+  rows?.forEach(r => { if (r.workerEndpoint) counts.set(r.workerEndpoint, (counts.get(r.workerEndpoint) ?? 0) + 1); });
+  return <Panel title="Recorded requests and failover evidence"><Availability {...live} />
+    <p className="mb-4 text-xs text-muted-foreground">Latest {rows?.length ?? "—"} stored requests (limit 100). Best-effort tracking can miss requests; these are sample counts, not global throughput. Endpoint totals use the recorded final endpoint, not every attempt.</p>
+    {!!counts.size && <div className="mb-4 flex flex-wrap gap-4">{Array.from(counts).map(([endpoint, n]) => <p className="text-sm" key={endpoint}>{endpoint}: {n} recorded requests</p>)}</div>}
+    {rows?.length === 0 && <p>No recorded requests yet.</p>}
+    <div className="space-y-3">{rows?.map(r => <details className="rounded border hairline p-3 text-sm" key={r.requestId}>
+      <summary className="cursor-pointer break-all">{r.status} · {r.capability} · {r.workerEndpoint ?? "No endpoint"} · {failoverState(r.routing)}</summary>
+      <p className="mt-2 text-xs">{r.requestId} · {r.receivedAt} · {r.totalMs ?? "—"} ms {r.errorCode ? "· " + r.errorCode : ""}</p>
+      {r.routing ? <RoutingDetails routing={r.routing} /> : <p className="mt-2">Routing evidence unavailable.</p>}
+    </details>)}</div>
+  </Panel>;
+}
+export function RoutingScreen() { return <div className="space-y-4"><OperationsSummary /><RequestEvidence /></div>; }
+export function MonitoringScreen() { return <div className="space-y-4"><OperationsSummary /><WorkersTable /><RequestEvidence /></div>; }
 
-/* ---------- Inference console ---------- */
 export function useHealth() {
   const [state, setState] = useState<"unset" | "checking" | "ok" | "down">(isApiConfigured() ? "checking" : "unset");
   const [detail, setDetail] = useState<string>("");
@@ -178,36 +138,83 @@ export function useHealth() {
 }
 
 const CAPS = [
+  { id: "AUTO", label: "Auto", on: true },
+  { id: "HEALTHCARE", label: "Healthcare", on: true },
   { id: "TEXT", label: "Text", on: true },
   { id: "CODE", label: "Code language", on: true },
   { id: "IMAGE", label: "Image", on: true },
 ] as const;
 
+export function HealthcareNotice({ result }: { result: Pick<InferenceResult, "capability" | "task" | "researchOnly" | "scoreMeaning"> }) {
+  if (result.capability !== "HEALTHCARE" && result.task !== "chest-xray" && result.researchOnly !== true) return null;
+  return <div className="rounded border hairline p-3 text-sm" role="note">
+    <strong>Research only — not a diagnosis.</strong>
+    <p>{result.scoreMeaning || "Independent model scores, not calibrated disease probabilities or diagnoses."}</p>
+    <p>This result does not establish or exclude disease. The model does not verify that an uploaded image is a chest X-ray.</p>
+  </div>;
+}
+
 export function InferenceScreen() {
   const health = useHealth();
-  const [capability, setCapability] = useState<Capability>("TEXT");
+  const [capability, setCapability] = useState<Capability>("AUTO");
   const [text, setText] = useState("The new routing layer made our latency drop dramatically.");
+  const [task, setTask] = useState<Task | "">("");
+  const [uploading, setUploading] = useState(false);
+  const medical = capability === "HEALTHCARE" || (capability === "AUTO" && task === "chest-xray");
   const [res, setRes] = useState<InferenceResult | null>(null);
+  const [failure, setFailure] = useState<ApiError | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const run = async () => {
-    setBusy(true); setErr(null); setRes(null);
-    try { setRes(await api.inference(text, undefined, capability)); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+    setBusy(true); setErr(null); setRes(null); setFailure(null);
+    try { setRes(await api.inference(text, undefined, capability, capability === "AUTO" ? (task || undefined) : medical ? "chest-xray" : undefined)); } catch (e) { setErr((e as Error).message); if (e instanceof ApiError) setFailure(e); } finally { setBusy(false); }
   };
   const rt = res?.routing;
+  const upload = async (file?: File) => {
+    if (!file) return;
+    setErr(null); setRes(null); setFailure(null); setText(""); setUploading(true);
+    try {
+      if (!["image/png", "image/jpeg"].includes(file.type)) throw new Error("Choose a PNG or JPEG image.");
+      if (file.size > 5_000_000) throw new Error("Image must be no larger than 5 MB.");
+      const data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Image could not be read."));
+        reader.readAsDataURL(file);
+      });
+      setText(data);
+    } catch (e) { setErr((e as Error).message); }
+    finally { setUploading(false); }
+  };
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
       <Panel title={`Inference · ${capability}`} right={<span className="micro">POST {ENDPOINTS.inference}</span>}>
         <div className="mb-3 flex flex-wrap gap-2">
           {CAPS.map((c) => (
-            <button key={c.id} type="button" disabled={busy} aria-pressed={capability === c.id}
-              onClick={() => { setCapability(c.id); setText(""); setRes(null); setErr(null); }}
+            <button key={c.id} type="button" disabled={busy || uploading} aria-pressed={capability === c.id}
+              onClick={() => { setCapability(c.id); setText(""); setRes(null); setErr(null); setFailure(null); }}
               className={cn("rounded-[3px] border px-2 py-0.5 text-[12px]", capability === c.id ? "border-leaf/60 text-leaf" : "hairline text-muted-foreground")}>{c.label}</button>
           ))}
         </div>
+        {capability === "AUTO" && <label className="mb-4 block text-sm">Task
+          <select aria-label="Auto task" value={task} disabled={busy || uploading} onChange={e => { setTask(e.target.value as Task | ""); setRes(null); setErr(null); setFailure(null); }} className="ml-3 rounded border hairline bg-background p-2">
+            <option value="">Detect text, code or image</option>
+            <option value="sentiment-analysis">Text sentiment</option>
+            <option value="code-language">Code language</option>
+            <option value="image-classification">General image classification</option>
+            <option value="chest-xray">Healthcare · chest X-ray</option>
+          </select>
+        </label>}
+        {medical && <p className="mb-4 text-sm text-muted-foreground">Research demonstration only, not a diagnosis. Upload a frontal chest X-ray PNG or JPEG without personal identifiers. Model scores are not calibrated probabilities of disease; a clinician must interpret medical images.</p>}
+        {["AUTO", "IMAGE", "HEALTHCARE"].includes(capability) && <label className="mb-4 block text-sm">
+          {medical ? "Upload chest X-ray" : "Upload image"} (PNG/JPEG, up to 5 MB)
+          <input className="mt-2 block w-full" aria-label="Upload image" type="file" accept="image/png,image/jpeg" disabled={busy || uploading}
+            onChange={e => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>}
         <textarea
-          aria-label={capability === "IMAGE" ? "PNG or JPEG data URL or base64" : capability === "CODE" ? "Code snippet" : "Text for sentiment analysis"}
-          placeholder={capability === "IMAGE" ? "Paste a PNG or JPEG data URL or base64 image" : capability === "CODE" ? "Paste a code snippet" : "Enter text for sentiment analysis"}
+          aria-label={medical || capability === "IMAGE" ? "PNG or JPEG data URL or base64" : capability === "CODE" ? "Code snippet" : capability === "AUTO" ? "Input for automatic routing" : "Text for sentiment analysis"}
+          placeholder={medical || capability === "IMAGE" ? "Upload an image or paste a PNG/JPEG data URL" : capability === "CODE" ? "Paste a code snippet" : capability === "AUTO" ? "Enter text, code or upload an image; select a task if ambiguous" : "Enter text for sentiment analysis"}
+          disabled={busy || uploading}
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={6}
@@ -217,7 +224,7 @@ export function InferenceScreen() {
           <Status tone={health.state === "ok" ? "ok" : health.state === "unset" ? "off" : "idle"}>
             {health.state === "ok" ? "Connected" : health.state === "checking" ? "Checking…" : health.state === "down" ? "Unreachable" : "Not connected"}
           </Status>
-          <button onClick={run} disabled={busy || !text.trim() || !isApiConfigured()} className="rounded-[3px] border border-leaf/60 px-4 py-1.5 text-[13px] text-leaf transition-colors hover:bg-leaf hover:text-primary-foreground disabled:opacity-40">
+          <button onClick={run} disabled={busy || uploading || !text.trim() || !isApiConfigured()} className="rounded-[3px] border border-leaf/60 px-4 py-1.5 text-[13px] text-leaf transition-colors hover:bg-leaf hover:text-primary-foreground disabled:opacity-40">
             {busy ? "Running…" : "Run inference"}
           </button>
         </div>
@@ -227,6 +234,7 @@ export function InferenceScreen() {
       <Panel title="Response">
         {res ? (
           <div className="space-y-4">
+            <HealthcareNotice result={res} />
             <div>
               <div className="num text-4xl">{res.prediction.label}</div>
               <div className="micro mt-2">score {res.prediction.score.toFixed(3)} · {res.totalLatencyMs}ms</div>
@@ -236,21 +244,13 @@ export function InferenceScreen() {
                 <div key={k} className="contents"><dt className="text-muted-foreground">{k}</dt><dd className="break-all">{v}</dd></div>
               ))}
             </dl>
-            {rt && (
-              <div className="border-t hairline pt-3">
-                <div className="micro mb-2">Routing evidence</div>
-                <dl className="grid grid-cols-[90px_1fr] gap-y-1 font-mono text-[11px]">
-                  {([["policy", rt.policy], ["chosen", rt.chosen], ["reason", rt.reason],
-                    ...(rt.attempts != null ? [["attempts", typeof rt.attempts === "number" ? String(rt.attempts) : JSON.stringify(rt.attempts)]] : []),
-                    ...(rt.terminalReason ? [["terminal", rt.terminalReason]] : [])] as [string, string][]).map(([k, v]) => (
-                    <div key={k} className="contents"><dt className="text-muted-foreground">{k}</dt><dd className="break-all">{v}</dd></div>
-                  ))}
-                </dl>
-              </div>
-            )}
+            {res.capability && <p className="text-sm">Resolved capability: {res.capability}</p>}
+            {res.topK && <ul className="text-sm">{res.topK.map(p => <li key={p.label}>{p.label}: {p.score.toFixed(3)}</li>)}</ul>}
+            {rt && <RoutingDetails routing={rt} />}
+
           </div>
         ) : err ? (
-          <p className="font-mono text-[12px] text-destructive">{err}</p>
+          <div><p className="font-mono text-[12px] text-destructive">{err}</p>{failure?.requestId && <p className="mt-2 text-xs">Request: {failure.requestId}</p>}{failure?.routing && <RoutingDetails routing={failure.routing} />}</div>
         ) : (
           <p className="text-[12px] text-muted-foreground">No request yet.</p>
         )}
@@ -259,71 +259,3 @@ export function InferenceScreen() {
   );
 }
 
-/* ---------- Routing ---------- */
-const ALGOS = [
-  { name: "Round Robin", desc: "Cycle requests evenly across healthy workers." },
-  { name: "Least In-Flight", desc: "Send to the worker with the fewest active requests." },
-  { name: "Weighted", desc: "Not supported by the backend." },
-  { name: "Health and Latency", desc: "Select a healthy eligible worker using estimated latency and workload." },
-];
-
-export function RoutingScreen() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {ALGOS.map((a) => (
-          <div key={a.name} className="rounded-[6px] border hairline p-4 opacity-60">
-            <span className="micro">Read-only</span>
-            <div className="num mt-5 text-2xl">{a.name}</div>
-            <div className="mt-1 text-[12px] text-muted-foreground">{a.desc}</div>
-          </div>
-        ))}
-      </div>
-      <Panel title="Strategy changes">
-        <div className="num text-2xl">Unavailable</div>
-        <p className="mt-3 text-[12px] text-muted-foreground">The API has no routing mutation endpoint. The policy the server actually used appears as routing evidence on each inference response.</p>
-      </Panel>
-    </div>
-  );
-}
-
-/* ---------- Monitoring ---------- */
-const LOGS = [
-  ["15:52:04.112", "INFO", "gateway", "route POST /sentiment → worker-02 (round_robin)"],
-  ["15:52:04.087", "INFO", "worker-02", "inference ok label=POSITIVE 39ms"],
-  ["15:52:03.951", "WARN", "worker-03", "queue depth 5 exceeds soft limit 4"],
-  ["15:52:03.420", "INFO", "registry", "heartbeat worker-01 healthy"],
-  ["15:52:02.877", "INFO", "worker-04", "drain requested; rejecting new work"],
-];
-
-export function MonitoringScreen() {
-  const h = useHealth();
-  const health = h.state === "ok" ? "Connected" : h.state === "down" ? "Unreachable" : h.state === "checking" ? "Checking…" : null;
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Panel title="Health check" right={<span className="micro">GET {ENDPOINTS.health}</span>}>
-          <div className="num text-3xl">{health ?? "—"}</div>
-          <div className="mt-1 font-mono text-[11px] text-muted-foreground">{API_BASE_URL ?? "VITE_API_BASE_URL unset"}</div>
-          {h.detail && <div className="mt-1 break-all font-mono text-[11px] text-muted-foreground">{h.detail}</div>}
-          <button onClick={() => void h.check()} disabled={!isApiConfigured()} className="mt-4 rounded-[3px] border hairline px-3 py-1 text-[12px] transition-colors hover:border-foreground/40">Ping</button>
-        </Panel>
-        <Panel title="CPU / worker" right={<Demo />}><Bars seed={4} n={32} h={70} accentEvery={5} /></Panel>
-        <Panel title="Memory / worker" right={<Demo />}><Bars seed={8} n={32} h={70} accentEvery={9} /></Panel>
-      </div>
-      <Panel title="Logs" right={<Demo />}>
-        <div className="space-y-1 font-mono text-[12px]">
-          {LOGS.map((l) => (
-            <div key={l[0]} className="flex gap-4 rounded-[2px] px-1 py-0.5 hover:bg-foreground/[0.03]">
-              <span className="text-muted-foreground">{l[0]}</span>
-              <span className={l[1] === "WARN" ? "text-chart-5" : "text-leaf"}>{l[1]}</span>
-              <span className="w-20 shrink-0 text-muted-foreground">{l[2]}</span>
-              <span className="truncate">{l[3]}</span>
-            </div>
-          ))}
-        </div>
-      </Panel>
-      <WorkersTable />
-    </div>
-  );
-}

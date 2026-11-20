@@ -52,17 +52,25 @@ public class WorkerPools {
         this.pools = Collections.unmodifiableMap(all);
     }
 
+    public WorkerPools(WorkerPool defaultPool,
+            String codeUrls, String imageUrls, long connectTimeoutMs, long readTimeoutMs,
+            long probeTimeoutMs, long identityMaxAgeMs, String policy, FailoverSettings failover) {
+        this(defaultPool, codeUrls, imageUrls, "", connectTimeoutMs, readTimeoutMs,
+                probeTimeoutMs, identityMaxAgeMs, policy, failover);
+    }
+
     @Autowired
     public WorkerPools(WorkerPool defaultPool,
             @Value("${platform.worker.code.urls:}") String codeUrls,
             @Value("${platform.worker.image.urls:}") String imageUrls,
+            @Value("${platform.worker.healthcare.urls:}") String healthcareUrls,
             @Value("${platform.worker.connect-timeout-ms}") long connectTimeoutMs,
             @Value("${platform.worker.read-timeout-ms}") long readTimeoutMs,
             @Value("${platform.worker.probe-timeout-ms:2000}") long probeTimeoutMs,
             @Value("${platform.worker.identity-max-age-ms:30000}") long identityMaxAgeMs,
             @Value("${platform.routing.policy:ROUND_ROBIN}") String policy,
             FailoverSettings failover) {
-        this(defaultPool, extraPools(defaultPool, Map.of("CODE", codeUrls, "IMAGE", imageUrls),
+        this(defaultPool, extraPools(defaultPool, Map.of("CODE", codeUrls, "IMAGE", imageUrls, "HEALTHCARE", healthcareUrls),
                 connectTimeoutMs, readTimeoutMs, probeTimeoutMs, identityMaxAgeMs, policy, failover));
         for (WorkerPool pool : pools.values()) {
             if (pool != defaultPool) owned.add(pool);
@@ -74,7 +82,7 @@ public class WorkerPools {
             long connectTimeoutMs, long readTimeoutMs, long probeTimeoutMs, long identityMaxAgeMs, String policy,
             FailoverSettings failover) {
         Map<String, WorkerPool> extra = new LinkedHashMap<>();
-        for (String capability : List.of("CODE", "IMAGE")) { // fixed order for logs and GET /api/capabilities
+        for (String capability : List.of("CODE", "IMAGE", "HEALTHCARE")) { // fixed order for logs and GET /api/capabilities
             String urls = urlsByCapability.get(capability);
             if (urls == null || urls.isBlank()) continue;
             if (capability.equals(defaultPool.capability())) {
@@ -111,3 +119,5 @@ public class WorkerPools {
         owned.forEach(WorkerPool::close); // the default pool is a bean and closes itself
     }
 }
+
+

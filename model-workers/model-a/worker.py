@@ -14,6 +14,8 @@ honest output; "topK" (best first) is added for code and image only:
   image  IMAGE  image-classification   google/vit-base-patch16-224        -> ImageNet class of a picture;
                 "text" is the image as base64 (optionally a data: URL), at most MAX_TEXT_CHARS characters;
                 only PNG/JPEG content of at most MAX_IMAGE_SIDE x MAX_IMAGE_SIDE pixels, else 422 invalid_image
+  healthcare HEALTHCARE chest-xray    torchxrayvision/densenet121-res224-all
+                -> independent research pathology scores; NOT diagnosis or clinical decision support
 
 The model loads once at startup. If loading fails, the process fails to start,
 so a worker that answers /health always has a loaded model.
@@ -43,6 +45,7 @@ TASKS = {
     "code": ("text-classification", "CODE", "huggingface/CodeBERTa-language-id", 10_000, 3),
     # ~5 MB of image bytes once base64 encoded.
     "image": ("image-classification", "IMAGE", "google/vit-base-patch16-224", 7_000_000, 3),
+    "healthcare": ("chest-xray", "HEALTHCARE", "torchxrayvision/densenet121-res224-all", 7_000_000, 18),
 }
 WORKER_TASK = os.getenv("WORKER_TASK", "text").strip().lower()
 if WORKER_TASK not in TASKS:
@@ -55,12 +58,15 @@ MODEL_NAME = os.getenv("MODEL_NAME", _DEFAULT_MODEL)
 # The revision actually loaded is what /health and /predict report, not this setting.
 MODEL_REVISION = os.getenv("MODEL_REVISION") or None
 
-classifier = pipeline(TASK, model=MODEL_NAME, revision=MODEL_REVISION) if MODEL_REVISION \
-    else pipeline(TASK, model=MODEL_NAME)
-
-# Exact model revision (Hugging Face git commit) when the library exposes it; otherwise None.
-# We report None rather than inventing a version string.
-MODEL_VERSION = getattr(classifier.model.config, "_commit_hash", None)
+if WORKER_TASK == "healthcare":
+    from healthcare import ChestXrayClassifier
+    classifier = ChestXrayClassifier(MODEL_NAME, MODEL_REVISION)
+    MODEL_VERSION = classifier.revision
+else:
+    classifier = pipeline(TASK, model=MODEL_NAME, revision=MODEL_REVISION) if MODEL_REVISION \
+        else pipeline(TASK, model=MODEL_NAME)
+    # Exact model revision when exposed; never invent a version string.
+    MODEL_VERSION = getattr(classifier.model.config, "_commit_hash", None)
 
 app = FastAPI(title=f"Model worker {WORKER_ID}")
 
@@ -172,4 +178,9 @@ def predict(request: PredictRequest):
     }
     if top_k is not None:
         body["topK"] = top_k
+    if WORKER_TASK == "healthcare":
+        body["researchOnly"] = True
+        body["scoreMeaning"] = "Independent model scores, not calibrated disease probabilities or diagnoses"
     return body
+
+

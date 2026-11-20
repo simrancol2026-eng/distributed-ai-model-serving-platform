@@ -14,7 +14,10 @@ public final class InferenceDtos {
      * Optional (Sprint 2): "model" = registry model id, "version" = registry version label or "latest"
      * (default when "model" is given). Without "model" the request behaves exactly as before.
      */
-    public record InferenceRequest(String capability, String input, String model, String version) {
+    public record InferenceRequest(String capability, String input, String model, String version, String task) {
+        public InferenceRequest(String capability, String input, String model, String version) {
+            this(capability, input, model, version, null);
+        }
     }
 
     /**
@@ -29,7 +32,15 @@ public final class InferenceDtos {
             String label,
             double score,
             double inferenceMs,
-            java.util.List<Prediction> topK) {
+            java.util.List<Prediction> topK,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            Boolean researchOnly,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            String scoreMeaning) {
+        public WorkerPrediction(String worker, String model, String version, String task, String label,
+                double score, double inferenceMs, java.util.List<Prediction> topK) {
+            this(worker, model, version, task, label, score, inferenceMs, topK, null, null);
+        }
     }
 
     public record Prediction(String label, double score) {
@@ -53,7 +64,18 @@ public final class InferenceDtos {
             RoutingDecision routing, // why this worker was chosen (Sprint 2 #5, D-044)
             // Specialist models (D-049): ranked alternatives from CODE/IMAGE workers; omitted for TEXT.
             @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-            java.util.List<Prediction> topK) {
+            java.util.List<Prediction> topK,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            Boolean researchOnly,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            String scoreMeaning) {
+        public InferenceResponse(String status, String requestId, String capability, String worker,
+                String workerEndpoint, String model, String version, String task, Prediction prediction,
+                double workerInferenceMs, long totalLatencyMs, String modelId, String modelVersion,
+                RoutingDecision routing, java.util.List<Prediction> topK) {
+            this(status, requestId, capability, worker, workerEndpoint, model, version, task, prediction,
+                    workerInferenceMs, totalLatencyMs, modelId, modelVersion, routing, topK, null, null);
+        }
     }
 
     /** Uniform error body: status is always "error"; error is a stable machine-readable code. */
@@ -68,3 +90,4 @@ public final class InferenceDtos {
         }
     }
 }
+

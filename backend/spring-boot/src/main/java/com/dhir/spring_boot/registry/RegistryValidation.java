@@ -23,7 +23,8 @@ public final class RegistryValidation {
     static final Pattern ARTIFACT = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$");
 
     /**
-     * Full 40-hex git commit (Hugging Face revision). Abbreviated hashes are rejected because they are
+     * Full 40-hex artifact revision (Hugging Face commit or healthcare weight-file SHA1).
+     * Abbreviated hashes are rejected because they are
      * not guaranteed unique. Registering a revision records metadata only; it does not prove the
      * artifact was downloaded or ever executed.
      */
@@ -32,7 +33,7 @@ public final class RegistryValidation {
     /** Reserved version alias used by inference requests (case-insensitive). */
     public static final String LATEST = "latest";
 
-    static final Set<String> CAPABILITIES = Set.of("TEXT", "CODE", "IMAGE", "DOCUMENT");
+    static final Set<String> CAPABILITIES = Set.of("TEXT", "CODE", "IMAGE", "DOCUMENT", "HEALTHCARE");
 
     private RegistryValidation() {
     }
@@ -56,7 +57,7 @@ public final class RegistryValidation {
         String task = required("task", r.task(), 100);
         String capability = required("capability", r.capability(), 16).toUpperCase(Locale.ROOT);
         if (!CAPABILITIES.contains(capability)) {
-            throw new InvalidRequestException("Field 'capability' must be one of TEXT, CODE, IMAGE, DOCUMENT.");
+            throw new InvalidRequestException("Field 'capability' must be one of TEXT, CODE, IMAGE, DOCUMENT, HEALTHCARE.");
         }
         String description = optional("description", r.description(), 1000);
         return new CreateModelRequest(id, name, task, capability, description);
@@ -83,7 +84,7 @@ public final class RegistryValidation {
         String revision = required("artifactRevision", r.artifactRevision(), 100).toLowerCase(Locale.ROOT);
         if (!REVISION.matcher(revision).matches()) {
             throw new InvalidRequestException(
-                    "Field 'artifactRevision' must be the full 40-character hexadecimal commit hash (abbreviated hashes are not accepted).");
+                    "Field 'artifactRevision' must be the full 40-character hexadecimal artifact revision (abbreviated hashes are not accepted).");
         }
         String framework = optional("framework", r.framework(), 100);
         String notes = optional("notes", r.notes(), 1000);
@@ -120,3 +121,5 @@ public final class RegistryValidation {
         return v;
     }
 }
+
+

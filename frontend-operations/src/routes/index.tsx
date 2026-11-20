@@ -19,8 +19,9 @@ export const Route = createFileRoute("/")({
 function Page() {
   return (
     <Shell>
-      <PageTitle eyebrow="Cluster 01 · eu-west" title="Distributed model operations" />
+      <PageTitle eyebrow="Live operations" title="Distributed model operations" />
       <HomeScreen />
     </Shell>
   );
 }
+
