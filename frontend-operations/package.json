@@ -7,7 +7,9 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "preview": "vite preview",
+    "preview": "node scripts/serve-production.mjs",
+    "start": "node scripts/serve-production.mjs",
+    "test:production": "node scripts/smoke-production.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
@@ -94,3 +96,4 @@
     "vitest": "^4.1.10"
   }
 }
+
