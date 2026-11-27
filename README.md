@@ -3,6 +3,9 @@
 The updated Nexus AI Operations dashboard lives in `frontend-operations/`.
 From that directory, run `npm ci --legacy-peer-deps`, set
 `VITE_API_BASE_URL=http://localhost:8080`, then run `npm run dev -- --port 5173`.
+To check the production build locally, run `npm run build` and then
+`npm run preview`. It serves the Cloudflare/Nitro output in `.output/` with
+the pinned `wrangler dev` on http://localhost:4173 (no Cloudflare login needed).
 Stop the earlier frontend first if it is using port 5173. The Operations
 dashboard sends TEXT, CODE and IMAGE inference to Spring Boot. IMAGE takes a
 PNG or JPEG data URL or base64 string. Start and configure the corresponding
